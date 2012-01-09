@@ -27,7 +27,7 @@ sources   += $(wildcard util/*.c)
 objtargets = $(sources:.c=.o)
 objfiles   = $(addprefix obj/,$(notdir $(objtargets)))
 
-exes=dumpimg dumphdr
+exes=dumpimg dumphdr cnvnifti extval
 
 default: $(exes)
 

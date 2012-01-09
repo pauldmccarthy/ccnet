@@ -11,7 +11,6 @@
 
 #include "io/analyze75.h"
 #include "io/nifti1.h"
-#include "util/suffix.h"
 
 #define MAX(X,Y) ((X > Y) ? (X) : (Y))
 
@@ -21,7 +20,6 @@ int main (int argc, char *argv[]) {
   dsr_t        ahdr;
   char        *infile;
   char        *outfile;
-  char        *fname;
 
   if (argc != 3) {
     printf("usage: nifticnv infile outfile\n");
@@ -31,9 +29,7 @@ int main (int argc, char *argv[]) {
   infile  = argv[1];
   outfile = argv[2];
 
-  fname = suffix(infile, "hdr");
-
-  if (nifti1_load_hdr(fname, &nhdr)) {
+  if (nifti1_load_hdr(infile, &nhdr)) {
     printf("error reading NIFTI-1 header file\n");
     goto fail;
   }
@@ -44,10 +40,7 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  free(fname);
-  fname = suffix(outfile, "hdr");
-
-  if (analyze_write_hdr(fname, &ahdr)) {
+  if (analyze_write_hdr(outfile, &ahdr)) {
     printf("error writing ANALYZE75 header file\n");
     goto fail;
   }

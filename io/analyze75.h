@@ -176,6 +176,17 @@ uint8_t analyze_load(
 );
 
 /**
+ * Writes the image data to the given file.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t analyze_write_img(
+  char    *filename, /**< name of file to write to */
+  dsr_t   *hdr,      /**< image header             */
+  uint8_t *img       /**< image data               */
+);
+
+/**
  * \return the data type of the file.
  */
 uint16_t analyze_datatype(

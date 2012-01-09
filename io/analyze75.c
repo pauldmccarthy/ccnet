@@ -216,31 +216,60 @@ fail:
   return 1;
 }
 
+uint8_t analyze_write_img(char *filename, dsr_t *hdr, uint8_t *img) {
+
+  FILE    *fd;
+  uint32_t nvals;
+  uint8_t  valsz;
+
+  fd = NULL;
+
+  filename = suffix(filename, "img");
+  nvals    = analyze_num_vals(  hdr);
+  valsz    = analyze_value_size(hdr);
+
+  fd = fopen(filename, "wb");
+
+  if (fwrite(img, 1, nvals*valsz, fd) != nvals*valsz) goto fail;
+
+  fclose(fd);
+  free(filename);
+  return 0;
+  
+fail:
+
+  if (filename != NULL) free(filename);
+  if (fd       != NULL) fclose(fd);
+  return 1;
+}
+
 uint8_t analyze_write_hdr(char *filename, dsr_t *hdr) {
 
   FILE *fd;
-  char *afilename;
   dsr_t hdrcpy;
 
-  afilename = suffix(filename, "hdr");
+  fd = NULL;
+
+  filename = suffix(filename, "hdr");
+  if (filename == NULL) goto fail;
 
   memcpy(&hdrcpy, hdr, sizeof(dsr_t));
 
   if (hdrcpy.rev) analyze_reverse_hdr(&hdrcpy);
 
-  fd = fopen(afilename, "wb");
+  fd = fopen(filename, "wb");
   if (fd == NULL) goto fail;
 
   if (fwrite(&hdrcpy, 1, 348, fd) != 348) goto fail;
   
-  free(afilename);
+  free(filename);
   fclose(fd);
   
   return 0;
   
 fail:
-  if (afilename != NULL) free(afilename);
-  if (fd        != NULL) fclose(fd);
+  if (filename != NULL) free(filename);
+  if (fd       != NULL) fclose(fd);
   return 1;
 }
 

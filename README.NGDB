@@ -1,0 +1,131 @@
+
+  ngdb - Not the Gnu DeBugger (n-GraphDataBase)
+
+ngdb is a simple file format and API for file-based storage and access of
+graph based data. 
+
+ngdb stores data as a directed graph, consisting of nodes and edges. An
+edge from one node to another is referred to as a reference. ngdb provides
+constant access time, by index, to access any node in the graph, and to
+access the neighbours of any node. This claim assumes that the operating
+system in which ngdb is executing provides random file access via the stdio
+functions rewind, fseek and fread.
+
+ngdb currently uses 32 bit values to represent both node indices and
+references. This imposes some limits on the maximum size of a graph - the
+combined total number of nodes and edges may not exceed 2^32. 32 bit
+addressing also places a limit on the maximum file size, so graph size
+limits are realistically a bit less than 2^32.
+
+Currently, the ngdb API supports creation of, and read-only access of ngdb
+graph files. This is a bit limiting, but it may change in the future.
+ 
+
+   File format 
+ 
+All multi-byte values are stored in little endian (i.e. least significant
+byte first).
+
+An ngdb file contains a header, a list of nodes, and a list of references. 
+ 
+  | Field  | Length in bytes          | Description        |
+  |--------|--------------------------|--------------------|
+  | header | 16+hdata_len             | File header        |
+  | nodes  | (14+ndata_len)*num_nodes | List of nodes      |
+  | refs   | (10+rdata_len)*num_refs  | List of references |
+
+The header contains information about the size of the file:
+
+  | Field      | Length in bytes | Description                           |
+  |------------|-----------------|---------------------------------------|
+  | id         | 2 (uint16_t)    | NGDB_FILE_ID                          |
+  | hdata_len  | 2 (uint16_t)    | Length of header data                 |
+  | ndata_len  | 2 (uint16_t)    | Length of data in a node section      |
+  | rdata_len  | 2 (uint16_t)    | Length of data in a reference section |
+  | num_nodes  | 4 (uint32_t)    | Total umber of nodes                  |
+  | num_refs   | 4 (uint32_t)    | Total number of references            |
+  | data       | hdata_len       | Data                                  |
+
+A node section has the following format. The references for each node are
+stored as a linked list, with the address of the first reference stored in
+the node section. Subsequent references are stored after the list of nodes.
+Reference addresses are zero-indexed:
+ 
+  | Field     | Length in bytes | Description                |
+  |---------- |-----------------|----------------------------|
+  | sync      | 2 (uint16_t)    | NGDB_NODE_SYNC             |
+  | num_refs  | 4 (uint32_t)    | Number of references       |
+  | first_ref | 4 (uint32_t)    | Address of first reference |
+  | last_ref  | 4 (uint32_t)    | Address of last reference  |
+  | data      | ndata_len       | Data                       |
+
+A reference section has the following format. The idx field is an index, 
+into the list of nodes, to the corresponding node; these indices are
+zero-indexed. The next_ref field of the last reference in a list is 
+0x00000000 - it is not possible for a valid reference to have this value:
+ 
+  | Field | Length in bytes | Description               |
+  |-------|-----------------|---------------------------|
+  | sync  | 2 (uint16_t)    | NGDB_REF_SYNC             |
+  | idx   | 4 (uint32_t)    | Node ID                   |
+  | next  | 4 (uint32_t)    | Address of next reference |
+  | data  | rdata_len       | Data                      |
+
+
+   Reading a graph file
+
+Here is an example on reading a graph file. You should check return values,
+of course:
+ 
+ngdb_t *ngdb;
+uint32_t nnodes, 
+         nrefs, 
+        *refs;
+  
+uint32_t i, j;
+ 
+ngdb = ngdb_open("myfile.ngdb");
+nnodes = ngdb_num_nodes(ngdb);
+nrefs = ngdb_num_refs( ngdb);
+
+printf("number of nodes: %u\n", nnodes);
+printf("number of refs:  %u\n", nrefs);
+
+for (i = 0; i < nnodes; i++) {
+
+  nrefs = ngdb_node_num_refs(ngdb, i);
+
+  refs = malloc(nrefs*sizeof(uint32_t));
+  ngdb_node_get_all_refs(ngdb, i, refs);
+ 
+  printf("%u: ", i);
+  for (j = 0; j < nrefs; j++) {
+
+    printf("%u", refs[j]);
+    if (j < nrefs-1) printf(", ");
+  }
+  printf("\n");
+
+  free(refs);
+}
+ 
+ngdb_close(ngdb);
+
+
+  Creaing a graph file
+
+Here is an example on creating a graph file. Again, you should check return
+values:
+
+ngdb_t *ngdb;
+
+ngdb = ngdb_create("myfile.ngdb", 3, 0, 0, 0));
+
+ngdb_add_ref(ngdb, 0, 1, NULL, 0);
+ngdb_add_ref(ngdb, 0, 2, NULL, 0);
+ngdb_add_ref(ngdb, 1, 0, NULL, 0);
+ngdb_add_ref(ngdb, 1, 2, NULL, 0);
+ngdb_add_ref(ngdb, 2, 0, NULL, 0);
+ngdb_add_ref(ngdb, 2, 1, NULL, 0);
+
+ngdb_close(ngdb);

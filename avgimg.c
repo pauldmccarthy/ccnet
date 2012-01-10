@@ -58,6 +58,12 @@ int main (int argc, char *argv[]) {
 
   if (argc < 4) {
     printf("usage: avgimg format output input1 [input2 ...]\n");
+    printf("Supported formats:\n\
+  2  - unsigned char (1 byte)\n\
+  4  - signed short  (2 bytes)\n\
+  8  - signed int    (4 bytes)\n\
+  16 - float         (4 bytes)\n\
+  64 - double        (8 bytes)\n");
     return 1;
   } 
 

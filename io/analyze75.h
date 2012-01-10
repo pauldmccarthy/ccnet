@@ -122,9 +122,9 @@ void analyze_reverse_hdr(
 
 /**
  * Checks the given headers to make sure that they all 
- * have the same dimensions.
+ * have the same dimensions, data type and endianness.
  *
- * \return 0 if all of the header dimensions match, non-0 otherwise.
+ * \return 0 if all of the headers match, non-0 otherwise.
  */
 uint8_t analyze_hdr_compat(
   uint8_t   nhdrs, /**< number of headers */

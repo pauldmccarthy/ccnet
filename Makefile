@@ -34,7 +34,9 @@ exes=dumpimg  \
      shiftimg \
      scaleimg \
      avgimg   \
-     cnvimg
+     cnvimg   \
+     catimg   \
+     cutimg
 
 default: $(exes)
 

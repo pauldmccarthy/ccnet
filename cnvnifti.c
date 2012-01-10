@@ -22,7 +22,7 @@ int main (int argc, char *argv[]) {
   char        *outfile;
 
   if (argc != 3) {
-    printf("usage: nifticnv infile outfile\n");
+    printf("usage: cnvnifti infile outfile\n");
     goto fail;
   }
 

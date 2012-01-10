@@ -283,15 +283,21 @@ uint8_t analyze_hdr_compat(uint8_t nhdrs, dsr_t *hdrs) {
   uint16_t *dimszs;
   float    *pixdims;
   float     pixdim_diff;
+  uint16_t  dtype;
+  uint8_t   endi;
 
   dimszs  = NULL;
   pixdims = NULL;
 
+  if (nhdrs == 0) return 0;
+
   /*
-   * get number of dimensions and dimension 
-   * sizes from first input image
+   * get number of dimensions, dimension sizes,data
+   * type and endianness from first input image
    */
   ndims = analyze_num_dims(hdrs);
+  dtype = analyze_datatype(hdrs);
+  endi  = hdrs->rev;
 
   dimszs  = malloc(ndims*sizeof(uint16_t));
   if (dimszs  == NULL) goto fail;
@@ -315,8 +321,10 @@ uint8_t analyze_hdr_compat(uint8_t nhdrs, dsr_t *hdrs) {
 
       pixdim_diff = fabs(analyze_pixdim_size(hdrs+i,j) - pixdims[j]);
 
-      if (analyze_dim_size(   hdrs+i, j) != dimszs [j]) goto fail;
-      if (pixdim_diff                     > 0.00001)    goto fail;
+      if (analyze_dim_size(hdrs+i, j) != dimszs [j]) goto fail;
+      if (pixdim_diff                  > 0.00001)    goto fail;
+      if (analyze_datatype(hdrs+i)    != dtype)      goto fail;
+      if (hdrs[i].rev                 != endi)       goto fail;
     }
   }
 

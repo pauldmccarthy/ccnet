@@ -27,18 +27,20 @@ sources   += $(wildcard util/*.c)
 objtargets = $(sources:.c=.o)
 objfiles   = $(addprefix obj/,$(notdir $(objtargets)))
 
-exes=dumpimg  \
-     dumphdr  \
-     cnvnifti \
-     extval   \
-     shiftimg \
-     scaleimg \
-     avgimg   \
-     cnvimg   \
-     catimg   \
-     cutimg   \
-     countimg \
-     cropimg
+exes=dumpimg   \
+     dumphdr   \
+     cnvnifti  \
+     extval    \
+     shiftimg  \
+     scaleimg  \
+     avgimg    \
+     cnvimg    \
+     catimg    \
+     cutimg    \
+     countimg  \
+     cropimg   \
+     mkhdr     \
+     nanfiximg
 
 default: $(exes)
 

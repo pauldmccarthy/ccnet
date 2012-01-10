@@ -41,8 +41,7 @@ exes=dumpimg   \
      cropimg   \
      mkhdr     \
      nanfiximg \
-     patchhdr  \
-     sampleimg
+     patchhdr
 
 default: $(exes)
 

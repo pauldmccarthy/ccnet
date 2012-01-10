@@ -68,12 +68,10 @@ int main (int argc, char *argv[]) {
   uint8_t    *outimg;
   uint32_t    nbytes;
   args_t      args;
-  FILE       *hd;
   struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
 
   inimg  = NULL;
   outimg = NULL;
-  hd     = NULL;
 
   args.xlo = 0xFFFF;
   args.xhi = 0xFFFF;
@@ -113,7 +111,6 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  fclose(hd);
   free(inimg);
   free(outimg);
 
@@ -122,7 +119,6 @@ int main (int argc, char *argv[]) {
 fail:
   if (inimg  != NULL) free(inimg);
   if (outimg != NULL) free(outimg);
-  if (hd     != NULL) fclose(hd);
   return 1;
 }
 

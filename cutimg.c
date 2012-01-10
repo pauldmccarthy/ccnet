@@ -11,7 +11,6 @@
 #include <float.h>
 
 #include "io/analyze75.h"
-#include "util/suffix.h"
 #include "util/filesize.h"
 
 /**
@@ -95,6 +94,11 @@ uint8_t _split(dsr_t *hdr, uint8_t *img, char *outdir, uint8_t pref) {
     sprintf(filename, "%s/%03u.img", outdir, pref);
     f = fopen(filename, "wb");
     if (f == NULL) goto fail;
+
+    if (filesize(f) != cutsize) {
+      printf("file size does not equal cut size (%s)\n", filename);
+      goto fail;
+    }
 
     if (fwrite(img + (i*cutsize), 1, cutsize, f) != cutsize) goto fail;
     fclose(f);

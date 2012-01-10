@@ -36,7 +36,9 @@ exes=dumpimg  \
      avgimg   \
      cnvimg   \
      catimg   \
-     cutimg
+     cutimg   \
+     countimg \
+     cropimg
 
 default: $(exes)
 

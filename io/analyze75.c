@@ -157,6 +157,9 @@ uint8_t analyze_load_hdr(char *file, dsr_t *dsr) {
   bytes     = NULL;
   afile     = NULL;
 
+  memset(dsr,   0, sizeof(dsr_t));
+  memset(&nhdr, 0, sizeof(nifti1_hdr_t));
+
   /*
    * 1. open file
    * 2. query file size
@@ -569,77 +572,85 @@ void analyze_write(dsr_t *hdr, uint8_t *data, double val) {
   }
 }
 
-uint8_t analyze_read_unsigned_char(dsr_t *hdr, uint8_t *data) {
+double analyze_read_unsigned_char(dsr_t *hdr, uint8_t *data) {
 
   return data[0];
 }
 
-int16_t analyze_read_signed_short(dsr_t *hdr, uint8_t *data) {
+double analyze_read_signed_short(dsr_t *hdr, uint8_t *data) {
 
   int16_t val;
 
-  val = *(int16_t *)data;
-  if (hdr->rev) reverse(&val, &val, 2);
+  if (hdr->rev) reverse(data, &val, 2);
+  else          val = *(int16_t *)data;
 
   return val;
 }
 
-int32_t analyze_read_signed_int(dsr_t *hdr, uint8_t *data) {
+double analyze_read_signed_int(dsr_t *hdr, uint8_t *data) {
 
   int32_t val;
-
-  val = *(int32_t *)data;
-  if (hdr->rev) reverse(&val, &val, 4);
-
+  
+  if (hdr->rev) reverse(data, &val, 4);
+  else val = *(int32_t *)data;
+  
   return val;
 }
 
-float analyze_read_float(dsr_t *hdr, uint8_t *data) {
+double analyze_read_float(dsr_t *hdr, uint8_t *data) {
 
   float val;
 
-  val = *(float *)data;
-  if (hdr->rev) reverse(&val, &val, 4);
+  if (hdr->rev) reverse(data, &val, 4);
+  else          val = *(float *)data;
 
-  return val;
+  return val; 
 }
-
 
 double analyze_read_double(dsr_t *hdr, uint8_t *data) {
 
   double val;
-
-  val = *(double *)data;
-  if (hdr->rev) reverse(&val, &val, 8);
+  
+  if (hdr->rev) reverse(data, &val, 8);
+  else val = *(double *)data;
 
   return val;
 }
 
-void analyze_write_unsigned_char(dsr_t *hdr, uint8_t *data, uint8_t val) {
+void analyze_write_unsigned_char(dsr_t *hdr, uint8_t *data, double val) {
 
-  data[0] = val;
+  data[0] = (uint8_t)round(val);
 }
 
-void analyze_write_signed_short(dsr_t *hdr, uint8_t *data, int16_t val) {
+void analyze_write_signed_short(dsr_t *hdr, uint8_t *data, double val) {
 
-  *((int16_t *)data) = val;
-  if (hdr->rev) reverse(data, data, 2);
+  int16_t sval;
+  sval = (int16_t)round(val);
+
+  if (hdr->rev) reverse(&sval, data, 2);
+  else          *((int16_t *)data) = sval;
 }
 
-void analyze_write_signed_int(dsr_t *hdr, uint8_t *data, int32_t val) {
+void analyze_write_signed_int(dsr_t *hdr, uint8_t *data, double val) {
 
-  *((int32_t *)data) = val;
-  if (hdr->rev) reverse(data, data, 4);
+  int32_t ival;
+  ival = (int32_t)round(val);
+
+  if (hdr->rev) reverse(&ival, data, 4);
+  else          *((int32_t *)data) = ival;
 }
 
-void analyze_write_float(dsr_t *hdr, uint8_t *data, float val) {
+void analyze_write_float(dsr_t *hdr, uint8_t *data, double val) {
 
-  *((float *)data) = val;
-  if (hdr->rev) reverse(data, data, 4);
+  float fval;
+  fval = (float)val;
+
+  if (hdr->rev) reverse(&fval, data, 4);
+  else          *((float *)data) = fval;
 }
 
 void analyze_write_double(dsr_t *hdr, uint8_t *data, double val) {
 
-  *((double *)data) = val;
-  if (hdr->rev) reverse(data, data, 8);
+  if (hdr->rev) reverse(&val, data, 8);
+  else          *((double *)data) = val;
 }

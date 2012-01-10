@@ -295,7 +295,7 @@ void analyze_write(
 /**
  * \return an unsigned char read from the data.
  */
-uint8_t analyze_read_unsigned_char(
+double analyze_read_unsigned_char(
   dsr_t   *hdr,  /**< file header       */
   uint8_t *data  /**< data to read from */
 );
@@ -303,7 +303,7 @@ uint8_t analyze_read_unsigned_char(
 /**
  * \return a signed (16 bit) integer read from the data.
  */
-int16_t analyze_read_signed_short(
+double analyze_read_signed_short(
   dsr_t   *hdr, /**< file header       */
   uint8_t *data /**< data to read from */
 );
@@ -311,7 +311,7 @@ int16_t analyze_read_signed_short(
 /**
  * \return a signed (32 bit) integer read from the data.
  */
-int32_t analyze_read_signed_int(
+double analyze_read_signed_int(
   dsr_t   *hdr, /**< file header       */
   uint8_t *data /**< data to read from */
 );
@@ -319,7 +319,7 @@ int32_t analyze_read_signed_int(
 /**
  * \return a float read from the data.
  */
-float analyze_read_float(
+double analyze_read_float(
   dsr_t   *hdr, /**< file header       */
   uint8_t *data /**< data to read from */
 );
@@ -338,7 +338,7 @@ double analyze_read_double(
 void analyze_write_unsigned_char(
   dsr_t   *hdr,  /**< file header      */
   uint8_t *data, /**< data to write to */
-  uint8_t  val   /**< value to write   */
+  double   val   /**< value to write   */
 );
 
 /**
@@ -347,7 +347,7 @@ void analyze_write_unsigned_char(
 void analyze_write_signed_short(
   dsr_t   *hdr,  /**< file header      */
   uint8_t *data, /**< data to write to */
-  int16_t  val   /**< value to write   */
+  double   val   /**< value to write   */
 );
 
 /**
@@ -356,7 +356,7 @@ void analyze_write_signed_short(
 void analyze_write_signed_int(
   dsr_t   *hdr,  /**< file header      */
   uint8_t *data, /**< data to write to */
-  int32_t  val   /**< value to write   */
+  double   val   /**< value to write   */
 );
 
 /**
@@ -365,7 +365,7 @@ void analyze_write_signed_int(
 void analyze_write_float(
   dsr_t   *hdr,  /**< file header      */
   uint8_t *data, /**< data to write to */
-  float    val   /**< value to write   */
+  double   val   /**< value to write   */
 );
 
 /**

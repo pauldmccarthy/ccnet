@@ -12,7 +12,7 @@
 void reverse(void *src, void *dst, int len) {
 
   int i;
-  int tmp;
+  uint8_t tmp;
   uint8_t *usrc = (uint8_t *)src;
   uint8_t *udst = (uint8_t *)dst;
 

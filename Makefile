@@ -40,7 +40,8 @@ exes=dumpimg   \
      countimg  \
      cropimg   \
      mkhdr     \
-     nanfiximg
+     nanfiximg \
+     patchhdr
 
 default: $(exes)
 

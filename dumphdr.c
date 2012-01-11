@@ -14,6 +14,7 @@
 
 void print_datatype(uint16_t datatype);
 
+void dump_short(          dsr_t             *ds);
 void dump_overview(       dsr_t             *ds);
 void dump_header_key(     header_key_t      *hk);
 void dump_image_dimension(image_dimension_t *id);
@@ -22,23 +23,40 @@ void dump_data_history(   data_history_t    *dh);
 int main(int argc, char *argv[]) {
 
   dsr_t   dsr;
+  uint8_t shout;
 
-  if (argc != 2) {
-    printf("usage: dumphdr file.hdr\n");
-    exit(1);
+  shout = 0;
+
+  if (argc != 2 && argc != 3) {
+    printf("usage: dumphdr file.hdr [-s]\n");
+    printf("  -s: short output\n");
+    return 1;
+  }
+
+  if (argc == 3) {
+
+    if (!strcmp(argv[2], "-s")) shout = 1;
+    else {
+      printf("unrecognised option: %s\n", argv[2]);
+      return 1;
+    }
   }
 
   if (analyze_load_hdr(argv[1], &dsr) != 0) {
     printf("error reading header (%i)\n", errno);
-    exit(1);
+    return 1;
   }
 
-  dump_overview(       &(dsr));
-  dump_header_key(     &(dsr.hk));
-  dump_image_dimension(&(dsr.dime));
-  dump_data_history(   &(dsr.hist));
+  if (shout) dump_short(&dsr);
+  
+  else{
+    dump_overview(       &(dsr));
+    dump_header_key(     &(dsr.hk));
+    dump_image_dimension(&(dsr.dime));
+    dump_data_history(   &(dsr.hist));
+  }
 
-  exit(0);
+  return 0;
 }
 
 void print_datatype(uint16_t datatype) {
@@ -57,6 +75,34 @@ void print_datatype(uint16_t datatype) {
     case DT_ALL:           printf("DT_ALL\n");             break;
     default:               printf("unknown type\n");       break;
   }
+}
+
+void dump_short(dsr_t *dsr) {
+
+  uint32_t i;
+  uint16_t dtype;
+  uint8_t  dtypesz;
+  uint8_t  ndims;
+  uint32_t nvals;
+  
+  dtype   = analyze_datatype(  dsr);
+  dtypesz = analyze_value_size(dsr);
+  ndims   = analyze_num_dims(  dsr);
+  nvals   = analyze_num_vals(  dsr);
+
+  printf("data type: ");
+  print_datatype(dtype);
+  printf("value size: %u\n", dtypesz);
+  printf("num values: %u\n", nvals);
+  
+
+  printf("dimensions: ");
+  for (i = 0; i < ndims; i++) printf("%u ", analyze_dim_size(dsr, i));
+  printf("\n");
+  
+  printf("voxel sizes: ");
+  for (i = 0; i < ndims; i++) printf("%0.6f ", analyze_pixdim_size(dsr, i));
+  printf("\n");
 }
 
 void dump_overview(dsr_t *dsr) {

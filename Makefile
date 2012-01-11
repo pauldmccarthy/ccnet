@@ -44,7 +44,10 @@ exes=dumpimg   \
      patchhdr  \
      cprune    \
      cextract  \
-     creduce
+     creduce   \
+     cmerge    \
+     cgen      \
+     ceo
 
 
 default: $(exes)

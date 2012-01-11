@@ -50,7 +50,8 @@ exes=dumpimg   \
      ceo       \
      cdot      \
      cnet      \
-     ctrim
+     ctrim     \
+     cvtk
 
 
 default: $(exes)

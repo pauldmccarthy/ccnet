@@ -1,0 +1,35 @@
+Various utilities for working with NGDB graph files and ANALYZE75 image files.
+
+  cnet      - Calculate statistics over NGDB graph files.
+  creduce   - Reduce a graph by label value, creating a new 
+              weighted/thresholded graph.
+  cextract  - Extract subgraphs by label.
+  cmerge    - Merge nodes by label.
+  cvtk      - Convert a ngdb graph to a vtk model file.
+  cprune    - Remove small components/disconnected nodes from a graph.
+  ctrim     - Remove edges from a graph based on a given criteria.
+  cgen      - Generate graphs of different types.
+  cdot      - Convert a ngdb graph to a graphviz dot file.
+  ceo       - Convert a radatools lol file to a ngdb graph file.
+
+  dumphdr   - Dump the contents of an ANALYZE75 header 
+  dumpimg   - Dump the contents of an ANALYZE75 image, with control over 
+              dimension order 
+  cnvimg    - Convert an ANALYZE75 image to a different data type.
+  scaleimg  - Apply a scaling factor to every value in an ANALYZE75 image.
+  cnvnifti  - Convert a NIFTT-1 header file to an ANALYZE75 header file.
+  avgimg    - Average a collection of ANALYZE75 image files (the inputs 
+              must have the same dimensions).
+  catimg    - Concatenate a collection of ANALYZE75 image files into a 
+              volume (the inputs must have the same dimensions).
+  cutimg    - Split an ANALYZE75 volume into a collection of image files.
+  shiftimg  - Shift an ANALYZE75 image along any dimension, with optional
+              wrap-around.
+  countimg  - Count the number of voxels above a given threshold.
+  cropimg   - Extract a portion of an ANALYZE75 file.
+  patchhdr  - Modify fields in an ANALYZE75 header file.
+  extval    - Extract a single value from an ANALYZE75 image file.
+  nanfiximg - Replace NaN values with zeros in an ANALYZE75 image file.
+  mkhdr     - Create an ANALYZE75 header file.
+
+  ngdb2img  - Convert a NGDB graph file to an ANALYZE75 image.

@@ -47,7 +47,8 @@ exes=dumpimg   \
      creduce   \
      cmerge    \
      cgen      \
-     ceo
+     ceo       \
+     cdot
 
 
 default: $(exes)

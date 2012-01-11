@@ -51,7 +51,8 @@ exes=dumpimg   \
      cdot      \
      cnet      \
      ctrim     \
-     cvtk
+     cvtk      \
+     ngdb2img
 
 
 default: $(exes)

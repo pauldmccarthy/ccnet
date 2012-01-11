@@ -41,7 +41,9 @@ exes=dumpimg   \
      cropimg   \
      mkhdr     \
      nanfiximg \
-     patchhdr
+     patchhdr  \
+     cprune
+
 
 default: $(exes)
 

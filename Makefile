@@ -42,7 +42,9 @@ exes=dumpimg   \
      mkhdr     \
      nanfiximg \
      patchhdr  \
-     cprune
+     cprune    \
+     cextract  \
+     creduce
 
 
 default: $(exes)

@@ -3,6 +3,7 @@
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,34 +87,26 @@ static void _join(
 );
 
 
-uint8_t dot_write(char *fout, graph_t *g, char *cmap, uint16_t opts) {
+uint8_t dot_write(FILE *hd, graph_t *g, char *cmap, uint16_t opts) {
 
-  FILE      *hd;
   int64_t    ncolours;
   uint32_t  *lblvals;
   char     **colours;
 
   ncolours = 0;
-  hd       = NULL;
   lblvals  = NULL;
   colours  = NULL;
-
-  hd = fopen(fout, "wt");
-  if (hd == NULL) goto fail;
 
   ncolours = _read_colourmap(cmap, &lblvals, &colours);
   if (ncolours < 0) goto fail;
 
   _write_graph(hd, g, opts, lblvals, colours, ncolours);
-  
 
   free(lblvals);
   free(colours);
-  fclose(hd);
   return 0;
 
 fail:
-  if (hd      != NULL) fclose(hd);
   if (lblvals != NULL) free(lblvals);
   if (colours != NULL) free(colours);
   return 1;

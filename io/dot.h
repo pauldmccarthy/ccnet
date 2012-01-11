@@ -6,6 +6,7 @@
 #ifndef __DOT_H__
 #define __DOT_H__
 
+#include <stdio.h>
 #include <stdint.h>
 
 #include "graph/graph.h"
@@ -41,7 +42,7 @@ typedef enum {
  * \return 0 on success, non-0 on failure.
  */
 uint8_t dot_write(
-  char    *fout, /**< file to write to                          */
+  FILE    *hd,   /**< file to write to                          */
   graph_t *g,    /**< graph to write                            */
   char    *cmap, /**< file specifying label <-> colour mappings */
   uint16_t opts  /**< output options                            */

@@ -67,6 +67,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
 int main (int argc, char *argv[]) {
 
+  FILE       *hd;
   graph_t     g;
   args_t      args;
   struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
@@ -80,7 +81,12 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  dot_write(args.output, &g, args.cmap, args.dotopts);
+  hd = fopen(args.output, "wt");
+  if (hd == NULL) goto fail;
+
+  dot_write(hd, &g, args.cmap, args.dotopts);
+
+  fclose(hd);
 
   return 0;
 

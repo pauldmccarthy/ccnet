@@ -405,12 +405,49 @@ fail:
 
 uint8_t mat_write_row_label(mat_t *mat, uint64_t row, void *data) {
 
+  uint64_t off;
+
+  if (mat            == NULL)            goto fail;
+  if (mat->mode      != MAT_MODE_CREATE) goto fail;
+  if (row            == 0)               goto fail;
+  if (row            >= mat->numrows)    goto fail;
+  if (mat->labelsize == 0)               goto fail;
+  if (!mat_has_row_labels(mat))          goto fail;
+
+  off = MAT_HDR_SIZE + ((mat->labelsize) * row);
+
+  if (fseek(mat->hd, off, SEEK_SET))                 goto fail;
+  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1) goto fail;
+
   return 0;
+  
+fail:
+  return 1;
 }
 
 uint8_t mat_write_col_label(mat_t *mat, uint64_t col, void *data) {
 
+  uint64_t off;
+
+  if (mat            == NULL)            goto fail;
+  if (mat->mode      != MAT_MODE_CREATE) goto fail;
+  if (col            == 0)               goto fail;
+  if (col            >= mat->numcols)    goto fail;
+  if (mat->labelsize == 0)               goto fail;
+  if (!mat_has_col_labels(mat))          goto fail;
+
+  off = MAT_HDR_SIZE + ((mat->labelsize) * col);
+
+  if (mat_has_row_labels(mat))
+    off += (mat->labelsize)*(mat->numrows);
+
+  if (fseek(mat->hd, off, SEEK_SET))                 goto fail;
+  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1) goto fail;  
+
   return 0;
+
+fail:
+  return 1;
 }
 
 uint8_t _mat_read_header(mat_t *mat) {

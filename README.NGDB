@@ -1,5 +1,5 @@
 
-  ngdb - Not the Gnu DeBugger (n-GraphDataBase)
+  ngdb - A simple binary graph file format
 
 ngdb is a simple file format and API for file-based storage and access of
 graph based data. 

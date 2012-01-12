@@ -2,7 +2,7 @@
 #define __NGDB_H__
 
 /**
- *   ngdb - Not the Gnu DeBugger (nGraphDataBase)
+ *   ngdb - simple binary graph file format
  *
  * ngdb is a simple file format and API for file-based storage and access of
  * graph based data. See README.NGDB for documentation.

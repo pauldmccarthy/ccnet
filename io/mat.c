@@ -7,6 +7,7 @@
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
 
+#include <math.h>
 #include <stdio.h>
 #include <float.h>
 #include <stdint.h>
@@ -15,6 +16,8 @@
 #include "io/mat.h"
 
 #define MAT_FILE_ID 0x8493
+
+#define MAT_HDR_SIZE 21
 
 typedef enum __mat_mode {
 
@@ -37,8 +40,14 @@ static uint8_t _mat_read_header(
   mat_t *mat
 );
 
-static uint8_t _mat_write_header(
-  mat_t *mat
+/* static uint8_t _mat_write_header( */
+/*   mat_t *mat */
+/* ); */
+
+static uint64_t _mat_calc_offset(
+  mat_t   *mat,
+  uint64_t row,
+  uint64_t col
 );
 
 static uint8_t _mat_seek(
@@ -208,28 +217,61 @@ fail:
   return 1;
 }
 
+uint8_t mat_read_row_label(mat_t *mat, uint64_t row, void *data) {
+
+  uint64_t off;
+
+  if (!mat_has_row_labels(mat))       goto fail;
+  if (row            <  0)            goto fail;
+  if (row            >= mat->numrows) goto fail;
+  if (mat->labelsize == 0)            goto fail;
+
+  off = MAT_HDR_SIZE + ((mat->labelsize) * row);
+
+  if (fread(data, mat->labelsize, 1, mat->hd) != 1) goto fail;
+  
+  return 0;
+  
+fail:
+  return 1;
+}
+
+uint8_t mat_read_col_label(mat_t *mat, uint64_t col, void *data) {
+
+  uint64_t off;
+  uint64_t rlbloff;
+
+  if (!mat_has_col_labels(mat))       goto fail;
+  if (col            <  0)            goto fail;
+  if (col            >= mat->numcols) goto fail;
+  if (mat->labelsize == 0)            goto fail;
 
 
+  if (mat_has_row_labels(mat)) rlbloff = (mat->labelsize) * (mat->numrows);
+  else                         rlbloff = 0;
 
+  off = MAT_HDR_SIZE + rlbloff + ((mat->labelsize) * col);
 
-mat_t * mat_create(
-  char    *fname,
-  uint64_t numrows,
-  uint64_t numcols,
-  uint16_t flags,
-  uint8_t  labelsize) {
+  if (fread(data, mat->labelsize, 1, mat->hd) != 1) goto fail;
 
-
-  return NULL;
+  return 0;
+  
+fail:
+  return 1;
 }
 
 
 
+/* mat_t * mat_create( */
+/*   char    *fname, */
+/*   uint64_t numrows, */
+/*   uint64_t numcols, */
+/*   uint16_t flags, */
+/*   uint8_t  labelsize) { */
 
 
-
-
-
+/*   return NULL; */
+/* } */
 
 uint8_t _mat_read_header(mat_t *mat) {
 
@@ -255,32 +297,81 @@ fail:
   return 1;
 }
 
-uint8_t _mat_write_header(mat_t *mat) {
+/* uint8_t _mat_write_header(mat_t *mat) { */
 
-  uint16_t id;
+/*   uint16_t id; */
 
-  rewind(mat->hd);
+/*   rewind(mat->hd); */
 
-  id = MAT_FILE_ID;
+/*   id = MAT_FILE_ID; */
 
-  if (fwrite(&(id),             sizeof(id),             1, mat->hd) != 1)
-    goto fail;
-  if (fwrite(&(mat->numrows),   sizeof(mat->numrows),   1, mat->hd) != 1)
-    goto fail;
-  if (fwrite(&(mat->numcols),   sizeof(mat->numcols),   1, mat->hd) != 1)
-    goto fail; 
-  if (fwrite(&(mat->flags),     sizeof(mat->flags),     1, mat->hd) != 1)
-    goto fail; 
-  if (fwrite(&(mat->labelsize), sizeof(mat->labelsize), 1, mat->hd) != 1)
-    goto fail;
+/*   if (fwrite(&(id),             sizeof(id),             1, mat->hd) != 1) */
+/*     goto fail; */
+/*   if (fwrite(&(mat->numrows),   sizeof(mat->numrows),   1, mat->hd) != 1) */
+/*     goto fail; */
+/*   if (fwrite(&(mat->numcols),   sizeof(mat->numcols),   1, mat->hd) != 1) */
+/*     goto fail;  */
+/*   if (fwrite(&(mat->flags),     sizeof(mat->flags),     1, mat->hd) != 1) */
+/*     goto fail;  */
+/*   if (fwrite(&(mat->labelsize), sizeof(mat->labelsize), 1, mat->hd) != 1) */
+/*     goto fail; */
 
 
-  return 0;
-fail:
-  return 1;
+/*   return 0; */
+/* fail: */
+/*   return 1; */
+/* } */
+
+uint64_t _mat_calc_offset(mat_t *mat, uint64_t row, uint64_t col) {
+
+  uint64_t ncols;
+  uint64_t nrows;
+  uint64_t val_size;
+  uint64_t rlbl_off;
+  uint64_t clbl_off;
+  uint64_t row_off;
+  uint64_t col_off;
+
+  nrows    = mat->numrows;
+  ncols    = mat->numcols;
+  val_size = sizeof(double);
+  rlbl_off = 0;
+  clbl_off = 0;
+  row_off  = 0;
+  col_off  = 0;
+
+  if (mat_has_row_labels(mat))
+    rlbl_off = (mat->labelsize) * nrows;
+  if (mat_has_col_labels(mat))
+    clbl_off = (mat->labelsize) * ncols;
+
+  if (mat_is_symmetric(mat)) {
+    row_off = ((ncols * row) - round(row*(row-1.0)/2.0)) * val_size;
+    col_off = (col - row) * val_size;
+  }
+  else {
+    row_off = ncols * val_size * row;
+    col_off = col * val_size;
+  }
+
+  return MAT_HDR_SIZE + rlbl_off + clbl_off + row_off + col_off;
 }
 
 uint8_t _mat_seek(mat_t *mat, uint64_t row, uint64_t col) {
+
+  uint64_t offset;
+
+  if (mat == NULL)         goto fail;
+  if (row <  0)            goto fail;
+  if (col <  0)            goto fail;
+  if (row >= mat->numrows) goto fail;
+  if (col >= mat->numcols) goto fail;
+
+  if (mat_is_symmetric(mat) && (col < row)) goto fail;
+
+  offset = _mat_calc_offset(mat, row, col);
+
+  if (fseek(mat->hd, offset, SEEK_SET)) goto fail;
 
   return 0;
   

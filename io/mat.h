@@ -86,11 +86,17 @@ uint8_t mat_read_col_part(
   double  *vals
 );
 
-//mat_read_matrix();
-//mat_read_row_label();
-//mat_read_col_label();
-//mat_read_row_labels();
-//mat_read_col_labels();
+uint8_t mat_read_row_label(
+  mat_t   *mat,
+  uint64_t row,
+  void    *data
+);
+
+uint8_t mat_read_col_label(
+  mat_t   *mat,
+  uint64_t col,
+  void    *data
+);
 
 
 mat_t * mat_create(

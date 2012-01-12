@@ -107,22 +107,52 @@ mat_t * mat_create(
   uint8_t  labelsize
 );
 
-//mat_write_elem();
-//mat_write_row();
-//mat_write_col();
-//mat_write_row_part();
-//mat_write_col_part();
-//mat_write_matrix();
-//mat_write_row_label();
-//mat_write_col_label();
-//mat_write_row_labels();
-//mat_write_col_labels();
+uint8_t mat_write_elem(
+  mat_t   *mat,
+  uint64_t row,
+  uint64_t col,
+  double   val
+);
+
+uint8_t mat_write_row(
+  mat_t   *mat,
+  uint64_t row,
+  double  *vals
+);
+
+uint8_t mat_write_row_part(
+  mat_t   *mat,
+  uint64_t row,
+  uint64_t col,
+  uint64_t len,
+  double  *vals
+);
+
+uint8_t mat_write_col(
+  mat_t   *mat,
+  uint64_t col,
+  double  *vals
+);
 
 
+uint8_t mat_write_col_part(
+  mat_t   *mat,
+  uint64_t row,
+  uint64_t col,
+  uint64_t len,
+  double  *vals
+);
 
+uint8_t mat_write_row_label(
+  mat_t   *mat,
+  uint64_t row,
+  void    *data
+);
 
-
-
-
+uint8_t mat_write_col_label(
+  mat_t   *mat,
+  uint64_t col,
+  void    *data
+);
 
 #endif

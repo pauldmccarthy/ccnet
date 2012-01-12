@@ -25,38 +25,58 @@ typedef enum __mat_mode {
   MAT_MODE_CREATE
 } mat_mode_t;
 
+/**
+ * Structure representing an open mat file.
+ */
 struct __mat {
   
-  FILE      *hd;
-  uint64_t   numrows;
-  uint64_t   numcols;
-  uint16_t   flags;
-  uint8_t    labelsize;
-  mat_mode_t mode;
+  FILE      *hd;        /**< handle to the file         */
+  uint64_t   numrows;   /**< number of rows             */
+  uint64_t   numcols;   /**< number of columns          */
+  uint16_t   flags;     /**< option flags               */
+  uint8_t    labelsize; /**< label size                 */
+  mat_mode_t mode;      /**< open mode (read or create) */
 };
 
-
+/**
+ * Reads header information from the mat->hd file into the
+ * provided mat_t struct.
+ *
+ * \return 0 on success,
+ */
 static uint8_t _mat_read_header(
-  mat_t *mat
+  mat_t *mat /**< mat struct with an open file handle */
 );
 
-/* static uint8_t _mat_write_header( */
-/*   mat_t *mat */
-/* ); */
+/**
+ * Writes header information from the provided mat_t struct
+ * into the mat->hd file.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _mat_write_header(
+  mat_t *mat /**< mat struct with an open file handle */
+);
 
+/**
+ * Calculates the offset into the mat->hd file for the given row/column.
+ *
+ * \return the offset into the mat file.
+ */
 static uint64_t _mat_calc_offset(
   mat_t   *mat,
   uint64_t row,
   uint64_t col
 );
 
+/**
+ * Seeks to the given row/column in the given mat->hd file.
+ */
 static uint8_t _mat_seek(
-  mat_t   *mat,
-  uint64_t row,
-  uint64_t col
+  mat_t   *mat, /**< mat struct with an open file */
+  uint64_t row, /**< row to seek to               */
+  uint64_t col  /**< column to seek to            */
 );
-
-
 
 mat_t * mat_open(char *fname) {
 
@@ -149,12 +169,14 @@ uint8_t mat_read_row_part(
   uint64_t rowlen;
   uint64_t collen;
 
-  if (mat       == NULL)         goto fail;
-  if (row       <  0)            goto fail;
-  if (col       <  0)            goto fail;
-  if (row       >= mat->numrows) goto fail;
-  if (col       >= mat->numcols) goto fail;
-  if (col + len >= mat->numcols) goto fail;
+  if (mat       == NULL)          goto fail;
+  if (mat->mode != MAT_MODE_READ) goto fail;
+  if (vals      == NULL)          goto fail;
+  if (row       <  0)             goto fail;
+  if (col       <  0)             goto fail;
+  if (row       >= mat->numrows)  goto fail;
+  if (col       >= mat->numcols)  goto fail;
+  if (col + len >= mat->numcols)  goto fail;
 
   if (!mat_is_symmetric(mat) || (col >= row)) {
 
@@ -198,12 +220,14 @@ uint8_t mat_read_col_part(
 
   uint64_t i;
   
-  if (mat       == NULL)         goto fail;
-  if (row       <  0)            goto fail;
-  if (col       <  0)            goto fail;
-  if (row       >= mat->numrows) goto fail;
-  if (col       >= mat->numcols) goto fail;
-  if (row + len >= mat->numrows) goto fail;
+  if (mat       == NULL)          goto fail;
+  if (mat->mode != MAT_MODE_READ) goto fail;
+  if (vals      == NULL)          goto fail;
+  if (row       <  0)             goto fail;
+  if (col       <  0)             goto fail;
+  if (row       >= mat->numrows)  goto fail;
+  if (col       >= mat->numcols)  goto fail;
+  if (row + len >= mat->numrows)  goto fail;
 
   for (i = 0; i < len; i++, row++) {
 
@@ -260,18 +284,134 @@ fail:
   return 1;
 }
 
+mat_t * mat_create(
+  char    *fname,
+  uint64_t numrows,
+  uint64_t numcols,
+  uint16_t flags,
+  uint8_t  labelsize) {
+
+  mat_t *mat;
+  mat = NULL;
+
+  mat = calloc(1, sizeof(mat_t));
+  if (mat == NULL) goto fail;
+
+  mat->numrows   = numrows;
+  mat->numcols   = numcols;
+  mat->flags     = flags;
+  mat->labelsize = labelsize;
+  mat->mode      = MAT_MODE_CREATE;
+
+  if (numrows == 0)                                  goto fail;
+  if (numcols == 0)                                  goto fail;
+  if (mat_is_symmetric(mat) && (numrows != numcols)) goto fail;
+  if (mat_has_row_labels(mat) && labelsize == 0)     goto fail;
+  if (mat_has_col_labels(mat) && labelsize == 0)     goto fail;
+  
+  mat->hd = fopen(fname, "wb");
+  if (mat->hd == NULL) goto fail;
+
+  if (_mat_write_header(mat)) goto fail;
+
+  return mat;
+
+fail:
+  if (mat != NULL) {
+    if (mat->hd != NULL) fclose(mat->hd);
+    free(mat);
+  }
+  return NULL;
+}
 
 
-/* mat_t * mat_create( */
-/*   char    *fname, */
-/*   uint64_t numrows, */
-/*   uint64_t numcols, */
-/*   uint16_t flags, */
-/*   uint8_t  labelsize) { */
+uint8_t mat_write_elem(mat_t *mat, uint64_t row, uint64_t col, double val) {
+
+  return mat_write_row_part(mat, row, col, 1, &val);
+}
+
+uint8_t mat_write_row(mat_t *mat, uint64_t row, double *vals) {
+  
+  return mat_write_row_part(mat, row, 0, mat->numcols, vals);
+}
+
+uint8_t mat_write_row_part(
+  mat_t *mat, uint64_t row, uint64_t col, uint64_t len, double *vals) {
+
+  uint64_t rowlen;
+  uint64_t collen;
+
+  if (mat       == NULL)            goto fail;
+  if (mat->mode != MAT_MODE_CREATE) goto fail;
+  if (vals      == NULL)            goto fail;
+  if (row       <  0)               goto fail;
+  if (col       <  0)               goto fail;
+  if (row       >= mat->numrows)    goto fail;
+  if (col       >= mat->numcols)    goto fail;
+  if (col + len >= mat->numcols)    goto fail;
+
+  if (!mat_is_symmetric(mat) || (col >= row)) {
+
+    if (_mat_seek(mat,row,col))                            goto fail;
+    if (fwrite(vals, sizeof(double), len, mat->hd) != len) goto fail;
+  }
+
+  else {
+
+    rowlen = col + len - row;
+    collen = row - col;
+
+    if (mat_write_col_part(mat, col, row, collen, vals))      goto fail;
+    if (_mat_seek(mat, row, row))                             goto fail;
+    if (fwrite(vals+collen, sizeof(double), rowlen, mat->hd)) goto fail;
+  }
+
+  return 0;
+  
+fail:
+  return 1;
+}
+
+uint8_t mat_write_col(mat_t *mat, uint64_t col, double *vals) {
+
+  return mat_write_col_part(mat, 0, col, mat->numrows, vals);
+}
+
+uint8_t mat_write_col_part(
+  mat_t *mat, uint64_t row, uint64_t col, uint64_t len, double *vals) {
+
+  uint64_t i;
+
+  if (mat       == NULL)            goto fail;
+  if (mat->mode != MAT_MODE_CREATE) goto fail;
+  if (vals      == NULL)            goto fail;
+  if (row       <  0)               goto fail;
+  if (col       <  0)               goto fail;
+  if (row       >= mat->numrows)    goto fail;
+  if (col       >= mat->numcols)    goto fail;
+  if (row + len >= mat->numrows)    goto fail;
+
+  for (i = 0; i < len; i++, row++) {
+
+    if (_mat_seek(mat, row, col))                        goto fail;
+    if (fwrite(vals+i, sizeof(double), 1, mat->hd) != 1) goto fail;
+  }
+
+  return 0;
+fail:
+  return 1;
+}
 
 
-/*   return NULL; */
-/* } */
+uint8_t mat_write_row_label(mat_t *mat, uint64_t row, void *data) {
+
+  return 0;
+}
+
+uint8_t mat_write_col_label(mat_t *mat, uint64_t col, void *data) {
+
+  return 0;
+}
 
 uint8_t _mat_read_header(mat_t *mat) {
 
@@ -297,30 +437,30 @@ fail:
   return 1;
 }
 
-/* uint8_t _mat_write_header(mat_t *mat) { */
+uint8_t _mat_write_header(mat_t *mat) {
 
-/*   uint16_t id; */
+  uint16_t id;
 
-/*   rewind(mat->hd); */
+  rewind(mat->hd);
 
-/*   id = MAT_FILE_ID; */
+  id = MAT_FILE_ID;
 
-/*   if (fwrite(&(id),             sizeof(id),             1, mat->hd) != 1) */
-/*     goto fail; */
-/*   if (fwrite(&(mat->numrows),   sizeof(mat->numrows),   1, mat->hd) != 1) */
-/*     goto fail; */
-/*   if (fwrite(&(mat->numcols),   sizeof(mat->numcols),   1, mat->hd) != 1) */
-/*     goto fail;  */
-/*   if (fwrite(&(mat->flags),     sizeof(mat->flags),     1, mat->hd) != 1) */
-/*     goto fail;  */
-/*   if (fwrite(&(mat->labelsize), sizeof(mat->labelsize), 1, mat->hd) != 1) */
-/*     goto fail; */
+  if (fwrite(&(id),             sizeof(id),             1, mat->hd) != 1)
+    goto fail;
+  if (fwrite(&(mat->numrows),   sizeof(mat->numrows),   1, mat->hd) != 1)
+    goto fail;
+  if (fwrite(&(mat->numcols),   sizeof(mat->numcols),   1, mat->hd) != 1)
+    goto fail;
+  if (fwrite(&(mat->flags),     sizeof(mat->flags),     1, mat->hd) != 1)
+    goto fail;
+  if (fwrite(&(mat->labelsize), sizeof(mat->labelsize), 1, mat->hd) != 1)
+    goto fail;
 
 
-/*   return 0; */
-/* fail: */
-/*   return 1; */
-/* } */
+  return 0;
+fail:
+  return 1;
+}
 
 uint64_t _mat_calc_offset(mat_t *mat, uint64_t row, uint64_t col) {
 

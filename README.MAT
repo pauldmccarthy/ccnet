@@ -1,0 +1,53 @@
+
+  mat - A simple binary matrix file format
+
+A very simple file format for the storage and access of rectangular 2D double
+matrices.
+
+A matfile consists of a short header section, and then data. All multi-byte
+values are stored in little endian format. The header has the following
+structure:
+
+| Field     | Length in bytes | Description                |
+|-----------|-----------------|----------------------------|
+| fileid    | 2 (uint16_t)    | matfile identifier         |
+| nrows     | 8 (uint64_t)    | number of rows             |
+| ncols     | 8 (uint64_t)    | number of columns          |
+| flags     | 2 (uint16_t)    | flags                      |
+| labelsize | 1 (uint8_t)     | size of one label in bytes |
+
+The data has the following structure (this structure varies depending on
+the values of certain flags; see below):
+
+| Field     | Length in bytes          | Description           |
+|-----------|--------------------------|-----------------------|
+| rowlabels | nrows*labelsize          | Label for each row    |
+| collabels | ncols*labelsize          | Label for each column |
+| data      | nrows*ncols*8 (double)   | Matrix data           |
+
+Each value in the matrix is stored as an IEEE 754 double precision floating
+point value (8 bytes). The data is stored row-wise. i.e.  for a matrix of size
+n*m (n rows, m columns), the first row of the matrix is stored in bytes
+0-(n-1) of the data section, the second row is stored in bytes n-(2n-1), and
+so on.
+
+A few flags specify deviations in the file format specified above:
+
+| Bit | Name     | Meaning                |
+|-----|----------|------------------------|
+| 0   | sym      | Is matrix symmetric?   |
+| 1   | rowlabel | Are rowlabels present? |
+| 2   | collabel | Are collabels present? |
+
+If the sym flag is set (==1), the file is assumed to contain a square n*n
+matrix which is symmetric along the diagonal. In this case, only the upper
+right triangle of the matrix is stored. The first row of the matrix takes up
+bytes 0-(n-1), the second row n-(2n-2), the ith row 0-(in-i-1), and the nth
+row takes up a single byte (n-1). Writes and queries into the lower left half
+of the matrix are translated into the upper right half.
+
+If the rowlabel flag is set, a list of label fields, one for each row,
+immediately follows the header section. If the rowlabel flag is clear, this
+section is not present. The same applies for the collabel flag and
+section. Anything may be stored in label sections - the format and byte order
+is not specified.

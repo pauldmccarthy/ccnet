@@ -24,6 +24,7 @@ sources    = $(wildcard io/*.c)
 sources   += $(wildcard graph/*.c)
 sources   += $(wildcard stats/*.c)
 sources   += $(wildcard util/*.c)
+sources   += $(wildcard timeseries/*.c)
 objtargets = $(sources:.c=.o)
 objfiles   = $(addprefix obj/,$(notdir $(objtargets)))
 

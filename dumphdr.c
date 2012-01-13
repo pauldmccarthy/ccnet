@@ -4,6 +4,8 @@
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
+
+#include <float.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -12,18 +14,31 @@
 
 #include "io/analyze75.h"
 
-void print_datatype(uint16_t datatype);
+static void print_datatype(uint16_t datatype);
 
-void dump_short(          dsr_t             *ds);
-void dump_overview(       dsr_t             *ds);
-void dump_header_key(     header_key_t      *hk);
-void dump_image_dimension(image_dimension_t *id);
-void dump_data_history(   data_history_t    *dh);
+static void dump_short(          dsr_t             *ds, uint8_t *img);
+static void dump_overview(       dsr_t             *ds, uint8_t *img);
+static void dump_header_key(     header_key_t      *hk);
+static void dump_image_dimension(image_dimension_t *id);
+static void dump_data_history(   data_history_t    *dh);
+
+/**
+ * Searches through the image data, and finds the minimum/maximum/meanx values.
+ * This is done because the min/max data in the headers is not always correct.
+ */
+static void image_stats(
+  dsr_t   *hdr, /**< image header                     */
+  uint8_t *img, /**< image data                       */
+  double  *min, /**< place to store the minimum value */
+  double  *max, /**< place to store the maximum value */
+  double  *mean /**< place to store the image mean    */
+);
 
 int main(int argc, char *argv[]) {
 
-  dsr_t   dsr;
-  uint8_t shout;
+  dsr_t    dsr;
+  uint8_t *img;
+  uint8_t  shout;
 
   shout = 0;
 
@@ -42,20 +57,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (analyze_load_hdr(argv[1], &dsr) != 0) {
+  if (analyze_load(argv[1], &dsr, &img) != 0) {
     printf("error reading header (%i)\n", errno);
     return 1;
   }
 
-  if (shout) dump_short(&dsr);
+  if (shout) dump_short(&dsr, img);
   
   else{
-    dump_overview(       &(dsr));
+    dump_overview(       &(dsr), img);
     dump_header_key(     &(dsr.hk));
     dump_image_dimension(&(dsr.dime));
     dump_data_history(   &(dsr.hist));
   }
 
+  free(img);
   return 0;
 }
 
@@ -77,35 +93,42 @@ void print_datatype(uint16_t datatype) {
   }
 }
 
-void dump_short(dsr_t *dsr) {
+void dump_short(dsr_t *dsr, uint8_t *img) {
 
   uint32_t i;
   uint16_t dtype;
   uint8_t  dtypesz;
   uint8_t  ndims;
   uint32_t nvals;
+  double   min;
+  double   max;
+  double   mean; 
   
   dtype   = analyze_datatype(  dsr);
   dtypesz = analyze_value_size(dsr);
   ndims   = analyze_num_dims(  dsr);
   nvals   = analyze_num_vals(  dsr);
 
-  printf("data type: ");
+  printf("data type:   ");
   print_datatype(dtype);
-  printf("value size: %u\n", dtypesz);
-  printf("num values: %u\n", nvals);
-  
+  printf("value size:  %u\n", dtypesz);
+  printf("num values:  %u\n", nvals);
 
-  printf("dimensions: ");
+  printf("dimensions:  ");
   for (i = 0; i < ndims; i++) printf("%u ", analyze_dim_size(dsr, i));
   printf("\n");
   
   printf("voxel sizes: ");
   for (i = 0; i < ndims; i++) printf("%0.6f ", analyze_pixdim_size(dsr, i));
   printf("\n");
+
+  image_stats(dsr, img, &min, &max, &mean);
+  printf("minimum:     %0.6f\n", min);
+  printf("maximum:     %0.6f\n", max);
+  printf("mean:        %0.6f\n", mean);
 }
 
-void dump_overview(dsr_t *dsr) {
+void dump_overview(dsr_t *dsr, uint8_t *img) {
 
   uint8_t i;
   uint8_t valsize;
@@ -113,6 +136,9 @@ void dump_overview(dsr_t *dsr) {
   uint8_t dimsize;
   int     dimoff;
   int     numvals;
+  double  min;
+  double  max;
+  double  mean;
 
   valsize = analyze_value_size(dsr);
   numdims = analyze_num_dims(  dsr);
@@ -126,10 +152,16 @@ void dump_overview(dsr_t *dsr) {
     dimsize = analyze_dim_size(dsr, i);
     printf("dimension %u size: %u\n", i, dimsize);
   }
+  
   for (i = 0; i < numdims; i++) {
     dimoff = analyze_dim_offset(dsr, i);
     printf("dimension %u offset: %u\n", i, dimoff);
   }
+
+  image_stats(dsr, img, &min, &max, &mean);
+  printf("data minimum: %0.6f\n", min);
+  printf("data maximum: %0.6f\n", max);
+  printf("data mean:    %0.6f\n", mean);
 }
 
 void dump_header_key(header_key_t *hk) {
@@ -246,4 +278,37 @@ void dump_data_history( data_history_t *dh) {
   printf("  smin:        %u\n", dh->smin);
 
   free(tmp);
+}
+
+void image_stats(
+  dsr_t *hdr, uint8_t *img, double *min, double *max, double *mean) {
+
+  uint64_t i;
+  uint32_t nvals;
+  uint32_t valsz;
+  double   val;
+  double   lmin;
+  double   lmax;
+  double   tally;
+
+  lmin  =  DBL_MAX;
+  lmax  = -DBL_MAX;
+  tally = 0;
+
+  nvals = analyze_num_vals(  hdr);
+  valsz = analyze_value_size(hdr);
+
+  for (i = 0; i < nvals; i++) {
+
+    val = analyze_read(hdr, img + (i*valsz));
+
+    tally += val;
+
+    if (val < lmin) lmin = val;
+    if (val > lmax) lmax = val;
+  }
+
+  *min  = lmin;
+  *max  = lmax;
+  *mean = tally / nvals;
 }

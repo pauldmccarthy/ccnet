@@ -24,8 +24,16 @@ char * set_suffix(
  * Extracts the prefix of the given name, storing it in the prefix pointer.
  */
 void get_prefix(
-  char *name,
-  char *pref
+  char *name, /**< input file name       */
+  char *pref  /**< place to store prefix */
+);
+
+/**
+ * Extracts the suffix of the given name, storing it in the suffix pointer.
+ */
+void get_suffix(
+  char *name, /**< input file name       */
+  char *suf   /**< place to store suffix */
 );
 
 #endif

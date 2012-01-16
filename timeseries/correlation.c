@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdint.h>
 
-#include "timeseries/pearson.h"
+#include "timeseries/correlation.h"
 
 double pearson(double *x, double *y, uint32_t len) {
 

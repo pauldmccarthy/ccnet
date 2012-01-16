@@ -4,8 +4,8 @@
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
-#ifndef __PEARSON_H__
-#define __PEARSON_H__
+#ifndef __CORRELATION_H__
+#define __CORRELATION_H__
 
 #include <stdint.h>
 

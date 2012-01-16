@@ -22,6 +22,35 @@ static int _compare_insert(
   int (*cmp)(const void *, const void *)
 );
 
+int compare_str_numeric(const void *a, const void *b) {
+
+  char  *sa;
+  char  *sb;
+  double da;
+  double db;
+
+  sa = (char *)a;
+  sb = (char *)b;
+
+  da = atof(sa);
+  db = atof(sb);
+  
+  return compare_double(&da, &db);
+}
+
+int compare_double(const void *a, const void *b) {
+  
+  double da;
+  double db;
+
+  da = *(double *)a;
+  db = *(double *)b;
+
+  if (da >  db) return 1;
+  if (da == db) return 0;
+  return -1;
+}
+
 int compare_u32(const void *a, const void *b) {
 
   uint32_t ia;

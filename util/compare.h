@@ -9,6 +9,26 @@
 #include <stdlib.h>
 
 /**
+ * Convert two strings to numbers, then compare them numerically.
+ *
+ * \return >0 if (*a > *b), 0 if (*a == *b), <0 if (*a < *b).
+ */
+int compare_str_numeric(
+  const void *a, /**< pointer to a string which contains a number */
+  const void *b  /**< pointer to a string which contains a number */
+);
+
+/**
+ * Compares two double values.
+ *
+ * \return >0 if (*a > *b), 0 if (*a == *b), <0 if (*a < *b).
+ */
+int compare_double(
+  const void *a, /**< pointer to a double */
+  const void *b  /**< pointer to a double */
+);
+
+/**
  * Compares two uint32_t values.
  *
  * \return >0 if (*a > *b), 0 if (*a == *b), <0 if (*a < *b).

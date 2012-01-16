@@ -79,7 +79,7 @@ uint8_t nifti1_load_hdr(char *filename, nifti1_hdr_t *hdr) {
   bytes = NULL;
   afile = NULL;
 
-  afile = suffix(filename, "hdr");
+  afile = set_suffix(filename, "hdr");
   if (afile == NULL) goto fail;
 
   f = fopen(afile, "rb");

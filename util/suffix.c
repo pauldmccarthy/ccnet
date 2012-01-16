@@ -14,7 +14,7 @@
  * It's ugly and dangerous, and there are a ton of 
  * situations it won't handle. Just letting you know.
  */
-char * suffix(char *oldname, char *suffix) {
+char * set_suffix(char *oldname, char *suffix) {
 
   int len;
   char *newname;
@@ -62,4 +62,11 @@ char * suffix(char *oldname, char *suffix) {
 
 fail:
   return NULL;
+}
+
+void get_prefix(char *name, char *pref) {
+
+  if (name == NULL) return;
+  if (pref == NULL) return;
+
 }

@@ -15,9 +15,17 @@
  * The caller is responsible for freeing the returned
  * pointer.
  */
-char * suffix(
+char * set_suffix(
   char *oldname, /**< input file name */
   char *suffix   /**< desired suffix  */
+);
+
+/**
+ * Extracts the prefix of the given name, storing it in the prefix pointer.
+ */
+void get_prefix(
+  char *name,
+  char *pref
 );
 
 #endif

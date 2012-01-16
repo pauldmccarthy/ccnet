@@ -92,7 +92,7 @@ uint8_t _concat(char *filename, char **inputs, uint16_t ninputs) {
   outf      = NULL;
   inf       = NULL;
 
-  filename = suffix(filename, "img");
+  filename = set_suffix(filename, "img");
   if (filename == NULL) goto fail;
   
   outf = fopen(filename, "wb");
@@ -100,7 +100,7 @@ uint8_t _concat(char *filename, char **inputs, uint16_t ninputs) {
 
   for (i = 0; i < ninputs; i++, inf = NULL, buf = NULL) {
 
-    infname = suffix(inputs[i], "img");
+    infname = set_suffix(inputs[i], "img");
     if (infname == NULL) goto fail;
 
     inf = fopen(infname, "rb");

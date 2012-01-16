@@ -167,7 +167,7 @@ uint8_t analyze_load_hdr(char *file, dsr_t *dsr) {
    * 4. read contents of file
    * 5. parse header
    */
-  afile = suffix(file, "hdr");
+  afile = set_suffix(file, "hdr");
   if (afile == NULL) goto fail;
 
   f = fopen(afile, "rb");
@@ -227,7 +227,7 @@ uint8_t analyze_write_img(char *filename, dsr_t *hdr, uint8_t *img) {
 
   fd = NULL;
 
-  filename = suffix(filename, "img");
+  filename = set_suffix(filename, "img");
   nvals    = analyze_num_vals(  hdr);
   valsz    = analyze_value_size(hdr);
 
@@ -253,7 +253,7 @@ uint8_t analyze_write_hdr(char *filename, dsr_t *hdr) {
 
   fd = NULL;
 
-  filename = suffix(filename, "hdr");
+  filename = set_suffix(filename, "hdr");
   if (filename == NULL) goto fail;
 
   memcpy(&hdrcpy, hdr, sizeof(dsr_t));
@@ -372,7 +372,7 @@ uint8_t analyze_load(
      * 6. close file
      */
 
-    afilename = suffix(filename, "img");
+    afilename = set_suffix(filename, "img");
     if (afilename == NULL) goto fail;
     
     f = fopen(afilename, "rb");

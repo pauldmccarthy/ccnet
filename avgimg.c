@@ -125,36 +125,40 @@ uint8_t _load_images(
 {
   uint8_t i;
 
-  *hdrs  = NULL;
-  *imgs  = NULL;
+  dsr_t    *lhdrs;
+  uint8_t **limgs;
+
+  lhdrs  = NULL;
+  limgs  = NULL;
 
   /*allocate space to store headers, and image pointers*/
-  *hdrs = malloc(nfiles * sizeof(dsr_t));
-  if (*hdrs == NULL) goto fail;
+  lhdrs = calloc(nfiles, sizeof(dsr_t));
+  if (lhdrs == NULL) goto fail;
 
-  *imgs = malloc(nfiles * sizeof(uint8_t *));
-  if (*imgs == NULL) goto fail;
-
-  for (i = 0; i < nfiles; i++) (*imgs)[i] = NULL;
+  limgs = calloc(nfiles, sizeof(uint8_t *));
+  if (limgs == NULL) goto fail;
 
   /*load all of the files in*/
   for (i = 0; i < nfiles; i++) {
-    if (analyze_load(files[i], (*hdrs)+i, (*imgs)+i)) 
+    if (analyze_load(files[i], lhdrs+i, limgs+i)) 
       goto fail;
   }
+
+  *hdrs = lhdrs;
+  *imgs = limgs;
 
   return 0;
 
 fail:
-  if (hdrs != NULL && *hdrs != NULL) free(*hdrs); 
-  if (imgs != NULL && *imgs != NULL) {
+  if (lhdrs != NULL) free(*hdrs); 
+  if (limgs != NULL) {
 
     for (i = 0; i < nfiles; i++) {
-      if ((*imgs)[i] != NULL)
-        free((*imgs)[i]);
+      if (limgs[i] != NULL)
+        free(limgs[i]);
     }
 
-    free(*imgs);
+    free(limgs);
   }
   *hdrs = NULL;
   *imgs = NULL;

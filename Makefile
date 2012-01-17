@@ -28,32 +28,33 @@ sources   += $(wildcard timeseries/*.c)
 objtargets = $(sources:.c=.o)
 objfiles   = $(addprefix obj/,$(notdir $(objtargets)))
 
-exes=dumpimg   \
-     dumphdr   \
-     cnvnifti  \
-     extval    \
-     shiftimg  \
-     scaleimg  \
-     avgimg    \
-     cnvimg    \
-     catimg    \
-     cutimg    \
-     countimg  \
-     cropimg   \
-     mkhdr     \
-     nanfiximg \
-     patchhdr  \
-     cprune    \
-     cextract  \
-     creduce   \
-     cmerge    \
-     cgen      \
-     ceo       \
-     cdot      \
-     cnet      \
-     ctrim     \
-     cvtk      \
-     ngdb2img
+exes=dumpimg    \
+     dumphdr    \
+     cnvnifti   \
+     extval     \
+     shiftimg   \
+     scaleimg   \
+     avgimg     \
+     cnvimg     \
+     catimg     \
+     cutimg     \
+     countimg   \
+     cropimg    \
+     mkhdr      \
+     nanfiximg  \
+     patchhdr   \
+     cprune     \
+     cextract   \
+     creduce    \
+     cmerge     \
+     cgen       \
+     ceo        \
+     cdot       \
+     cnet       \
+     ctrim      \
+     cvtk       \
+     ngdb2img   \
+     dumpvolume
 
 
 default: $(exes)

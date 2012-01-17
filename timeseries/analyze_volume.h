@@ -13,6 +13,7 @@
 typedef struct __analyze_volume {
   
   uint16_t  nimgs; /**< number of images in the volume */
+  char    **files; /**< image file names               */
   dsr_t    *hdrs;  /**< image headers                  */
   uint8_t **imgs;  /**< image data                     */
   

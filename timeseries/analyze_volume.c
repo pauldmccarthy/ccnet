@@ -68,16 +68,12 @@ uint8_t analyze_open_volume(char *path, analyze_volume_t *vol) {
   if (vol->imgs == NULL) goto fail;
 
   for (i = 0; i < vol->nimgs; i++) {
-    if (analyze_load(vol->files[i], (vol->hdrs)+i, (vol->imgs)+i)) {
-      printf("load %s fail\n", vol->files[i]);
+    if (analyze_load(vol->files[i], (vol->hdrs)+i, (vol->imgs)+i)) 
       goto fail;
-    }
   }
   
-  if (analyze_hdr_compat(vol->nimgs, vol->hdrs)){
-    printf("headers not compatible\n");
-    goto fail;
-  }
+  if (analyze_hdr_compat(vol->nimgs, vol->hdrs)) goto fail;
+  if (analyze_num_dims(&(vol->hdrs[0])) != 4)    goto fail;
     
   return 0;
 
@@ -109,14 +105,43 @@ void analyze_free_volume(analyze_volume_t *vol) {
   if (vol        == NULL) return;
   if (vol->hdrs  == NULL) return;
   if (vol->imgs  == NULL) return;
+  if (vol->files == NULL) return;
   if (vol->nimgs == 0)    return;
 
+  for (i = 0; i < vol->nimgs; i++) {
+    free(vol->imgs[i]);
+    free(vol->files[i]);
+  }
+
   free(vol->hdrs);
-
-  for (i = 0; i < vol->nimgs; i++) free(vol->imgs[i]);
-
   free(vol->imgs);
+  free(vol->files);
 }
+
+
+uint8_t analyze_read_timeseries(
+  analyze_volume_t *vol,
+  uint32_t          x,
+  uint32_t          y,
+  uint32_t          z,
+  double           *timeseries
+) {
+
+  uint64_t i;
+  uint32_t idx[4];
+  
+  idx[0] = x;
+  idx[1] = y;
+  idx[2] = z;
+  idx[3] = 0;
+
+  for (i = 0; i < vol->nimgs; i++) {
+    timeseries[i] = analyze_read_val(&(vol->hdrs[i]), vol->imgs[i], idx);
+  }
+
+  return 0;
+}
+
 
 int32_t _list_files(char *path, char ***list) {
 

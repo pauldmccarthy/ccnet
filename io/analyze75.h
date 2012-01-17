@@ -17,7 +17,8 @@
  */
 
 #define DT_NONE          0
-#define DT_UNKNOWN       0
+#define DT_UNKOWN        0 /* typo is intentional (DT_UNKNOWN
+                              is defined in dirent.h) */
 #define DT_BINARY        1
 #define DT_UNSIGNED_CHAR 2
 #define DT_SIGNED_SHORT  4

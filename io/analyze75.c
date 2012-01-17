@@ -316,15 +316,15 @@ uint8_t analyze_hdr_compat(uint8_t nhdrs, dsr_t *hdrs) {
   for (i = 1; i < nhdrs; i++) {
 
     if (analyze_num_dims(hdrs+i) != ndims) goto fail;
+    if (analyze_datatype(hdrs+i) != dtype) goto fail;
+    if (hdrs[i].rev              != endi)  goto fail; 
 
     for (j = 0; j < ndims; j++) {
 
       pixdim_diff = fabs(analyze_pixdim_size(hdrs+i,j) - pixdims[j]);
-
+      
       if (analyze_dim_size(hdrs+i, j) != dimszs [j]) goto fail;
       if (pixdim_diff                  > 0.00001)    goto fail;
-      if (analyze_datatype(hdrs+i)    != dtype)      goto fail;
-      if (hdrs[i].rev                 != endi)       goto fail;
     }
   }
 

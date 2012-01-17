@@ -1,6 +1,5 @@
 /**
- * Provides a function for ensuring that 
- * a given filename has a given suffix.
+ * File name manipulation functions.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
@@ -34,6 +33,17 @@ void get_prefix(
 void get_suffix(
   char *name, /**< input file name       */
   char *suf   /**< place to store suffix */
+);
+
+/**
+ * Joins the given directory path and file name, returning a newly allocated
+ * string.
+ *
+ * \return a string containing the path and name joined, NULL on failure.
+ */
+char * join_path(
+  char *path, /**< directory path */
+  char *name  /**< file name      */
 );
 
 #endif

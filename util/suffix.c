@@ -1,6 +1,5 @@
 /**
- * Provides a function, which takes a file name, 
- * and ensures that it has a given suffix.
+ * File name manipulation functions.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
@@ -118,4 +117,26 @@ void get_suffix(char *name, char *suf) {
     suf[i] = name[suf_start + i];
   
   suf[suf_len] = '\0';
+}
+
+
+char * join_path(char *path, char *name) {
+
+  uint32_t len;
+  char    *joined;
+
+  joined = NULL;
+
+  len = strlen(path) + strlen(name) + 2;
+
+  joined = malloc(len);
+  if (joined == NULL) goto fail;
+
+  sprintf(joined, "%s/%s", path, name);
+
+  return joined;
+
+fail:
+  if (joined != NULL) free(joined);
+  return NULL;
 }

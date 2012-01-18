@@ -13,6 +13,7 @@
 #include <argp.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 #include "util/dimorder.h"
 
 /**
@@ -55,6 +56,8 @@ int main(int argc, char *argv[]) {
   pcoord   = 0;
   data     = NULL;
   dimorder = NULL;
+
+  startup("dumpimg", argc, argv, NULL, NULL);
 
   if (argc < 2) {
     printf("usage: dumpimg file.img [-r|-v] [dimension order]\n" 
@@ -118,7 +121,6 @@ void _dumpimg(
   dsr_t *hdr, uint8_t *image, uint8_t *dimorder, char pcoord) {
 
   uint32_t  i;
-  uint16_t  datatype;
   uint8_t   ndims;
   uint32_t  nvals;
   uint32_t *dims;
@@ -126,7 +128,6 @@ void _dumpimg(
   char      str[30];
 
   dims     = NULL;
-  datatype = analyze_datatype(hdr);
   ndims    = analyze_num_dims(hdr);
   nvals    = analyze_num_vals(hdr);
 
@@ -137,13 +138,16 @@ void _dumpimg(
   for (i = 0; i < nvals; i++) {
 
     /*read the value from the image*/
-    val = dimorder_getval(hdr, image, dims, dimorder);
-
+    val = analyze_read_val(hdr, image, dims);
+    
     /*print coordinates if necessary*/
     if (pcoord) _dump_coords(hdr, dims, pcoord);
 
-    _sprint_val(datatype, str, val);
+    analyze_sprint_val(hdr, str, val);
     printf("%s\n", str);
+
+    /* update dimension indices */
+    dimorder_next(hdr, dims, dimorder);
   }
 
   free(dims);
@@ -153,16 +157,4 @@ void _dumpimg(
 fail:
   if (dims != NULL) free(dims);
   return;
-}
-
-void _sprint_val(uint16_t datatype, char *str, double val) {
-  switch (datatype) {
-
-    case DT_UNSIGNED_CHAR: sprintf(str, "%u",    (uint8_t) val); break;
-    case DT_SIGNED_SHORT:  sprintf(str, "%i",    (int16_t) val); break;
-    case DT_SIGNED_INT:    sprintf(str, "%i",    (uint32_t)val); break;
-    case DT_FLOAT:         sprintf(str, "%0.3f", (float)   val); break;
-    case DT_DOUBLE:        sprintf(str, "%0.3f",           val); break;
-    default:                                                     break;
-  }
 }

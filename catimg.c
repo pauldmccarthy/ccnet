@@ -140,6 +140,7 @@ void _mk_hdr(dsr_t *hdr, dsr_t *input_hdrs, uint16_t ninputs, float dimsz) {
   memcpy(hdr, input_hdrs, sizeof(dsr_t));
 
   ndims = analyze_num_dims(hdr);
-  hdr->dime.dim   [ndims] = ninputs;
-  hdr->dime.pixdim[ndims] = dimsz;
+  hdr->dime.dim   [0]       = ndims+1;
+  hdr->dime.dim   [ndims+1] = ninputs;
+  hdr->dime.pixdim[ndims+1] = dimsz;
 }

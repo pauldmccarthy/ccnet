@@ -147,6 +147,7 @@ void analyze_reverse_hdr(dsr_t *hdr) {
 
 uint8_t analyze_load_hdr(char *file, dsr_t *dsr) {
 
+  uint16_t     i;
   int          sz;
   FILE        *f;
   uint8_t     *bytes;
@@ -204,6 +205,13 @@ uint8_t analyze_load_hdr(char *file, dsr_t *dsr) {
     if (dsr->hk.sizeof_hdr != 348) goto fail;
 
     dsr->rev = 1;
+  }
+
+  /*fix number of dimensions*/
+  dsr->dime.dim[0] = 0;
+  for (i = 1; i < 7; i++) {
+    if (dsr->dime.dim[i] > 1) dsr->dime.dim[0]++;
+    else                      break;
   }
 
 succ:

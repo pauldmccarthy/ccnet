@@ -465,6 +465,17 @@ void _reverse_data_history(data_history_t *d) {
   reverse(&(d->smin),        &(d->smin),        sizeof(d->smin));
 }
 
+void analyze_sprint_val(dsr_t *hdr, char *str, double val) {
+  switch (analyze_datatype(hdr)) {
+
+    case DT_UNSIGNED_CHAR: sprintf(str, "%u",    (uint8_t) val); break;
+    case DT_SIGNED_SHORT:  sprintf(str, "%i",    (int16_t) val); break;
+    case DT_SIGNED_INT:    sprintf(str, "%i",    (uint32_t)val); break;
+    case DT_FLOAT:         sprintf(str, "%0.3f", (float)   val); break;
+    case DT_DOUBLE:        sprintf(str, "%0.3f",           val); break;
+    default:                                                     break;
+  }
+}
 
 double analyze_read_val(dsr_t *hdr, uint8_t *img, uint32_t *dims) {
 

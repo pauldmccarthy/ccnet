@@ -258,6 +258,15 @@ uint32_t analyze_num_vals(
 );
 
 /**
+ * Prints the given value to the given string.
+ */
+void analyze_sprint_val(
+  dsr_t *hdr, /**< file header                  */
+  char  *str, /**< place to put formatted value */
+  double val  /**< value to print               */
+);
+
+/**
  * Reads an image value from the given location.
  */
 double analyze_read_val(

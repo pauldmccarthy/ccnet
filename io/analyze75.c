@@ -207,7 +207,10 @@ uint8_t analyze_load_hdr(char *file, dsr_t *dsr) {
     dsr->rev = 1;
   }
 
-  /*fix number of dimensions*/
+  /*
+   * adjust number of dimensions (some tools will set
+   * the number of dimensions of a 3D image to 4)
+   */
   dsr->dime.dim[0] = 0;
   for (i = 1; i < 7; i++) {
     if (dsr->dime.dim[i] > 1) dsr->dime.dim[0]++;

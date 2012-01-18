@@ -1,4 +1,6 @@
 /**
+ * Functions for generating fastest-slowest dimension orderings. Used by
+ * the dumpimg and dumpvolume programs. 
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
@@ -56,17 +58,13 @@ fail:
 }
 
 
-double dimorder_getval(
-  dsr_t *hdr, uint8_t *img, uint32_t *dims, uint8_t *dimorder) {
+void dimorder_next(dsr_t *hdr, uint32_t *dims, uint8_t *dimorder) {
 
   uint32_t i;
   uint16_t ndims;
   uint32_t dimsz;
-  double   val;
 
   ndims = analyze_num_dims(hdr);
-
-  val = analyze_read_val(hdr, img, dims);
 
   /*update dimension indices*/
   for (i = 0; i < ndims; i++) {
@@ -76,6 +74,4 @@ double dimorder_getval(
     
     if (dims[dimorder[i]] != 0) break;
   } 
-
-  return val;
 }

@@ -27,14 +27,11 @@ uint8_t dimorder_parse(
 );
 
 /**
- * Gets the value specified by the given dimension indices, and updates
- * the indices to point to the next value, based on the given dimension order.
- *
- * \return the value at the specified dimension indices.
+ * Updates the dims indices to point to the next
+ * value, according to the given dimension order.
  */
-double dimorder_getval(
+void dimorder_next(
   dsr_t    *hdr,     /**< image header      */
-  uint8_t  *img,     /**< image data        */
   uint32_t *dims,    /**< dimension indices */
   uint8_t  *dimorder /**< dimension order   */
 );

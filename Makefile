@@ -54,7 +54,8 @@ exes=dumpimg    \
      ctrim      \
      cvtk       \
      ngdb2img   \
-     dumpvolume
+     dumpvolume \
+     tsmat
 
 
 default: $(exes)

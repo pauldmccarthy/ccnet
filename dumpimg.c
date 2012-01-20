@@ -35,15 +35,6 @@ static void _dumpimg(
   char     pcoord    /**< whether to print voxel coordinates            */
 );
 
-/**
- * Formats the value stored in data, which is of type datatype. 
- */
-static void _sprint_val(
-  uint16_t datatype, /**< type of value to be formatted   */
-  char    *str,      /**< string to store formatted value */
-  double   val       /**< the raw value                   */
-);
-
 int main(int argc, char *argv[]) {
 
   dsr_t    hdr;

@@ -50,4 +50,17 @@ uint8_t analyze_read_timeseries(
   double           *timeseries /**< space in which to store the data */
 );
 
+/**
+ * Reads the time series data for the specified voxel. The idx value is
+ * converted to a (x,y,z) coordinate (order of fastest to slowest changing
+ * dimension is [x,y,z]).
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t analyze_read_timeseries_by_idx(
+  analyze_volume_t *vol,       /**< volume to query                  */
+  uint32_t          idx,       /**< voxel index                      */
+  double           *timeseries /**< space in which to store the data */  
+);
+  
 #endif

@@ -124,8 +124,7 @@ uint8_t analyze_read_timeseries(
   uint32_t          x,
   uint32_t          y,
   uint32_t          z,
-  double           *timeseries
-) {
+  double           *timeseries) {
 
   uint64_t i;
   uint32_t idx[4];
@@ -142,6 +141,15 @@ uint8_t analyze_read_timeseries(
   return 0;
 }
 
+uint8_t analyze_read_timeseries_by_idx(
+  analyze_volume_t *vol, uint32_t idx, double *timeseries) {
+
+  uint32_t dims[3];
+
+  analyze_get_indices(vol->hdrs, idx, dims);
+
+  return analyze_read_timeseries(vol, dims[0], dims[1], dims[2], timeseries);
+}
 
 int32_t _list_files(char *path, char ***list) {
 

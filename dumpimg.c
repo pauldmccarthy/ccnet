@@ -135,7 +135,7 @@ void _dumpimg(
     if (pcoord) _dump_coords(hdr, dims, pcoord);
 
     analyze_sprint_val(hdr, str, val);
-    printf("%s\n", str);
+    printf(" %s\n", str);
 
     /* update dimension indices */
     dimorder_next(hdr, dims, dimorder);

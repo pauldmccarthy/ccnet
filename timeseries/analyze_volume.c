@@ -228,8 +228,10 @@ int _cmp_filenames(const struct dirent **a, const struct dirent **b) {
   char *capref;
   char *cbpref;
 
-  ca = (char *)((*a)->d_name);
-  cb = (char *)((*b)->d_name);
+  capref = NULL;
+  cbpref = NULL;
+  ca     = (char *)((*a)->d_name);
+  cb     = (char *)((*b)->d_name);
 
   capref = malloc(strlen(ca)+1);
   if (capref == NULL) goto fail;

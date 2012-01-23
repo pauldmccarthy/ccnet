@@ -635,6 +635,11 @@ fail:
 
 void analyze_write_by_idx(
   dsr_t *hdr, uint8_t *data, uint32_t idx, double val) {
+
+  uint8_t valsz;
+
+  valsz = analyze_value_size(hdr);
+  data += valsz*idx;
   
   switch (hdr->dime.datatype) {
 

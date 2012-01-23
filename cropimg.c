@@ -96,7 +96,7 @@ int main (int argc, char *argv[]) {
   _crop_hdr(&inhdr, &outhdr, &args);
 
   nbytes = analyze_num_vals(&outhdr) * analyze_value_size(&outhdr);
-  outimg = malloc(nbytes);
+  outimg = calloc(nbytes, 1);
   if (outimg == NULL) goto fail;
 
   _crop_img(&inhdr, &outhdr, inimg, outimg, &args);

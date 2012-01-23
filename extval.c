@@ -14,7 +14,7 @@
 
 #include "io/analyze75.h"
 
-static void _print_val(dsr_t *hdr, uint8_t *data, uint32_t *idx);
+static void _print_val(dsr_t *hdr, uint8_t *data, uint32_t *dims);
 
 static uint32_t _unit_to_idx(dsr_t *hdr, uint8_t dim, double unit);
 
@@ -81,16 +81,14 @@ fail:
 }
 
 
-void _print_val(dsr_t *hdr, uint8_t *data, uint32_t *idx) {
+void _print_val(dsr_t *hdr, uint8_t *data, uint32_t *dims) {
 
   double   val;
-  uint32_t off;
+  uint32_t idx;
 
-  off = analyze_get_offset(hdr, idx);
+  idx = analyze_get_index(hdr, dims);
 
-  data += off;
-
-  val = analyze_read(hdr, data);
+  val = analyze_read_by_idx(hdr, data, idx);
 
   printf("%0.3f\n", val);
 }

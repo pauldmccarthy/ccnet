@@ -103,23 +103,33 @@ uint32_t analyze_dim_offset(dsr_t *hdr, uint8_t dim) {
 
 uint32_t analyze_get_offset(dsr_t *hdr, uint32_t *dims) {
 
+  uint8_t  valsz;
+  uint32_t idx;
+
+  valsz = analyze_value_size(hdr);
+  idx   = analyze_get_index( hdr, dims);
+  
+
+  return idx*valsz;
+}
+
+uint32_t analyze_get_index(dsr_t *hdr, uint32_t *dims) {
+  
   uint8_t  i;
-  uint8_t  valsize;
   uint8_t  ndims;
   uint32_t dimoff;  
-  uint32_t off;
+  uint32_t idx;
 
-  valsize = analyze_value_size(hdr);
-  ndims   = analyze_num_dims(  hdr);
+  ndims = analyze_num_dims(hdr);
 
-  for (off = 0, i = 0; i < ndims; i++) {
+  for (idx = 0, i = 0; i < ndims; i++) {
 
     dimoff = analyze_dim_offset(hdr, i);
 
-    off += dimoff*dims[i];
+    idx += dimoff*dims[i];
   }
 
-  return off*valsize;
+  return idx;
 }
 
 void analyze_get_indices(dsr_t *hdr, uint32_t index, uint32_t *dims) {
@@ -536,7 +546,7 @@ double analyze_read_val(dsr_t *hdr, uint8_t *img, uint32_t *dims) {
   uint16_t i;
   uint8_t  ndims;
   uint16_t dimsz;
-  uint32_t off;
+  uint32_t idx;
 
   if (hdr  == NULL) goto fail;
   if (img  == NULL) goto fail;
@@ -551,17 +561,21 @@ double analyze_read_val(dsr_t *hdr, uint8_t *img, uint32_t *dims) {
     if (dims[i] < 0 || dims[i] >= dimsz) goto fail;
   }
 
-  off = analyze_get_offset(hdr, dims);
+  idx = analyze_get_index(hdr, dims);
 
-  return analyze_read(hdr, img + off);
+  return analyze_read_by_idx(hdr, img, idx);
 
 fail:
   return DBL_MAX;
 }
 
-double analyze_read(dsr_t *hdr, uint8_t *data) {
+double analyze_read_by_idx(dsr_t *hdr, uint8_t *data, uint32_t idx) {
 
-  double val;
+  double  val;
+  uint8_t valsz;
+
+  valsz = analyze_value_size(hdr);
+  data += valsz*idx;
 
   switch (hdr->dime.datatype) {
 
@@ -597,14 +611,14 @@ void analyze_write_val(dsr_t *hdr, uint8_t *img, uint32_t *dims, double val) {
   uint16_t i;
   uint8_t  ndims;
   uint16_t dimsz;
-  uint32_t off;
+  uint32_t idx;
 
   if (hdr  == NULL) goto fail;
   if (img  == NULL) goto fail;
   if (dims == NULL) goto fail;
 
-  ndims = analyze_num_dims(  hdr);
-  off   = analyze_get_offset(hdr, dims);
+  ndims = analyze_num_dims( hdr);
+  idx   = analyze_get_index(hdr, dims);
 
   /*check that dimension indices are valid*/
   for (i = 0; i < ndims; i++) {
@@ -613,13 +627,14 @@ void analyze_write_val(dsr_t *hdr, uint8_t *img, uint32_t *dims, double val) {
     if (dims[i] < 0 || dims[i] >= dimsz) goto fail;
   }
 
-  analyze_write(hdr, img + off, val);
+  analyze_write_by_idx(hdr, img, idx, val);
 
 fail:
   return;
 }
 
-void analyze_write(dsr_t *hdr, uint8_t *data, double val) {
+void analyze_write_by_idx(
+  dsr_t *hdr, uint8_t *data, uint32_t idx, double val) {
   
   switch (hdr->dime.datatype) {
 

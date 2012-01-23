@@ -294,11 +294,9 @@ void _readslice(
   uint32_t i;
   uint8_t  j;
   uint8_t  ndims;
-  uint8_t  valsz;
   uint32_t dimidx[4];
 
   ndims = analyze_num_dims(hdr);
-  valsz = analyze_value_size(hdr);
 
   memset(dimidx, 0, 4 * sizeof(uint32_t));
   dimidx[dim] = sliceno;

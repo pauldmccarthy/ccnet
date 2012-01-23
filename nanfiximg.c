@@ -67,19 +67,17 @@ uint8_t _nanfix(dsr_t *hdr, uint8_t *img) {
   uint32_t i;
   double   val;
   uint32_t nvals;
-  uint8_t  valsize;
 
-  valsize = analyze_value_size(hdr);
-  nvals   = analyze_num_vals(  hdr);
+  nvals   = analyze_num_vals(hdr);
 
   uint32_t nnan = 0;
 
   for (i = 0; i < nvals; i++) {
 
-    val = analyze_read(hdr, img + (valsize*i));
+    val = analyze_read_by_idx(hdr, img, i);
     if (isnan(val)) {val = 0; nnan++;}
 
-    analyze_write(hdr, img + (valsize*i), val);
+    analyze_write_by_idx(hdr, img, i, val);
   }
 
   printf("nnan: %u\n", nnan);

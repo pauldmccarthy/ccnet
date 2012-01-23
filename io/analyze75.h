@@ -263,6 +263,14 @@ uint32_t analyze_get_offset(
 );
 
 /**
+ * \return the value index for the given dimension indices.
+ */
+uint32_t analyze_get_index(
+  dsr_t    *hdr, /**< file header       */
+  uint32_t *dims /**< dimension indices */
+);
+
+/**
  * Converts the given image value index into separate dimension indices.
  */
 void analyze_get_indices(
@@ -297,11 +305,14 @@ double analyze_read_val(
 );
 
 /**
- * Reads a value from the data.
+ * Reads a value from the data by index. The
+ * first dimension is the fastest changing,
+ * and the last is the slowest changing.
  */
-double analyze_read(
+double analyze_read_by_idx(
   dsr_t   *hdr, /**< file header */
-  uint8_t *data /**< image data  */
+  uint8_t *img, /**< image data  */
+  uint32_t idx  /**< value index */
 );
 
 /**
@@ -317,9 +328,10 @@ void analyze_write_val(
 /**
  * Writes the given value to the data.
  */
-void analyze_write(
+void analyze_write_by_idx(
   dsr_t   *hdr,  /**< file header    */
-  uint8_t *data, /**< image data     */
+  uint8_t *img,  /**< image data     */
+  uint32_t idx,  /**< value index    */  
   double   val   /**< value to write */
 );
 

@@ -13,18 +13,14 @@
 
 #include "io/analyze75.h"
 
-static uint8_t _threshold(
-  dsr_t *hdr, uint8_t *data, double thres);
-
 int main(int argc, char *argv[]) {
 
   dsr_t    hdr;
   uint8_t *data;
-  uint8_t *ptr;
   double   threshold;
+  double   val;
   uint32_t count;
   uint32_t nvals;
-  uint8_t  valsz;
   uint64_t i;
 
   count     = 0;
@@ -44,17 +40,15 @@ int main(int argc, char *argv[]) {
   }
 
   nvals = analyze_num_vals(&hdr);
-  valsz = analyze_value_size(&hdr);
-  ptr   = data;
-  
+
   for (i = 0; i < nvals; i++) {
 
-    if (_threshold(&hdr, ptr, threshold)) count++;
-    ptr += valsz;
+    val = analyze_read_by_idx(&hdr, data, i);
+    
+    if (val >= threshold) count++;
   }
 
   printf("%u / %u values above %0.3f\n", count, nvals, threshold);
-
 
   free(data);
   exit(0);
@@ -62,13 +56,4 @@ int main(int argc, char *argv[]) {
  fail:
   if (data != NULL) free(data);
   exit(1);
-}
-
-uint8_t _threshold(dsr_t *hdr, uint8_t *data, double thres) {
-
-  double val;
-
-  val = analyze_read(hdr, data);
-
-  return (val >= thres) ? 1 : 0;
 }

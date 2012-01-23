@@ -51,15 +51,13 @@ void _scaleimg(dsr_t *hdr, uint8_t *img, double scale) {
   uint32_t i;
   double   val;
   uint32_t nvals;
-  uint8_t  valsize;
 
-  valsize = analyze_value_size(hdr);
   nvals   = analyze_num_vals(  hdr);
 
   for (i = 0; i < nvals; i++) {
 
-    val = analyze_read(hdr, img + (valsize*i));
-    analyze_write(     hdr, img + (valsize*i), val*scale);
+    val = analyze_read_by_idx(hdr, img, i);
+    analyze_write_by_idx(     hdr, img, i, val*scale);
   }
 
   hdr->dime.cal_max *= scale;

@@ -285,7 +285,6 @@ void image_stats(
 
   uint64_t i;
   uint32_t nvals;
-  uint32_t valsz;
   double   val;
   double   lmin;
   double   lmax;
@@ -296,11 +295,10 @@ void image_stats(
   tally = 0;
 
   nvals = analyze_num_vals(  hdr);
-  valsz = analyze_value_size(hdr);
 
   for (i = 0; i < nvals; i++) {
 
-    val = analyze_read(hdr, img + (i*valsz));
+    val = analyze_read_by_idx(hdr, img, i);
 
     tally += val;
 

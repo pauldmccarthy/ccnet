@@ -160,13 +160,11 @@ uint8_t _clone_img(
 {
   uint64_t i;
   uint32_t nvals;
-  uint8_t  oldvalsz;
   uint8_t  newvalsz;
   uint8_t *lnewimg;
   double   val;
 
   nvals    = analyze_num_vals(  oldhdr);
-  oldvalsz = analyze_value_size(oldhdr);
   newvalsz = analyze_datatype_size(newfmt);
   lnewimg  = malloc(nvals*newvalsz);
   if (lnewimg == NULL) goto fail;  
@@ -175,10 +173,9 @@ uint8_t _clone_img(
   newhdr->dime.datatype = newfmt;
   newhdr->dime.bitpix   = newvalsz * 8;
 
-
   for (i = 0; i < nvals; i++) {
-    val = analyze_read(oldhdr, oldimg  + i*oldvalsz);
-    analyze_write(     newhdr, lnewimg + i*newvalsz, val);
+    val = analyze_read_by_idx(oldhdr, oldimg,  i);
+    analyze_write_by_idx(     newhdr, lnewimg, i, val);
   }
 
   *newimg = lnewimg;

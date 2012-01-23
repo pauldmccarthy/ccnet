@@ -176,7 +176,6 @@ uint8_t _mk_avg_img(
   uint64_t i;
   uint16_t j;
   double   val;
-  uint32_t valsz;
   uint32_t avgvalsz;
   uint32_t nvals;
   uint8_t *lavgimg;
@@ -189,7 +188,6 @@ uint8_t _mk_avg_img(
   
   /*allocate space for average image*/
   nvals    = analyze_num_vals(     hdrs);
-  valsz    = analyze_value_size(   hdrs);
   avgvalsz = analyze_datatype_size(datatype);
 
   lavgimg = malloc(avgvalsz * nvals);
@@ -212,7 +210,7 @@ uint8_t _mk_avg_img(
     val = 0;
 
     for (j = 0; j < nimgs; j++)  {
-      val += analyze_read(hdrs+j, imgs[j]+(i*valsz));
+      val += analyze_read_by_idx(hdrs+j, imgs[j], i);
     }
 
     val /= nimgs;
@@ -220,7 +218,7 @@ uint8_t _mk_avg_img(
     if (val < min) min = val;
     if (val > max) max = val;
 
-    analyze_write(avghdr, lavgimg+(i*avgvalsz), val);
+    analyze_write_by_idx(avghdr, lavgimg, i, val);
   }
 
   avghdr->dime.cal_max = (float)   max;

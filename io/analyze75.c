@@ -122,6 +122,24 @@ uint32_t analyze_get_offset(dsr_t *hdr, uint32_t *dims) {
   return off*valsize;
 }
 
+void analyze_get_indices(dsr_t *hdr, uint32_t index, uint32_t *dims) {
+
+  int16_t  i;
+  uint8_t  ndims;
+  
+  if (hdr   == NULL)                  return;
+  if (dims  == NULL)                  return;
+  if (index >= analyze_num_vals(hdr)) return;
+
+  ndims = analyze_num_dims(hdr);
+
+  for (i = 0; i < ndims; i++) {
+
+    dims[i] = index /  analyze_dim_offset(hdr, i);
+    dims[i]         %= analyze_dim_size(  hdr, i);
+  }
+}
+
 uint32_t analyze_num_vals(dsr_t *hdr) {
 
   uint8_t  ndims;
@@ -287,9 +305,9 @@ fail:
   return 1;
 }
 
-uint8_t analyze_hdr_compat(uint8_t nhdrs, dsr_t *hdrs) {
+uint8_t analyze_hdr_compat(uint16_t nhdrs, dsr_t *hdrs) {
 
-  uint8_t   i, j;
+  uint32_t  i, j;
   uint8_t   ndims;
   uint16_t *dimszs;
   float    *pixdims;
@@ -346,6 +364,31 @@ uint8_t analyze_hdr_compat(uint8_t nhdrs, dsr_t *hdrs) {
 fail:
   if (dimszs  != NULL) free(dimszs);
   if (pixdims != NULL) free(pixdims);
+  return 1;
+}
+
+uint8_t analyze_hdr_compat_ptr(uint16_t nhdrs, dsr_t **hdrs) {
+
+  uint32_t i;
+  uint8_t  compat;  
+  dsr_t   *lhdrs;
+
+  lhdrs = NULL;
+
+  lhdrs = calloc(nhdrs, sizeof(dsr_t));
+  if (lhdrs == NULL) goto fail;
+
+  for (i = 0; i < nhdrs; i++) 
+    memcpy(lhdrs+i, hdrs[i], sizeof(dsr_t));
+
+  compat = analyze_hdr_compat(nhdrs, lhdrs);
+  
+  free(lhdrs);
+
+  return compat;
+
+fail:
+  if (lhdrs != NULL) free(lhdrs);
   return 1;
 }
 

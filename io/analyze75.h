@@ -128,8 +128,20 @@ void analyze_reverse_hdr(
  * \return 0 if all of the headers match, non-0 otherwise.
  */
 uint8_t analyze_hdr_compat(
-  uint8_t   nhdrs, /**< number of headers */
+  uint16_t  nhdrs, /**< number of headers */
   dsr_t    *hdrs   /**< headers to check  */
+);
+
+/**
+ * Convenience function with equivalent behaviour to
+ * analyze_hdr_compat. Accepts a list of pointers,
+ * rather than a list of structs.
+ *
+ * \return 0 if all of the headers match, non-0 otherwise.
+ */
+uint8_t analyze_hdr_compat_ptr(
+  uint16_t nhdrs, /**< number of headers */
+  dsr_t  **hdrs   /**< headers to check  */
 );
 
 /**
@@ -248,6 +260,15 @@ uint32_t analyze_dim_offset(
 uint32_t analyze_get_offset(
   dsr_t    *hdr, /**< file header       */
   uint32_t *dims /**< dimension indices */
+);
+
+/**
+ * Converts the given image value index into separate dimension indices.
+ */
+void analyze_get_indices(
+  dsr_t    *hdr,   /**< image header                     */
+  uint32_t  index, /**< value index to convert           */
+  uint32_t *dims   /**< place to store dimension indices */
 );
 
 /**

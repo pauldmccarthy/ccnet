@@ -133,17 +133,17 @@ uint64_t mat_num_cols(mat_t *mat) {
 
 uint8_t mat_is_symmetric(mat_t *mat) {
   
-  return (mat->flags) & MAT_IS_SYMMETRIC;
+  return (mat->flags >> MAT_IS_SYMMETRIC) & 1;
 }
 
 uint8_t mat_has_row_labels(mat_t *mat) {
   
-  return (mat->flags) & MAT_HAS_ROW_LABELS;
+  return (mat->flags >> MAT_HAS_ROW_LABELS) & 1;
 }
 
 uint8_t mat_has_col_labels(mat_t *mat) {
 
-  return (mat->flags) & MAT_HAS_COL_LABELS;
+  return (mat->flags >> MAT_HAS_COL_LABELS) & 1;
 }
 
 double mat_read_elem(mat_t *mat, uint64_t row, uint64_t col) {
@@ -348,7 +348,7 @@ uint8_t mat_write_row_part(
   if (col       <  0)               goto fail;
   if (row       >= mat->numrows)    goto fail;
   if (col       >= mat->numcols)    goto fail;
-  if (col + len >= mat->numcols)    goto fail;
+  if (col + len >  mat->numcols)    goto fail;
 
   if (!mat_is_symmetric(mat) || (col >= row)) {
 
@@ -389,7 +389,7 @@ uint8_t mat_write_col_part(
   if (col       <  0)               goto fail;
   if (row       >= mat->numrows)    goto fail;
   if (col       >= mat->numcols)    goto fail;
-  if (row + len >= mat->numrows)    goto fail;
+  if (row + len >  mat->numrows)    goto fail;
 
   for (i = 0; i < len; i++, row++) {
 

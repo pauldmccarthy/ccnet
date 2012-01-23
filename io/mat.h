@@ -19,9 +19,10 @@ typedef struct __mat mat_t;
  */
 typedef enum {
 
-  MAT_HAS_ROW_LABELS = 0,
-  MAT_HAS_COL_LABELS = 1,
-  MAT_IS_SYMMETRIC   = 2,
+  MAT_IS_SYMMETRIC   = 0,
+  MAT_HAS_ROW_LABELS = 1,
+  MAT_HAS_COL_LABELS = 2,
+
 
 } mat_flags_t;
 

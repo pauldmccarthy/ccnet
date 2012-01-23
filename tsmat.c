@@ -38,6 +38,7 @@ typedef struct __args {
   uint8_t  corrtype;
   uint8_t  ninclbls;
   uint8_t  nexclbls;
+  
   double   inclbls[MAX_LABELS];
   double   exclbls[MAX_LABELS];
 
@@ -239,7 +240,7 @@ int main (int argc, char *argv[]) {
 
   mat = mat_create(
     args.output, nincvxls, nincvxls,
-    MAT_IS_SYMMETRIC & MAT_HAS_ROW_LABELS,
+    (1 << MAT_IS_SYMMETRIC) | (1 << MAT_HAS_ROW_LABELS),
     sizeof(graph_label_t));
 
   if (mat == NULL) {
@@ -549,17 +550,21 @@ uint8_t _mk_corr_matrix(
   if (rowtsdata == NULL) goto fail;
   coltsdata = malloc(len*sizeof(double));
   if (coltsdata == NULL) goto fail;
-    
+
   for (row = 0; row < nincvxls; row++) {
     
     if (analyze_read_timeseries_by_idx(vol, incvxls[row], rowtsdata))
       goto fail;
     
-    for (col = row+1; col < nincvxls; col++) {
+    for (col = row; col < nincvxls; col++) {
+
+      if (col == row) {
+        if (mat_write_elem(mat, row, col, 0.0)) goto fail;
+        continue;
+      }
 
       if (analyze_read_timeseries_by_idx(vol, incvxls[col], coltsdata))
         goto fail;
-      
 
       corrval = pearson(rowtsdata, coltsdata, len);
 

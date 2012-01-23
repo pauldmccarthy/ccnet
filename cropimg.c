@@ -13,6 +13,7 @@
 #include <errno.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 static char doc[] = "cropimg -- extract part of a ANALYZE75 3D image file";
 
@@ -70,16 +71,15 @@ int main (int argc, char *argv[]) {
   args_t      args;
   struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
 
-  inimg  = NULL;
-  outimg = NULL;
-
+  inimg    = NULL;
+  outimg   = NULL;
   args.xlo = 0xFFFF;
   args.xhi = 0xFFFF;
   args.ylo = 0xFFFF;
   args.yhi = 0xFFFF;
   args.zlo = 0xFFFF;
   args.zhi = 0xFFFF;
-  argp_parse(&argp, argc, argv, 0, 0, &args);
+  startup("cropimg", argc, argv, &argp, &args);  
 
   if (analyze_load(args.input, &inhdr, &inimg)) {
     printf("error loading %s\n", args.input);
@@ -90,8 +90,8 @@ int main (int argc, char *argv[]) {
   if (args.ylo == 0xFFFF) args.ylo = 0;
   if (args.zlo == 0xFFFF) args.zlo = 0;
   if (args.xhi == 0xFFFF) args.xhi = analyze_dim_size(&inhdr, 0);
-  if (args.yhi == 0xFFFF) args.yhi = analyze_dim_size(&inhdr, 0);
-  if (args.zhi == 0xFFFF) args.zhi = analyze_dim_size(&inhdr, 0);
+  if (args.yhi == 0xFFFF) args.yhi = analyze_dim_size(&inhdr, 1);
+  if (args.zhi == 0xFFFF) args.zhi = analyze_dim_size(&inhdr, 2);
 
   _crop_hdr(&inhdr, &outhdr, &args);
 

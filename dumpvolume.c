@@ -33,11 +33,17 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  if (analyze_open_volume(argv[1], &vol)) goto fail;
+  if (analyze_open_volume(argv[1], &vol)) {
+    printf("error opening volume: %s\n", argv[1]);
+    goto fail;
+  }
 
   /*create the dimension order*/
   dimorder = malloc(analyze_num_dims(vol.hdrs));
-  if (dimorder == NULL) goto fail;
+  if (dimorder == NULL) {
+    printf("out of memory?\n");
+    goto fail;
+  }
 
   dimorder_parse(vol.hdrs, argv+2, dimorder, argc-2);
 
@@ -45,7 +51,6 @@ int main (int argc, char *argv[]) {
     printf("error dumping volume\n");
     goto fail;
   }
-
 
   analyze_free_volume(&vol);
   return 0;

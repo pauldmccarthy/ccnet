@@ -23,8 +23,8 @@ typedef enum {
   CORRTYPE_COHERENCE
 } corrtype_t;
 
-#define MAX_LABELS      50
-#define MAT_HDR_DATA_SZ 512
+#define MAX_LABELS        50
+#define MAT_HDR_DATA_SIZE 512
 
 typedef struct __args {
 
@@ -284,7 +284,7 @@ int main (int argc, char *argv[]) {
   mat = mat_create(
     args.output, nincvxls, nincvxls,
     (1 << MAT_IS_SYMMETRIC) | (1 << MAT_HAS_ROW_LABELS),
-    MAT_HDR_DATA_SZ,
+    MAT_HDR_DATA_SIZE,
     sizeof(graph_label_t));
 
   if (mat == NULL) {

@@ -56,7 +56,8 @@ exes=dumpimg    \
      ngdb2img   \
      dumpvolume \
      tsmat      \
-     dumpmat
+     dumpmat    \
+     tsgraph
 
 
 default: $(exes)

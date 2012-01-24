@@ -282,7 +282,7 @@ uint8_t graph_copy(
 );
 
 /**
- * Add an edge to the given graph. If the edge is specified as undirected,
+ * Add an edge to the given graph. If the graph is undirected,
  * two edges are added - one from u to v, and one from v to u.
  *
  * \return 0 on success, non-0 on failure.

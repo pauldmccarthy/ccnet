@@ -300,6 +300,11 @@ int main (int argc, char *argv[]) {
     }
   }
 
+  if (_write_labels(&lblhdr, lblimg, mat, incvxls, nincvxls)) {
+    printf("error writing labels to %s\n", args.output);
+    goto fail;
+  }
+
   if (_mk_corr_matrix(&vol, mat, args.corrtype, incvxls, nincvxls)) {
     printf("error creating correlation matrix\n");
     goto fail;
@@ -573,10 +578,18 @@ static uint8_t _write_labels(
   uint32_t *incvxls,
   uint32_t  nincvxls) {
 
-  uint64_t      i;
+  uint64_t      i;  
+  uint32_t      dims[3];
   graph_label_t label;
 
   for (i = 0; i < nincvxls; i++) {
+
+    analyze_get_indices(hdr, incvxls[i], dims);
+
+    label.labelval = analyze_read_by_idx(hdr, img, incvxls[i]);
+    label.xval     = dims[0];
+    label.yval     = dims[1];
+    label.zval     = dims[2];
 
     if (mat_write_row_label(mat, i, &label)) goto fail;
   }

@@ -33,6 +33,10 @@ typedef struct _graph {
   array_t        *neighbours;    /**< neighbours for each node           */
   array_t        *weights;       /**< weights for each edge              */
   uint16_t        flags;         /**< graph flags                        */
+  void           *data;          /**< place to store data associated
+                                      with the graph, such as a human
+                                      readable description               */
+  uint16_t        datalen;       /**< length of data                     */
 
   array_t         event_listeners; /**< array of registered event listeners */
 

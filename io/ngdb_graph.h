@@ -11,6 +11,8 @@
 #include "io/ngdb.h"
 #include "graph/graph.h"
 
+#define NGDB_HDR_DATA_SIZE 2048
+
 /**
  * Loads the graph contained in the given 
  * ngdb file into the given graph struct.
@@ -25,7 +27,6 @@ uint8_t ngdb_read(
   char    *f, /**< name of ngdb file to load        */
   graph_t *g  /**< pointer to a graph struct to use */
 );
-
 
 /**
  * Writes the given graph to the given file.

@@ -37,7 +37,7 @@ static uint8_t _read_label(
 
 uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
 
-  ngdb_t *ngdb;
+  ngdb_t  *ngdb;
   uint32_t i;
   uint32_t nnodes;
 
@@ -48,7 +48,15 @@ uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
   ngdb = ngdb_open(ngdbfile);
   if (ngdb == NULL) goto fail;
 
-  nnodes = ngdb_num_nodes(ngdb);
+  nnodes         = ngdb_num_nodes(ngdb);
+  graph->datalen = ngdb_hdr_data_len(ngdb);
+
+  if (graph->datalen > 0) {
+    
+    graph->data = calloc(graph->datalen, 1);
+    if (graph->data == NULL)                  goto fail;
+    if (ngdb_hdr_get_data(ngdb, graph->data)) goto fail;
+  }
 
   if (graph_create(graph, nnodes, 0)) goto fail;
 
@@ -62,7 +70,8 @@ uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
   return 0;
 fail: 
 
-  if (ngdb != NULL) ngdb_close(ngdb);
+  if (ngdb        != NULL) ngdb_close(ngdb);
+  if (graph->data != NULL) free(graph->data);
   graph_free(graph);
 
   return 1;
@@ -151,16 +160,17 @@ uint8_t ngdb_write(graph_t *g, char *f) {
 
   ngdb_t *ngdb;
 
-  ngdb = NULL;
-
-  ngdb = ngdb_create(f, graph_num_nodes(g), 32, sizeof(graph_label_t), 8);
+  ngdb = ngdb_create(
+    f,
+    graph_num_nodes(g),
+    NGDB_HDR_DATA_SIZE,
+    sizeof(graph_label_t),
+    8);
 
   if (ngdb == NULL)          goto fail;
-
   if (_write_hdr  (ngdb, g)) goto fail;
   if (_write_nodes(ngdb, g)) goto fail;
   if (_write_refs (ngdb, g)) goto fail;
-
   if (ngdb_close(ngdb))      goto fail;
 
   return 0;
@@ -172,20 +182,21 @@ fail:
 
 uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
 
-  uint8_t *data;
+  void    *data;
+  uint16_t len;
 
-  data = NULL;
+  data = g->data;
+  len  = g->datalen;
 
-  data = calloc(1, 32);
-  if (data == NULL) goto fail;
+  if (data == NULL || len == 0) return 0;
 
-  if (ngdb_hdr_set_data(ngdb, data, 32)) goto fail;
+  if (len > NGDB_HDR_DATA_SIZE) len = NGDB_HDR_DATA_SIZE;
 
-  free(data);
+  if (ngdb_hdr_set_data(ngdb, data, len)) goto fail;
+
   return 0;
 
 fail:
-  if (data != NULL) free(data);
   return 1;
 }
 

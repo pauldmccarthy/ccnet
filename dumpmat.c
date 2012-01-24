@@ -157,6 +157,8 @@ static void _print_meta(mat_t *mat) {
     free(hdrdata);
   }
 
+  return;
+
 fail:
   if (hdrdata != NULL) free(hdrdata);
 }
@@ -231,8 +233,8 @@ static void _print_data(mat_t *mat) {
     printf("\n");
   }
 
-
   free(rowvals);
+  return;
   
 fail:
   if (rowvals != NULL) free(rowvals);

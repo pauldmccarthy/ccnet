@@ -201,11 +201,9 @@ uint8_t mat_read_row_part(
   if (mat       == NULL)          goto fail;
   if (mat->mode != MAT_MODE_READ) goto fail;
   if (vals      == NULL)          goto fail;
-  if (row       <  0)             goto fail;
-  if (col       <  0)             goto fail;
   if (row       >= mat->numrows)  goto fail;
   if (col       >= mat->numcols)  goto fail;
-  if (col + len >= mat->numcols)  goto fail;
+  if (col + len >  mat->numcols)  goto fail;
 
   if (!mat_is_symmetric(mat) || (col >= row)) {
 
@@ -256,7 +254,7 @@ uint8_t mat_read_col_part(
   if (col       <  0)             goto fail;
   if (row       >= mat->numrows)  goto fail;
   if (col       >= mat->numcols)  goto fail;
-  if (row + len >= mat->numrows)  goto fail;
+  if (row + len >  mat->numrows)  goto fail;
 
   for (i = 0; i < len; i++, row++) {
 
@@ -313,6 +311,8 @@ uint8_t mat_read_hdr_data(mat_t *mat, void *hdrdata) {
 
   if (_mat_seek_to(mat, MAT_SEEK_HDRDATA))           goto fail;
   if (fread(hdrdata, mat->hdrsize, 1, mat->hd) != 1) goto fail;
+
+  return 0;
   
 fail:
   return 1;
@@ -442,7 +442,6 @@ uint8_t mat_write_row_label(mat_t *mat, uint64_t row, void *data) {
 
   if (mat            == NULL)            goto fail;
   if (mat->mode      != MAT_MODE_CREATE) goto fail;
-  if (row            == 0)               goto fail;
   if (row            >= mat->numrows)    goto fail;
   if (mat->labelsize == 0)               goto fail;
   if (!mat_has_row_labels(mat))          goto fail;

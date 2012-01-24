@@ -266,7 +266,7 @@ int main (int argc, char *argv[]) {
     hdrs[0] = vol.hdrs;
     hdrs[1] = &lblhdr;
 
-    if (!analyze_hdr_compat_ptr(2, hdrs)) {
+    if (analyze_hdr_compat_ptr(2, hdrs)) {
       printf(
         "label file %s does not match volume files in %s\n",
         args.labelf, args.input);

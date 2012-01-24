@@ -93,7 +93,7 @@ void _dump_coords(dsr_t *hdr, uint32_t *dims, char pcoord) {
   uint8_t i;
   uint8_t ndims;
 
-  ndims = analyze_num_dims(hdr) - 1;
+  ndims = analyze_num_dims(hdr);
 
   if (pcoord == 'r') {
     for (i = 0; i < ndims; i++) {
@@ -135,7 +135,7 @@ void _dumpimg(
     if (pcoord) _dump_coords(hdr, dims, pcoord);
 
     analyze_sprint_val(hdr, str, val);
-    printf(" %s\n", str);
+    printf("%s\n", str);
 
     /* update dimension indices */
     dimorder_next(hdr, dims, dimorder);

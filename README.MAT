@@ -10,7 +10,7 @@ structure:
 
 | Field     | Length in bytes | Description                |
 |-----------|-----------------|----------------------------|
-| fileid    | 2 (uint16_t)    | matfile identifier         |
+| fileid    | 2 (uint16_t)    | MAT_FILE_ID                |
 | nrows     | 8 (uint64_t)    | number of rows             |
 | ncols     | 8 (uint64_t)    | number of columns          |
 | flags     | 2 (uint16_t)    | flags                      |

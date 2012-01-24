@@ -292,6 +292,14 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
+  if (args.hdrmsg != NULL) {
+    if (mat_write_hdr_data(mat, args.hdrmsg, strlen(args.hdrmsg)+1)) {
+      printf(
+        "error writing header message \"%s\" to %s\n",
+        args.hdrmsg, args.output);
+    }
+  }
+
   if (_mk_corr_matrix(&vol, mat, args.corrtype, incvxls, nincvxls)) {
     printf("error creating correlation matrix\n");
     goto fail;

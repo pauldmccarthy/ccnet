@@ -15,15 +15,21 @@
 
 #include "io/mat.h"
 
-#define MAT_FILE_ID 0x8493
-
-#define MAT_HDR_SIZE 21
+#define MAT_FILE_ID  0x8493
+#define MAT_HDR_SIZE 23
 
 typedef enum __mat_mode {
 
   MAT_MODE_READ,
   MAT_MODE_CREATE
 } mat_mode_t;
+
+typedef enum {
+  MAT_SEEK_HDR,      /**< start of header        */
+  MAT_SEEK_HDRDATA,  /**< start of header data   */
+  MAT_SEEK_ROWLABEL, /**< start of row labels    */
+  MAT_SEEK_COLLABEL, /**< start of column labels */
+} mat_seek_loc_t;
 
 /**
  * Structure representing an open mat file.
@@ -34,6 +40,7 @@ struct __mat {
   uint64_t   numrows;   /**< number of rows             */
   uint64_t   numcols;   /**< number of columns          */
   uint16_t   flags;     /**< option flags               */
+  uint16_t   hdrsize;   /**< header data size           */
   uint8_t    labelsize; /**< label size                 */
   mat_mode_t mode;      /**< open mode (read or create) */
 };
@@ -71,11 +78,23 @@ static uint64_t _mat_calc_offset(
 
 /**
  * Seeks to the given row/column in the given mat->hd file.
+ *
+ * \return 0 on success, non-0 on failure.
  */
 static uint8_t _mat_seek(
   mat_t   *mat, /**< mat struct with an open file */
   uint64_t row, /**< row to seek to               */
   uint64_t col  /**< column to seek to            */
+);
+
+/**
+ * Seek to the specified location in the given mat->hd file.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _mat_seek_to(
+  mat_t         *mat, /**< mat struct with an open file */
+  mat_seek_loc_t what /**< location to seek to          */
 );
 
 mat_t * mat_open(char *fname) {
@@ -129,6 +148,16 @@ uint64_t mat_num_rows(mat_t *mat) {
 uint64_t mat_num_cols(mat_t *mat) {
 
   return mat->numcols;
+}
+
+uint16_t mat_hdr_data_size(mat_t *mat) {
+  
+  return mat->hdrsize;
+}
+
+uint16_t mat_label_size(mat_t *mat) {
+
+  return mat->labelsize;
 }
 
 uint8_t mat_is_symmetric(mat_t *mat) {
@@ -243,16 +272,14 @@ fail:
 
 uint8_t mat_read_row_label(mat_t *mat, uint64_t row, void *data) {
 
-  uint64_t off;
-
   if (!mat_has_row_labels(mat))       goto fail;
   if (row            <  0)            goto fail;
   if (row            >= mat->numrows) goto fail;
   if (mat->labelsize == 0)            goto fail;
 
-  off = MAT_HDR_SIZE + ((mat->labelsize) * row);
-
-  if (fread(data, mat->labelsize, 1, mat->hd) != 1) goto fail;
+  if (_mat_seek_to(mat, MAT_SEEK_ROWLABEL))             goto fail;
+  if (fseek(mat->hd, (mat->labelsize) * row, SEEK_CUR)) goto fail;
+  if (fread(data, mat->labelsize, 1, mat->hd) != 1)     goto fail;
   
   return 0;
   
@@ -262,23 +289,30 @@ fail:
 
 uint8_t mat_read_col_label(mat_t *mat, uint64_t col, void *data) {
 
-  uint64_t off;
-  uint64_t rlbloff;
-
   if (!mat_has_col_labels(mat))       goto fail;
   if (col            <  0)            goto fail;
   if (col            >= mat->numcols) goto fail;
   if (mat->labelsize == 0)            goto fail;
 
 
-  if (mat_has_row_labels(mat)) rlbloff = (mat->labelsize) * (mat->numrows);
-  else                         rlbloff = 0;
-
-  off = MAT_HDR_SIZE + rlbloff + ((mat->labelsize) * col);
-
-  if (fread(data, mat->labelsize, 1, mat->hd) != 1) goto fail;
+  if (_mat_seek_to(mat, MAT_SEEK_COLLABEL))             goto fail;
+  if (fseek(mat->hd, (mat->labelsize) * col, SEEK_CUR)) goto fail;
+  if (fread(data, mat->labelsize, 1, mat->hd) != 1)     goto fail;
 
   return 0;
+  
+fail:
+  return 1;
+}
+
+uint8_t mat_read_hdr_data(mat_t *mat, void *hdrdata) {
+
+  if (mat          == NULL) goto fail;
+  if (hdrdata      == NULL) goto fail;
+  if (mat->hdrsize == 0)    goto fail;
+
+  if (_mat_seek_to(mat, MAT_SEEK_HDRDATA))           goto fail;
+  if (fread(hdrdata, mat->hdrsize, 1, mat->hd) != 1) goto fail;
   
 fail:
   return 1;
@@ -289,6 +323,7 @@ mat_t * mat_create(
   uint64_t numrows,
   uint64_t numcols,
   uint16_t flags,
+  uint16_t hdrsize,
   uint8_t  labelsize) {
 
   mat_t *mat;
@@ -300,6 +335,7 @@ mat_t * mat_create(
   mat->numrows   = numrows;
   mat->numcols   = numcols;
   mat->flags     = flags;
+  mat->hdrsize   = hdrsize;
   mat->labelsize = labelsize;
   mat->mode      = MAT_MODE_CREATE;
 
@@ -323,7 +359,6 @@ fail:
   }
   return NULL;
 }
-
 
 uint8_t mat_write_elem(mat_t *mat, uint64_t row, uint64_t col, double val) {
 
@@ -405,8 +440,6 @@ fail:
 
 uint8_t mat_write_row_label(mat_t *mat, uint64_t row, void *data) {
 
-  uint64_t off;
-
   if (mat            == NULL)            goto fail;
   if (mat->mode      != MAT_MODE_CREATE) goto fail;
   if (row            == 0)               goto fail;
@@ -414,10 +447,9 @@ uint8_t mat_write_row_label(mat_t *mat, uint64_t row, void *data) {
   if (mat->labelsize == 0)               goto fail;
   if (!mat_has_row_labels(mat))          goto fail;
 
-  off = MAT_HDR_SIZE + ((mat->labelsize) * row);
-
-  if (fseek(mat->hd, off, SEEK_SET))                 goto fail;
-  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1) goto fail;
+  if (_mat_seek_to(mat, MAT_SEEK_ROWLABEL))           goto fail;
+  if (fseek(mat->hd, (mat->labelsize)*row, SEEK_CUR)) goto fail;
+  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1)  goto fail;
 
   return 0;
   
@@ -427,8 +459,6 @@ fail:
 
 uint8_t mat_write_col_label(mat_t *mat, uint64_t col, void *data) {
 
-  uint64_t off;
-
   if (mat            == NULL)            goto fail;
   if (mat->mode      != MAT_MODE_CREATE) goto fail;
   if (col            == 0)               goto fail;
@@ -436,13 +466,34 @@ uint8_t mat_write_col_label(mat_t *mat, uint64_t col, void *data) {
   if (mat->labelsize == 0)               goto fail;
   if (!mat_has_col_labels(mat))          goto fail;
 
-  off = MAT_HDR_SIZE + ((mat->labelsize) * col);
+  if (_mat_seek_to(mat, MAT_SEEK_COLLABEL))           goto fail;
+  if (fseek(mat->hd, (mat->labelsize)*col, SEEK_CUR)) goto fail;
+  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1)  goto fail; 
 
-  if (mat_has_row_labels(mat))
-    off += (mat->labelsize)*(mat->numrows);
+  return 0;
 
-  if (fseek(mat->hd, off, SEEK_SET))                 goto fail;
-  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1) goto fail;  
+fail:
+  return 1;
+}
+
+uint8_t mat_write_hdr_data(mat_t *mat, void *hdrdata, uint16_t len) {
+
+  uint32_t zero;
+
+  if (mat                    == NULL)            goto fail;
+  if (mat->mode              != MAT_MODE_CREATE) goto fail;
+  if (mat->hdrsize           == 0)               goto fail;
+  if (len                    == 0)               goto fail;
+  if (len                     > mat->hdrsize)    goto fail;
+
+  if (_mat_seek_to(mat, MAT_SEEK_HDRDATA))   goto fail;
+  if (fwrite(hdrdata, len, 1, mat->hd) != 1) goto fail;
+
+  zero = 0;
+
+  for (; len < mat->hdrsize; len++) {
+    if (fwrite(&zero, 1, 1, mat->hd) != 1) goto fail;
+  }
 
   return 0;
 
@@ -454,8 +505,7 @@ uint8_t _mat_read_header(mat_t *mat) {
 
   uint16_t id;
 
-  rewind(mat->hd);
-
+  if (_mat_seek_to(mat, MAT_SEEK_HDR))         goto fail;
   if (fread(&id, sizeof(id), 1, mat->hd) != 1) goto fail;
   if (id != MAT_FILE_ID)                       goto fail;
 
@@ -465,6 +515,8 @@ uint8_t _mat_read_header(mat_t *mat) {
     goto fail;
   if (fread(&(mat->flags),     sizeof(mat->flags),     1, mat->hd) != 1)
     goto fail; 
+  if (fread(&(mat->hdrsize),   sizeof(mat->hdrsize),   1, mat->hd) != 1)
+    goto fail;  
   if (fread(&(mat->labelsize), sizeof(mat->labelsize), 1, mat->hd) != 1)
     goto fail; 
 
@@ -478,7 +530,7 @@ uint8_t _mat_write_header(mat_t *mat) {
 
   uint16_t id;
 
-  rewind(mat->hd);
+  if (_mat_seek_to(mat, MAT_SEEK_HDR)) goto fail;
 
   id = MAT_FILE_ID;
 
@@ -489,7 +541,9 @@ uint8_t _mat_write_header(mat_t *mat) {
   if (fwrite(&(mat->numcols),   sizeof(mat->numcols),   1, mat->hd) != 1)
     goto fail;
   if (fwrite(&(mat->flags),     sizeof(mat->flags),     1, mat->hd) != 1)
-    goto fail;
+    goto fail; 
+  if (fwrite(&(mat->hdrsize),   sizeof(mat->hdrsize),   1, mat->hd) != 1)
+    goto fail; 
   if (fwrite(&(mat->labelsize), sizeof(mat->labelsize), 1, mat->hd) != 1)
     goto fail;
 
@@ -504,6 +558,7 @@ uint64_t _mat_calc_offset(mat_t *mat, uint64_t row, uint64_t col) {
   uint64_t ncols;
   uint64_t nrows;
   uint64_t val_size;
+  uint64_t hdr_off;
   uint64_t rlbl_off;
   uint64_t clbl_off;
   uint64_t row_off;
@@ -516,6 +571,8 @@ uint64_t _mat_calc_offset(mat_t *mat, uint64_t row, uint64_t col) {
   clbl_off = 0;
   row_off  = 0;
   col_off  = 0;
+  
+  hdr_off  = mat_hdr_data_size(mat);
 
   if (mat_has_row_labels(mat))
     rlbl_off = (mat->labelsize) * nrows;
@@ -531,7 +588,7 @@ uint64_t _mat_calc_offset(mat_t *mat, uint64_t row, uint64_t col) {
     col_off = col * val_size;
   }
 
-  return MAT_HDR_SIZE + rlbl_off + clbl_off + row_off + col_off;
+  return MAT_HDR_SIZE + hdr_off + rlbl_off + clbl_off + row_off + col_off;
 }
 
 uint8_t _mat_seek(mat_t *mat, uint64_t row, uint64_t col) {
@@ -552,6 +609,36 @@ uint8_t _mat_seek(mat_t *mat, uint64_t row, uint64_t col) {
 
   return 0;
   
+fail:
+  return 1;
+}
+
+uint8_t _mat_seek_to(mat_t *mat, mat_seek_loc_t what) {
+
+  uint64_t off;
+  uint64_t hdr_off;
+  uint64_t rlbl_off;
+
+  rlbl_off = 0;
+  hdr_off  = mat_hdr_data_size(mat);
+
+  if (mat_has_row_labels(mat))
+    rlbl_off = (mat->labelsize) * (mat->numrows);
+  
+  switch(what) {
+    
+    case MAT_SEEK_HDR:      off = 0;                                 break; 
+    case MAT_SEEK_HDRDATA:  off = MAT_HDR_SIZE;                      break; 
+    case MAT_SEEK_ROWLABEL: off = MAT_HDR_SIZE + hdr_off;            break;
+    case MAT_SEEK_COLLABEL: off = MAT_HDR_SIZE + hdr_off + rlbl_off; break; 
+
+    default: goto fail;
+  }
+
+  if (fseek(mat->hd, off, SEEK_SET)) goto fail;
+
+  return 0;
+
 fail:
   return 1;
 }

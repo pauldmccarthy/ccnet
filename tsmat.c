@@ -23,12 +23,14 @@ typedef enum {
   CORRTYPE_COHERENCE
 } corrtype_t;
 
-#define MAX_LABELS 50
+#define MAX_LABELS      50
+#define MAT_HDR_DATA_SZ 512
 
 typedef struct __args {
 
   char    *input;
   char    *output;
+  char    *hdrmsg;
   char    *labelf;
   char    *maskf;
   double  *lothres;
@@ -48,6 +50,7 @@ static char doc[] =
 "tsmat -- generate a correlation matrix from an ANALYZE75 volume";
 
 static struct argp_option options[] = {
+  {"hdrmsg",  's', "MSG",   0, "message to save to .mat file header"},
   {"labelf",  'f', "FILE",  0,
    "ANALYZE75 label file (must have same datat type as volume files)"},
   {"maskf",   'm', "FILE",  0,
@@ -74,7 +77,9 @@ static int64_t _create_mask(
   analyze_volume_t *vol,     /**< volume containing time series  */
   uint32_t        **incvxls, /**< place to store indices
                                   of voxels to include           */
-  args_t           *args     /**< tsmat program arguments        */
+  args_t           *args,    /**< tsmat program arguments        */
+  dsr_t            *hdr,     /**< ANALYZE75 label header         */
+  uint8_t          *img      /**< ANALYZE75 label data           */
 );
 
 /**
@@ -101,7 +106,8 @@ static int64_t _apply_threshold_mask(
 static int64_t _apply_label_mask(
   analyze_volume_t *vol,      /**< time series volume               */
   uint8_t          *mask,     /**< mask array                       */
-  char             *labelf,   /**< ANALYZE75 label file             */
+  dsr_t            *hdr,      /**< ANALYZE75 label header           */
+  uint8_t          *img,      /**< ANALYZE75 label data             */
   double           *inclbls,  /**< list of labels to include        */
   double           *exclbls,  /**< list of labels to exclude        */
   uint8_t           ninclbls, /**< number of values in include list */
@@ -149,6 +155,20 @@ static uint8_t _check_label(
 );
 
 /**
+ * Writes label data from the given label file to the matrix,
+ * for all voxels in the incvxls list.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _write_labels(
+  dsr_t    *hdr,     /**< label header              */
+  uint8_t  *img,     /**< label data                */
+  mat_t    *mat,     /**< matrix file               */
+  uint32_t *incvxls, /**< voxels to include         */
+  uint32_t  nincvxls /**< number of included voxels */
+);
+
+/**
  * Calculates a correlation value between all pairs of time series,
  * storing the values in the given mat file, which is assumed to
  * have already been created.
@@ -172,6 +192,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   switch (key) {
     case 'f': args->labelf   = arg;                break;
     case 'm': args->maskf    = arg;                break;
+    case 's': args->hdrmsg   = arg;                break;
     case 'p': args->corrtype = CORRTYPE_PEARSON;   break;
     case 'c': args->corrtype = CORRTYPE_COHERENCE; break;
     case 'l':
@@ -216,9 +237,13 @@ int main (int argc, char *argv[]) {
   uint32_t        *incvxls;
   analyze_volume_t vol;
   mat_t           *mat;
+  dsr_t            lblhdr;
+  dsr_t           *hdrs[2];
+  uint8_t         *lblimg;
   args_t           args;
   struct argp      argp = {options, _parse_opt, "INPUT OUTPUT", doc};
 
+  lblimg  = NULL;
   incvxls = NULL;
   mat     = NULL;
 
@@ -231,7 +256,25 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  nincvxls = _create_mask(&vol, &incvxls, &args);
+  if (args.labelf != NULL) {
+    
+    if (analyze_load(args.labelf, &lblhdr, &lblimg)) {
+      printf("error loading label file %s\n", args.labelf);
+      goto fail;
+    }
+
+    hdrs[0] = vol.hdrs;
+    hdrs[1] = &lblhdr;
+
+    if (!analyze_hdr_compat_ptr(2, hdrs)) {
+      printf(
+        "label file %s does not match volume files in %s\n",
+        args.labelf, args.input);
+      goto fail;
+    }
+  }
+
+  nincvxls = _create_mask(&vol, &incvxls, &args, &lblhdr, lblimg);
   
   if (nincvxls < 0) {
     printf("error masking voxels\n");
@@ -241,6 +284,7 @@ int main (int argc, char *argv[]) {
   mat = mat_create(
     args.output, nincvxls, nincvxls,
     (1 << MAT_IS_SYMMETRIC) | (1 << MAT_HAS_ROW_LABELS),
+    MAT_HDR_DATA_SZ,
     sizeof(graph_label_t));
 
   if (mat == NULL) {
@@ -255,6 +299,7 @@ int main (int argc, char *argv[]) {
 
   mat_close(mat);
   analyze_free_volume(&vol);
+  free(lblimg);
   free(incvxls);
 
   return 0;
@@ -266,7 +311,11 @@ fail:
 }
 
 int64_t _create_mask(
-  analyze_volume_t *vol, uint32_t **incvxls, args_t *args) {
+  analyze_volume_t *vol,
+  uint32_t        **incvxls,
+  args_t           *args,
+  dsr_t            *hdr,
+  uint8_t          *img) {
 
   uint64_t  i;
   uint64_t  j;
@@ -301,7 +350,8 @@ int64_t _create_mask(
     result = _apply_label_mask(
       vol,
       mask,
-      args->labelf,
+      hdr,
+      img,
       args->inclbls,
       args->exclbls,
       args->ninclbls,
@@ -381,40 +431,27 @@ fail:
 static int64_t _apply_label_mask(
   analyze_volume_t *vol,
   uint8_t          *mask,
-  char             *labelf,
+  dsr_t            *hdr,
+  uint8_t          *img,
   double           *inclbls,
   double           *exclbls,
   uint8_t           ninclbls,
   uint8_t           nexclbls
 ) {
 
-  dsr_t    lblhdr;
-  uint8_t *lblimg;
   double   lblval;
-  uint8_t  lblvalsz;
-  dsr_t   *hdrs[2];
   uint64_t i;
   uint32_t masked;
   uint32_t nvals;
 
-  lblimg = NULL;
   nvals  = analyze_num_vals(vol->hdrs);
   masked = 0;
-
-  if (analyze_load(labelf, &lblhdr, &lblimg)) goto fail;
-
-  lblvalsz = analyze_value_size(&lblhdr);
-
-  hdrs[0] = &lblhdr;
-  hdrs[1] = vol->hdrs;
-
-  if (analyze_hdr_compat_ptr(2, hdrs)) goto fail;
   
   for (i = 0; i < nvals; i++) {
 
     if (mask[i] == 0) continue;
 
-    lblval = analyze_read_by_idx(&lblhdr, lblimg, i);
+    lblval = analyze_read_by_idx(hdr, img, i);
 
     if (!_check_label(inclbls, exclbls, ninclbls, nexclbls, lblval)) {
       mask[i] = 0;
@@ -422,12 +459,7 @@ static int64_t _apply_label_mask(
     }
   }
 
-  free(lblimg);
   return masked;
-
-fail:
-  if (lblimg != NULL) free(lblimg);
-  return -1;
 }
 
 int64_t _apply_file_mask(
@@ -524,6 +556,28 @@ uint8_t _check_label(
   }
 
   return 0;
+}
+
+static uint8_t _write_labels(
+  dsr_t    *hdr,
+  uint8_t  *img,
+  mat_t    *mat,
+  uint32_t *incvxls,
+  uint32_t  nincvxls) {
+
+  uint64_t      i;
+  graph_label_t label;
+
+  for (i = 0; i < nincvxls; i++) {
+
+    if (mat_write_row_label(mat, i, &label)) goto fail;
+  }
+
+  return 0;
+
+fail:
+
+  return 1;
 }
 
 uint8_t _mk_corr_matrix(

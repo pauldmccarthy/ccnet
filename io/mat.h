@@ -58,6 +58,20 @@ uint64_t mat_num_cols(
 );
 
 /**
+ * \return the header data size in bytes.
+ */
+uint16_t mat_hdr_data_size(
+  mat_t *mat /**< mat file to query */
+);
+
+/**
+ * \return the row/column label size in bytes.
+ */
+uint16_t mat_label_size(
+  mat_t *mat /**< mat file to query */
+);
+
+/**
  * \return non-0 if the given mat file is symmetric, 0 otherwise.
  */
 uint8_t mat_is_symmetric(
@@ -158,6 +172,16 @@ uint8_t mat_read_col_label(
 );
 
 /**
+ * Reads the header data from the given file.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t mat_read_hdr_data(
+  mat_t *mat,    /**< mat file to query          */
+  void  *hdrdata /**< place to store header data */
+);
+
+/**
  * Creates a new mat file.
  *
  * \return a newly allocated mat_t struct on success, NULL on failure.
@@ -167,6 +191,7 @@ mat_t * mat_create(
   uint64_t numrows,  /**< number of rows         */
   uint64_t numcols,  /**< number of rows         */
   uint16_t flags,    /**< file options           */
+  uint16_t hdrsize,  /**< header data size       */
   uint8_t  labelsize /**< label size             */
 );
 
@@ -250,6 +275,18 @@ uint8_t mat_write_col_label(
   mat_t   *mat, /**< mat file to write to */
   uint64_t col, /**< column to write to   */
   void    *data /**< data to write        */
+);
+
+/**
+ * Writes the given data to the header data section.
+ * The header data section is then padded with 0s.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t mat_write_hdr_data(
+  mat_t   *mat,     /**< mat file to query          */
+  void    *hdrdata, /**< place to store header data */
+  uint16_t len      /**< number of bytes to write   */
 );
 
 #endif

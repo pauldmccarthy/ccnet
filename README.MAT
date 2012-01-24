@@ -14,7 +14,9 @@ structure:
 | nrows     | 8 (uint64_t)    | number of rows             |
 | ncols     | 8 (uint64_t)    | number of columns          |
 | flags     | 2 (uint16_t)    | flags                      |
+| hdrsize   | 2 (uint16_t)    | header data size           |
 | labelsize | 1 (uint8_t)     | size of one label in bytes |
+| hdrdata   | hdrsize         | header data                |
 
 The data has the following structure (this structure varies depending on
 the values of certain flags; see below):

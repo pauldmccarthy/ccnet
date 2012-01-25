@@ -71,11 +71,9 @@ uint8_t graph_trail_import(
 /**
  * Copies all of the messages in the trail to the given destination pointer,
  * separating them with the given delimiter string. The destination pointer
- * must have enough space to store
+ * must have enough space to store this many bytes:
  *
  *   graph_trail_total_len(g) + (graph_trail_num_msgs(g)-1)*strlen(delim) + 1
- *
- * bytes.
  *
  * \return 0 on success, non-0 on failure.
  */

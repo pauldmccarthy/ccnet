@@ -14,7 +14,7 @@
 #include "io/ngdb_graph.h"
 #include "util/startup.h"
 #include "graph/graph.h"
-#include "graph/graph_trail.h"
+#include "graph/graph_log.h"
 
 #define MAX_LABELS 50
 
@@ -190,7 +190,7 @@ int main (int argc, char *argv[]) {
     printf("error creating graph\n");
     goto fail;
   }
-  if (graph_trail_init(&graph)) goto fail;
+  if (graph_log_init(&graph)) goto fail;
 
   /*connect graph */
   if (_connect_graph(
@@ -217,11 +217,11 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  if (graph_trail_add(&graph, mathdrmsg))   {
+  if (graph_log_add(&graph, mathdrmsg))   {
     printf("error adding header message: %s\n", mathdrmsg);
     goto fail;
   }
-  if (graph_trail_add(&graph, args.hdrmsg)) {
+  if (graph_log_add(&graph, args.hdrmsg)) {
     printf("error adding header message: %s\n", args.hdrmsg);
     goto fail;
   }

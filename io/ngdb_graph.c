@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "graph/graph.h"
-#include "graph/graph_trail.h"
+#include "graph/graph_log.h"
 #include "io/ngdb.h"
 #include "util/array.h"
 #include "util/compare.h"
@@ -38,7 +38,7 @@ static uint8_t _read_label(
 
 /**
  * Reads header data from the ngdb file, adding it as a
- * trail to the graph (see graph_trail.h).
+ * log to the graph (see graph_log.h).
  *
  * \return 0 on success, non-0 on failure.
  */
@@ -94,9 +94,9 @@ static uint8_t _read_hdr(ngdb_t *ngdb, graph_t *graph) {
   hdrdata = malloc(hdrlen);
   if (hdrdata == NULL) goto fail;
 
-  if (ngdb_hdr_get_data(ngdb, hdrdata))         goto fail;
-  if (graph_trail_init(graph))                  goto fail;
-  if (graph_trail_import(graph, hdrdata, "\n")) goto fail;
+  if (ngdb_hdr_get_data(ngdb, hdrdata))       goto fail;
+  if (graph_log_init(graph))                  goto fail;
+  if (graph_log_import(graph, hdrdata, "\n")) goto fail;
 
   return 0;
   
@@ -216,15 +216,15 @@ uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
 
   data = NULL;
 
-  if (!graph_trail_exists(g)) return 0;
+  if (!graph_log_exists(g)) return 0;
 
-  len = graph_trail_total_len(g) +
-       (graph_trail_num_msgs(g)-1) * strlen(delim) + 1;
+  len = graph_log_total_len(g) +
+       (graph_log_num_msgs(g)-1) * strlen(delim) + 1;
 
   data = calloc(len, 1);
   if (data != NULL) goto fail;
 
-  if (graph_trail_export(g, data, delim)) goto fail;
+  if (graph_log_export(g, data, delim)) goto fail;
 
   if (len > NGDB_HDR_DATA_SIZE) {
     len = NGDB_HDR_DATA_SIZE;

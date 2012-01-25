@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "graph/graph.h"
+#include "graph/graph_trail.h"
 #include "io/ngdb.h"
 #include "util/array.h"
 #include "util/compare.h"
@@ -35,6 +36,17 @@ static uint8_t _read_label(
   uint32_t nidx   /**< node index   */
 );
 
+/**
+ * Reads header data from the ngdb file, adding it as a
+ * trail to the graph (see graph_trail.h).
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _read_hdr(
+  ngdb_t  *ngdb, /**< ngdb handle  */
+  graph_t *graph /**< graph handle */
+);
+
 uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
 
   ngdb_t  *ngdb;
@@ -48,17 +60,10 @@ uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
   ngdb = ngdb_open(ngdbfile);
   if (ngdb == NULL) goto fail;
 
-  nnodes         = ngdb_num_nodes(ngdb);
-  graph->datalen = ngdb_hdr_data_len(ngdb);
-
-  if (graph->datalen > 0) {
-    
-    graph->data = calloc(graph->datalen, 1);
-    if (graph->data == NULL)                  goto fail;
-    if (ngdb_hdr_get_data(ngdb, graph->data)) goto fail;
-  }
+  nnodes = ngdb_num_nodes(ngdb);
 
   if (graph_create(graph, nnodes, 0)) goto fail;
+  if (_read_hdr(ngdb, graph))         goto fail;
 
   for (i = 0; i < nnodes; i++) {
     if (_read_refs (ngdb, graph, i) != 0) goto fail;
@@ -70,10 +75,33 @@ uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
   return 0;
 fail: 
 
-  if (ngdb        != NULL) ngdb_close(ngdb);
-  if (graph->data != NULL) free(graph->data);
+  if (ngdb != NULL) ngdb_close(ngdb);
   graph_free(graph);
 
+  return 1;
+}
+
+static uint8_t _read_hdr(ngdb_t *ngdb, graph_t *graph) {
+  
+  uint8_t *hdrdata;
+  uint16_t hdrlen;
+
+  hdrdata = NULL;
+  hdrlen  = ngdb_hdr_data_len(ngdb);
+
+  if (hdrlen == 0) return 0;
+
+  hdrdata = malloc(hdrlen);
+  if (hdrdata == NULL) goto fail;
+
+  if (ngdb_hdr_get_data(ngdb, hdrdata))         goto fail;
+  if (graph_trail_init(graph))                  goto fail;
+  if (graph_trail_import(graph, hdrdata, "\n")) goto fail;
+
+  return 0;
+  
+fail:
+  if (hdrdata != NULL) free(hdrdata);
   return 1;
 }
 
@@ -182,21 +210,35 @@ fail:
 
 uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
 
-  void    *data;
   uint16_t len;
+  uint8_t *data;
+  char    *delim = "\n";
 
-  data = g->data;
-  len  = g->datalen;
+  data = NULL;
 
-  if (data == NULL || len == 0) return 0;
+  if (!graph_trail_exists(g)) return 0;
 
-  if (len > NGDB_HDR_DATA_SIZE) len = NGDB_HDR_DATA_SIZE;
+  len = graph_trail_total_len(g) +
+       (graph_trail_num_msgs(g)-1) * strlen(delim) + 1;
+
+  data = calloc(len, 1);
+  if (data != NULL) goto fail;
+
+  if (graph_trail_export(g, data, delim)) goto fail;
+
+  if (len > NGDB_HDR_DATA_SIZE) {
+    len = NGDB_HDR_DATA_SIZE;
+    data[len-1] = '\0';
+  }
 
   if (ngdb_hdr_set_data(ngdb, data, len)) goto fail;
 
-  return 0;
+  free(data);
 
+  return 0;
+  
 fail:
+  if (data != NULL) free(data);
   return 1;
 }
 

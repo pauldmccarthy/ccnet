@@ -13,6 +13,7 @@
 
 #define _GRAPH_CTX_SIZE_             5
 #define _GRAPH_STATS_CACHE_CTX_LOC_  1
+#define _GRAPH_TRAIL_CTX_LOC_        2
 
 /**
  * Graph flag bit locations.
@@ -33,10 +34,6 @@ typedef struct _graph {
   array_t        *neighbours;    /**< neighbours for each node           */
   array_t        *weights;       /**< weights for each edge              */
   uint16_t        flags;         /**< graph flags                        */
-  void           *data;          /**< place to store data associated
-                                      with the graph, such as a human
-                                      readable description               */
-  uint16_t        datalen;       /**< length of data                     */
 
   array_t         event_listeners; /**< array of registered event listeners */
 

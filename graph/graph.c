@@ -144,8 +144,6 @@ uint8_t graph_create(graph_t *g, uint32_t numnodes, uint8_t directed) {
 
   memset(g, 0, sizeof(graph_t));
   g->numnodes = numnodes;
-  g->data     = NULL;
-  g->datalen  = 0;
   g->flags    = 0;
 
   if (directed) g->flags |= 1 << GRAPH_FLAG_DIRECTED;

@@ -47,7 +47,7 @@ void _log_free(void *vlog) {
 
   for (i = 0; i < log->size; i++) {
 
-    msg = array_getd(log, i);
+    msg = *(char **)array_getd(log, i);
     if (msg != NULL) free(msg);
   }
 
@@ -86,10 +86,10 @@ uint8_t graph_log_add(graph_t *g, char *msg) {
 
   msgcpy = malloc(len+1);
   if (msgcpy == NULL) goto fail;
-
+  
   strcpy(msgcpy, msg);
 
-  if (array_append(log, &msg)) goto fail;
+  if (array_append(log, &msgcpy)) goto fail;
 
   return 0;
   
@@ -100,29 +100,92 @@ fail:
 
 uint16_t graph_log_total_len(graph_t *g) {
 
+  uint64_t i;
+  uint16_t len;  
   array_t *log;
   char    *msg;
-  uint64_t i;
-  uint32_t len;
 
+  len = 0;
   log = g->ctx[_GRAPH_LOG_CTX_LOC_];
 
   if (log == NULL) return 0;
 
+  for (i = 0; i < log->size; i++) {
+    
+    msg = *(char **)array_getd(log, i);
+    len += strlen(msg);
+  }
 
-  //for (i = 0; i <
-
-  return 0;
+  return len;
 }
 
-uint8_t graph_log_import(graph_t *g, uint8_t *data, char *delim) {
+uint8_t graph_log_import(graph_t *g, char *data, char *delim) {
+
+  int32_t  len;
+  uint16_t dlen;
+  array_t *log;
+  char    *msg;
+  char    *substr;
+  uint16_t substrlen;
+
+  msg  = NULL;
+  log  = g->ctx[_GRAPH_LOG_CTX_LOC_];
+  len  = strlen(data);
+  dlen = strlen(delim);
+
+  if (log == NULL) return 0;
+  
+  while (len > 0) {
+    
+    substr = strstr(data, delim);
+
+    if (substr == NULL) substrlen = len;
+    else                substrlen = substr - data;
+
+    msg = calloc(substrlen+1, 1);
+    if (msg == NULL) goto fail;
+
+    memcpy(msg, data, substrlen);
+    msg[substrlen] = '\0';
+
+    if (array_append(log, &msg)) goto fail;
+
+    data += (substrlen + dlen);
+    len  -= (substrlen + dlen);
+  }
 
   return 0;
+  
+fail:
+  return 1;
 }
 
-uint8_t graph_log_export(graph_t *g, uint8_t *dest, char *delim) {
+void graph_log_export(graph_t *g, char *dest, char *delim) {
 
-  return 0;
+  uint32_t i;
+  array_t *log;
+  uint16_t dlen;
+  uint16_t len;
+  char    *msg;
+
+  dlen = strlen(delim);
+  log  = g->ctx[_GRAPH_LOG_CTX_LOC_];
+  
+  if (log == NULL) return;
+
+  for (i = 0; i < log->size; i++) {
+    
+    msg = *(char **)array_getd(log, i);
+    len = strlen(msg);
+
+    memcpy(dest, msg, len);
+    dest += len;
+    
+    if (i < log->size - 1) {
+      memcpy(dest, delim, dlen);
+      dest += dlen;
+    }
+  }
+
+  dest[0] = '\0';
 }
-
-

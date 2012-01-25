@@ -94,9 +94,9 @@ static uint8_t _read_hdr(ngdb_t *ngdb, graph_t *graph) {
   hdrdata = malloc(hdrlen);
   if (hdrdata == NULL) goto fail;
 
-  if (ngdb_hdr_get_data(ngdb, hdrdata))       goto fail;
-  if (graph_log_init(graph))                  goto fail;
-  if (graph_log_import(graph, hdrdata, "\n")) goto fail;
+  if (ngdb_hdr_get_data(ngdb, hdrdata))               goto fail;
+  if (graph_log_init(graph))                          goto fail;
+  if (graph_log_import(graph, (char *)hdrdata, "\n")) goto fail;
 
   return 0;
   
@@ -224,12 +224,14 @@ uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
   data = calloc(len, 1);
   if (data != NULL) goto fail;
 
-  if (graph_log_export(g, data, delim)) goto fail;
+  graph_log_export(g, (char *)data, delim);
 
   if (len > NGDB_HDR_DATA_SIZE) {
     len = NGDB_HDR_DATA_SIZE;
     data[len-1] = '\0';
   }
+
+  
 
   if (ngdb_hdr_set_data(ngdb, data, len)) goto fail;
 

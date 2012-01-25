@@ -48,13 +48,13 @@ uint16_t graph_log_total_len(
 
 /**
  * Copies all of the messages from the given data, adding them to the log
- * for the graph.
+ * for the graph. The data are assumed to be '\0' terminated.
  *
  * \return 0 on success, non-0 on failure.
  */
 uint8_t graph_log_import(
   graph_t *g,    /**< graph to import to         */
-  uint8_t *data, /**< data to parse              */
+  char    *data, /**< data to parse              */
   char    *delim /**< delimiter between messages */
 );
 
@@ -64,13 +64,11 @@ uint8_t graph_log_import(
  * must have enough space to store this many bytes:
  *
  *   graph_log_total_len(g) + (graph_log_num_msgs(g)-1)*strlen(delim) + 1
- *
- * \return 0 on success, non-0 on failure.
  */
-uint8_t graph_log_export(
+void graph_log_export(
   graph_t *g,    /**< the graph           */
-  uint8_t *dest, /**< place to put string */
-  char    *delim /**< delimiter string    */
+  char    *dest, /**< place to put string */
+  char    *delim /**< delimiter character */
 );
 
 #endif

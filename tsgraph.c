@@ -14,9 +14,9 @@
 #include "io/ngdb_graph.h"
 #include "util/startup.h"
 #include "graph/graph.h"
+#include "graph/graph_trail.h"
 
-#define MAX_LABELS         50
-#define NGDB_HDR_DATA_SIZE 512
+#define MAX_LABELS 50
 
 typedef struct __args {
 
@@ -114,6 +114,17 @@ static int64_t _apply_label_mask(
 );
 
 /**
+ * \return 1 if the label should be included, 0 otherwise.
+ */
+static uint8_t _check_label(
+  double   *inclbls,  /**< include only labels in this list */
+  double   *exclbls,  /**< exclude labels in this list      */
+  uint8_t   ninclbls, /**< number of labels in include list */
+  uint8_t   nexclbls, /**< number of labels in include list */
+  double    lblval    /**< label to check                   */
+);
+
+/**
  * Adds edges between the nodes in the graph, according to the correlation
  * values in the matrix file.
  *
@@ -128,7 +139,6 @@ static uint8_t _connect_graph(
   uint8_t   absval     /**< use absolute correlation value       */
 );
 
-
 int main (int argc, char *argv[]) {
 
   args_t      args;
@@ -136,23 +146,31 @@ int main (int argc, char *argv[]) {
   mat_t      *mat;
   graph_t     graph;
   uint32_t   *nodes;
+  uint16_t    mathdrlen;
+  char       *mathdrmsg;
   int64_t     nnodes;
 
-  nodes = NULL;
+  mathdrmsg = NULL;
+  nodes     = NULL;
 
   memset(&args, 0, sizeof(args));
   args.threshold = 0.9;
 
   startup("tsgraph", argc, argv, &argp, &args);
 
+  /*open mat file*/
   mat = mat_open(args.input);
   if (mat == NULL) {
     printf("error opening mat file %s\n", args.input);
     goto fail;
   }
 
+  /*figure out which rows/columns to include*/
   nodes = calloc(mat_num_rows(mat), sizeof(uint32_t));
-  if (nodes == NULL) goto fail;
+  if (nodes == NULL) {
+    printf("out of memory?!?\n");
+    goto fail;
+  }
   
   nnodes = _apply_label_mask(
     mat,
@@ -162,13 +180,19 @@ int main (int argc, char *argv[]) {
     args.nexclbls,
     nodes);
   
-  if (nnodes < 0) goto fail;
+  if (nnodes < 0) {
+    printf("error masking rows/columns\n");
+    goto fail;
+  }
 
+  /*create graph */
   if (graph_create(&graph, nnodes, args.directed)) {
     printf("error creating graph\n");
     goto fail;
   }
+  if (graph_trail_init(&graph)) goto fail;
 
+  /*connect graph */
   if (_connect_graph(
         mat,
         &graph,
@@ -180,6 +204,29 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
+  /*write header message, including header from mat file*/
+  mathdrlen = mat_hdr_data_size(mat);
+  mathdrmsg = calloc(mathdrlen, 1);
+  if (mathdrmsg == NULL) {
+    printf("out of memory?!?\n");
+    goto fail;
+  }
+  
+  if (mat_read_hdr_data(mat, mathdrmsg)) {
+    printf("error reading header data from %s\n", args.input);
+    goto fail;
+  }
+
+  if (graph_trail_add(&graph, mathdrmsg))   {
+    printf("error adding header message: %s\n", mathdrmsg);
+    goto fail;
+  }
+  if (graph_trail_add(&graph, args.hdrmsg)) {
+    printf("error adding header message: %s\n", args.hdrmsg);
+    goto fail;
+  }
+  
+  /*write graph to file*/
   if (ngdb_write(&graph, args.output)) {
     printf("error writing graph to %s\n", args.output);
     goto fail;
@@ -191,8 +238,7 @@ int main (int argc, char *argv[]) {
   return 0;
 
 fail:
-  mat_close(mat);
-  if (nodes != NULL) free(nodes);
+  if (nodes  != NULL) free(nodes);
   return 1;
 }
 
@@ -203,6 +249,54 @@ int64_t _apply_label_mask(
   uint8_t   ninclbls,
   uint8_t   nexclbls,
   uint32_t *nodes) {
+
+  uint64_t      i;
+  uint32_t      nrows;
+  uint32_t      nnodes;
+  graph_label_t lbl;
+
+  nrows = mat_num_rows(mat);
+
+  if (ninclbls == 0 && nexclbls == 0) {
+    
+    for (i = 0; i < nrows; i++) nodes[i] = i;
+    return nrows;
+  }
+
+  for (i = 0, nnodes = 0; i < nrows; i++) {
+    
+    if (mat_read_row_label(mat, i, &lbl)) goto fail;
+
+    if (_check_label(inclbls, exclbls, ninclbls, nexclbls, lbl.labelval))
+      nodes[nnodes++] = i;
+  }
+
+  return nnodes;
+
+fail:
+  return -1;
+}
+
+uint8_t _check_label(
+  double   *inclbls,
+  double   *exclbls,
+  uint8_t   ninclbls,
+  uint8_t   nexclbls,
+  double    lblval) {
+
+  uint64_t i;
+
+  if (ninclbls == 0 && nexclbls == 0) return 1;
+
+  for (i = 0; i < nexclbls; i++) {
+    if (lblval == exclbls[i]) return 0;
+  }
+
+  if (ninclbls == 0) return 1;
+
+  for (i = 0; i < ninclbls; i++) {
+    if (lblval == inclbls[i]) return 1;
+  }
 
   return 0;
 }

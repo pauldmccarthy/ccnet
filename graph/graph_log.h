@@ -40,6 +40,14 @@ uint16_t graph_log_num_msgs(
 );
 
 /**
+ * \return a pointer to the specified message.
+ */
+char * graph_log_get_msg(
+  graph_t *g, /**< graph to query */
+  uint16_t i  /**< message index  */
+);
+
+/**
  * \return the total length, combined, of all the messages in the log.
  */
 uint16_t graph_log_total_len(

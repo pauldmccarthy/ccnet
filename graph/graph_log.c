@@ -72,6 +72,18 @@ uint16_t graph_log_num_msgs(graph_t *g) {
   return 0;
 }
 
+char * graph_log_get_msg(graph_t *g, uint16_t i) {
+
+  array_t *log;
+
+  log = g->ctx[_GRAPH_LOG_CTX_LOC_];
+  
+  if (log == NULL)      return NULL;
+  if (i   >= log->size) return NULL;
+
+  return *(char **)array_getd(log, i);
+}
+
 uint8_t graph_log_add(graph_t *g, char *msg) {
 
   array_t *log;

@@ -217,11 +217,11 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  if (graph_log_add(&graph, mathdrmsg))   {
+  if ((strlen(mathdrmsg) > 0) && graph_log_add(&graph, mathdrmsg))   {
     printf("error adding header message: %s\n", mathdrmsg);
     goto fail;
   }
-  if (graph_log_add(&graph, args.hdrmsg)) {
+  if ((args.hdrmsg != NULL) && graph_log_add(&graph, args.hdrmsg)) {
     printf("error adding header message: %s\n", args.hdrmsg);
     goto fail;
   }

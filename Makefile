@@ -57,7 +57,8 @@ exes=dumpimg    \
      dumpvolume \
      tsmat      \
      dumpmat    \
-     tsgraph
+     tsgraph    \
+     dumpngdb
 
 
 default: $(exes)

@@ -307,8 +307,28 @@ uint8_t _connect_graph(
   uint32_t *nodes,
   uint32_t  nnodes,
   double    threshold,
-  uint8_t   absval
-) {
+  uint8_t   absval) {
+
+  uint64_t i;
+  uint64_t j;
+  double   corrval;
+
+  for (i = 0; i < nnodes; i++) {
+    for (j = i+1; j < nnodes; j++) {
+
+      corrval = mat_read_elem(mat, nodes[i], nodes[j]);
+
+      if (absval) corrval = abs(corrval);
+
+      if (corrval >= threshold) {
+        if (graph_add_edge(graph, i, j, corrval))
+          goto fail;
+      }
+    }
+  }
 
   return 0;
+  
+fail:
+  return 1;
 }

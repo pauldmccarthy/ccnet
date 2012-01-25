@@ -222,7 +222,7 @@ uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
        (graph_log_num_msgs(g)-1) * strlen(delim) + 1;
 
   data = calloc(len, 1);
-  if (data != NULL) goto fail;
+  if (data == NULL) goto fail;
 
   graph_log_export(g, (char *)data, delim);
 
@@ -230,8 +230,6 @@ uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
     len = NGDB_HDR_DATA_SIZE;
     data[len-1] = '\0';
   }
-
-  
 
   if (ngdb_hdr_set_data(ngdb, data, len)) goto fail;
 

@@ -11,7 +11,7 @@
 #include "io/ngdb.h"
 #include "graph/graph.h"
 
-#define NGDB_HDR_DATA_SIZE 2048
+#define NGDB_HDR_DATA_SIZE 8192
 
 /**
  * Loads the graph contained in the given 

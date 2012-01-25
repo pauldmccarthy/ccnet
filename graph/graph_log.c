@@ -3,9 +3,11 @@
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
+#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "util/array.h"
 #include "graph/graph.h"
 #include "graph/graph_log.h"
 
@@ -74,17 +76,41 @@ uint8_t graph_log_add(graph_t *g, char *msg) {
 
   array_t *log;
   char    *msgcpy;
+  uint32_t len;
 
-  log = g->ctx[_GRAPH_LOG_CTX_LOC_];
+  msgcpy = NULL;
+  len    = strlen(msg);
+  log    = g->ctx[_GRAPH_LOG_CTX_LOC_];
+  
   if (log == NULL) return 0;
-  
 
-  
+  msgcpy = malloc(len+1);
+  if (msgcpy == NULL) goto fail;
+
+  strcpy(msgcpy, msg);
+
+  if (array_append(log, &msg)) goto fail;
 
   return 0;
+  
+fail:
+  if (msgcpy!= NULL) free(msgcpy);
+  return 1;
 }
 
 uint16_t graph_log_total_len(graph_t *g) {
+
+  array_t *log;
+  char    *msg;
+  uint64_t i;
+  uint32_t len;
+
+  log = g->ctx[_GRAPH_LOG_CTX_LOC_];
+
+  if (log == NULL) return 0;
+
+
+  //for (i = 0; i <
 
   return 0;
 }

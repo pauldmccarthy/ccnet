@@ -11,6 +11,7 @@
 #include <argp.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 typedef struct args {
 
@@ -87,7 +88,7 @@ int main (int argc, char *argv[]) {
   hd = NULL;  
 
   memset(&args, 0, sizeof(args_t));
-  argp_parse(&argp, argc, argv, 0, 0, &args);
+  startup("mkhdr", argc, argv, &argp, &args);
 
   if (_fill_hdr(&hdr, &args)) {
     printf("There's a problem with the input arguments\n");

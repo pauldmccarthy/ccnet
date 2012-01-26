@@ -13,6 +13,7 @@
 #include <errno.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 static void print_datatype(uint16_t datatype);
 
@@ -41,6 +42,8 @@ int main(int argc, char *argv[]) {
   uint8_t  shout;
 
   shout = 0;
+
+  startup("dumphdr", argc, argv, NULL, NULL);
 
   if (argc != 2 && argc != 3) {
     printf("usage: dumphdr file.hdr [-s]\n");

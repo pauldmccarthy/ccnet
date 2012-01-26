@@ -11,6 +11,7 @@
 
 #include "io/analyze75.h"
 #include "io/nifti1.h"
+#include "util/startup.h"
 
 #define MAX(X,Y) ((X > Y) ? (X) : (Y))
 
@@ -20,6 +21,8 @@ int main (int argc, char *argv[]) {
   dsr_t        ahdr;
   char        *infile;
   char        *outfile;
+
+  startup("cnvnifti", argc, argv, NULL, NULL);
 
   if (argc != 3) {
     printf("usage: cnvnifti infile outfile\n");

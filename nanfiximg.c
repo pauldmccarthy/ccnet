@@ -13,6 +13,7 @@
 #include <argp.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 static uint8_t _nanfix(dsr_t *hdr, uint8_t *img); 
 
@@ -21,6 +22,8 @@ int main(int argc, char *argv[]) {
   dsr_t    hdr;
   uint8_t *img;
   uint16_t datatype;
+
+  startup("nanfiximg", argc, argv, NULL, NULL);
 
   if (argc != 3) {
     printf("usage: nanfiximg infile outfile\n");

@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 static void _scaleimg(dsr_t *hdr, uint8_t *img, double scale);
 
@@ -20,6 +21,8 @@ int main(int argc, char *argv[]) {
   double   scale;
 
   img  = NULL;
+
+  startup("scaleimg", argc, argv, NULL, NULL);
 
   if (argc != 4) {
     printf("usage: scaleimg input output scalefactor\n");

@@ -13,6 +13,7 @@
 #include <argp.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 static void _print_val(dsr_t *hdr, uint8_t *data, uint32_t *dims);
 
@@ -28,6 +29,8 @@ int main (int argc, char *argv[]) {
   uint32_t idx[4];
 
   memset(idx, 0, sizeof(idx));
+
+  startup("extval", argc, argv, NULL, NULL);
 
   if (argc < 6 || argc % 3) {
     printf("usage: extval file.img (r|v) x y z [x y z [...]]\n" 

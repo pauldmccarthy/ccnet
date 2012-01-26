@@ -14,6 +14,7 @@
 #include <errno.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 /**
  * argp callback function; parses a single argument value.
@@ -72,7 +73,7 @@ int main (int argc, char *argv[]) {
   newimg      = NULL;
   args.format = 16;
 
-  argp_parse(&argp, argc, argv, 0, 0, &args);
+  startup("cnvimg", argc, argv, &argp, &args);
 
   /*
    * 1. read header and image

@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 /**
  * Updates the given header so that the specified field has the new value.
@@ -36,6 +37,8 @@ int main(int argc, char *argv[]) {
 
   dsr_t    hdr;
   uint64_t i;
+
+  startup("patchhdr", argc, argv, NULL, NULL);
 
   if (argc < 4 || argc % 2) {
     printf("usage: patchhdr file field newvalue [field2 newvalue2 [...]]\n");

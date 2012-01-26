@@ -13,6 +13,7 @@
 #include <errno.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 #define MAX_SHIFTS 50
 
@@ -116,7 +117,7 @@ int main (int argc, char *argv[]) {
 
   arguments.wrap    = 0;
   arguments.nshifts = 0;
-  argp_parse(&argp, argc, argv, 0, 0, &arguments);
+  startup("shiftimg", argc, argv, &argp, &arguments);
 
   if (analyze_load(arguments.input, &inhdr, &inimg)) {
     printf("error reading %s\n", arguments.input);

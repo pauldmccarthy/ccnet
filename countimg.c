@@ -12,6 +12,7 @@
 #include <errno.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 int main(int argc, char *argv[]) {
 
@@ -26,6 +27,8 @@ int main(int argc, char *argv[]) {
   count     = 0;
   threshold = 0;
   data      = NULL;
+
+  startup("countimg", argc, argv, NULL, NULL);
 
   if (argc != 3) {
     printf("usage: countimg threshold file.img\n");

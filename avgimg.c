@@ -15,6 +15,7 @@
 #include <float.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 
 /**
  * Loads all of the specified images into memory. Space is allocated
@@ -55,6 +56,8 @@ int main (int argc, char *argv[]) {
   uint8_t  *avgimg;
   dsr_t     avghdr;
   uint16_t  i;
+
+  startup("avgimg", argc, argv, NULL, NULL);
 
   if (argc < 4) {
     printf("usage: avgimg format output input1 [input2 ...]\n");

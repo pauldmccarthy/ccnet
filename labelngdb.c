@@ -15,7 +15,7 @@
 #include "io/analyze75.h"
 #include "io/ngdb_graph.h"
 
-typedef struct __args {
+typedef struct _args {
   char *input;
   char *output;
   char *labelf;

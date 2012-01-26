@@ -10,6 +10,7 @@
 #include <float.h>
 
 #include "io/analyze75.h"
+#include "util/startup.h"
 #include "util/suffix.h"
 #include "util/filesize.h"
 
@@ -45,6 +46,8 @@ int main (int argc, char *argv[]) {
   float     dimsz;
 
   hdrs = NULL;
+
+  startup("catimg", argc, argv, NULL, NULL);
 
   if (argc < 5) {
     printf("usage: catimg output dimsz input input [input ...]\n");

@@ -12,6 +12,7 @@
 
 #include "io/analyze75.h"
 #include "util/filesize.h"
+#include "util/startup.h"
 
 /**
  * Splits the given volume into a series of images.
@@ -44,6 +45,8 @@ int main (int argc, char *argv[]) {
   pref = 1;
 
   img = NULL;
+
+  startup("cutimg", argc, argv, NULL, NULL);
 
   if (argc != 3 && argc != 4) {
     printf("usage: cutimg input outdir [prefix]\n");
@@ -121,6 +124,7 @@ void _mk_hdr(dsr_t *inhdr, dsr_t *outhdr, uint8_t *img, uint32_t imgsz) {
 
   memcpy(outhdr, inhdr, sizeof(dsr_t));
 
+  outhdr->dime.dim   [0]     = ndims-1;
   outhdr->dime.dim   [ndims] = 1;
   outhdr->dime.pixdim[ndims] = 0.0;
 }

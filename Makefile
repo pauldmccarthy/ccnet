@@ -58,7 +58,8 @@ exes=dumpimg    \
      tsmat      \
      dumpmat    \
      tsgraph    \
-     dumpngdb
+     dumpngdb   \
+     labelngdb
 
 
 default: $(exes)

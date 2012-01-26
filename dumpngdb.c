@@ -112,8 +112,44 @@ void _meta(graph_t *g) {
 
 void _labels(graph_t *g) {
 
+  graph_label_t *lbl;
+  uint32_t       nnodes;
+  uint64_t       i;
+
+  nnodes = graph_num_nodes(g);
+
+  for (i = 0; i < nnodes; i++) {
+    
+    lbl = graph_get_nodelabel(g, i);
+
+    printf(
+      "node %5llu: %0.3f %0.3f %0.3f %u\n",
+      i, lbl->xval, lbl->yval, lbl->zval, lbl->labelval);
+  }
+
 }
 
 void _graph(graph_t *g) {
 
+  uint64_t  i;
+  uint64_t  j;
+  uint32_t  nnodes;
+  uint32_t  nnbrs;
+  uint32_t *nbrs;
+
+  nnodes = graph_num_nodes(g);
+
+  for (i = 0; i < nnodes; i++) {
+
+    nnbrs = graph_num_neighbours(g, i);
+    nbrs  = graph_get_neighbours(g, i);
+
+    printf("%5llu: ", i);
+
+    for (j = 0; j < nnbrs; j++) {
+      printf("%5u", nbrs[j]);
+      if (j < nnbrs-1) printf(" ");
+    }
+    printf("\n");
+  }
 }

@@ -4,6 +4,7 @@
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
+#include <math.h>
 #include <argp.h>
 #include <stdio.h>
 #include <string.h>
@@ -139,6 +140,18 @@ static uint8_t _connect_graph(
   uint8_t   absval     /**< use absolute correlation value       */
 );
 
+/**
+ * Copies the row labels from the mat file to the graph.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _copy_labels(
+  mat_t    *mat,   /**< mat file                     */
+  graph_t  *graph, /**< initialised graph            */
+  uint32_t *nodes, /**< row/column ids into mat file */
+  uint32_t  nnodes /**< number of nodes              */
+);
+
 int main (int argc, char *argv[]) {
 
   args_t      args;
@@ -201,6 +214,12 @@ int main (int argc, char *argv[]) {
         args.threshold,
         args.absval)) {
     printf("error connecting graph\n");
+    goto fail;
+  }
+
+  /*copy row labels into graph*/
+  if (_copy_labels(mat, &graph, nodes, nnodes)) {
+    printf("error copying labels\n");
     goto fail;
   }
 
@@ -317,8 +336,7 @@ uint8_t _connect_graph(
     for (j = i+1; j < nnodes; j++) {
 
       corrval = mat_read_elem(mat, nodes[i], nodes[j]);
-
-      if (absval) corrval = abs(corrval);
+      if (absval) corrval = fabs(corrval);
 
       if (corrval >= threshold) {
         if (graph_add_edge(graph, i, j, corrval))
@@ -329,6 +347,24 @@ uint8_t _connect_graph(
 
   return 0;
   
+fail:
+  return 1;
+}
+
+uint8_t _copy_labels(
+  mat_t *mat, graph_t *g, uint32_t *nodes, uint32_t nnodes) {
+
+  uint64_t      i;
+  graph_label_t lbl;
+
+  for (i = 0; i < nnodes; i++) {
+
+    if (mat_read_row_label( mat, nodes[i], &lbl)) goto fail;
+    if (graph_set_nodelabel(g,   i,        &lbl)) goto fail;
+  }
+
+  return 0;
+
 fail:
   return 1;
 }

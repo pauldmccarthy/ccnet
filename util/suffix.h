@@ -46,4 +46,23 @@ char * join_path(
   char *name  /**< file name      */
 );
 
+
+/**
+ * Extracts the leading directory name from the given path, storing it
+ * in the dir pointer.
+ */
+void dirname(
+  char *path, /**< input file name         */
+  char *dir   /**< place to store dir name */
+);
+
+/**
+ * Strips leading directories and slashes from the given file name. 
+ *
+ * \return a pointer into the path string, at the start of the file name.
+ */
+char * basename(
+  char *path /**< path to strip */
+);
+
 #endif

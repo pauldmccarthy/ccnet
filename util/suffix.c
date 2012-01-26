@@ -140,3 +140,31 @@ fail:
   if (joined != NULL) free(joined);
   return NULL;
 }
+
+
+void dirname(char *path, char *dir) {
+
+  char *bn;
+
+  bn = strrchr(path, '/');
+
+  if (bn == NULL) dir[0] = '\0';
+  
+  else {
+    
+    strncpy(dir, path, bn - path + 1);
+    dir[bn - path + 1] = '\0';
+  }
+}
+
+char * basename(char *path) {
+
+  char *bn;
+
+  bn = strrchr(path, '/');
+
+
+  if (bn == NULL) return path;
+  else            return bn + 1;
+}
+p

@@ -28,6 +28,7 @@ typedef struct _args {
   uint16_t dt;
   double   lo;
   double   hi;
+  uint8_t  re;
   
 } args_t;
 
@@ -53,6 +54,7 @@ static struct argp_option options[] = {
   {"dt", 't', "INT",   0, "data type"},
   {"lo", 'l', "FLOAT", 0, "minimum value"},
   {"hi", 'h', "FLOAT", 0, "maximum value"},
+  {"re", 'r',  NULL,   0, "reverse endianness"},
   {0}
 };
 
@@ -73,6 +75,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
     case 't': args->dt = atoi(arg); break;
     case 'l': args->lo = atof(arg); break;
     case 'h': args->hi = atof(arg); break;
+    case 'r': args->re = 1;         break;
       
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) args->output = arg;
@@ -91,14 +94,15 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 }
 
 /**
- * Creates a file name for the given image.
+ * Creates a file name for the given image. Caller is responsible for freeing
+ * the memory after use.
  *
- * \return 0 on success, non-0 on failure.
+ * \return pointer to a string on success, NULL on failure.
  */
-static uint8_t _file_name(
-  uint16_t tn,  /**< total number of values in time series */
-  uint16_t ti,  /**< number of current value               */
-  char    *name /**< place to put file name                */
+static char * _file_name(
+  char    *outdir, /**< output directory                      */
+  uint16_t tn,     /**< total number of values in time series */
+  uint16_t ti      /**< number of current value               */
 );
 
 /**
@@ -112,12 +116,25 @@ static uint8_t _create_image(
   args_t   *args /**< program arguments                                     */
 );
 
+/**
+ * Scales the value to lie within the given range.
+ *
+ * \return the scaled value.
+ */
+static double _scale_val(
+  double val,   /**< value to scale             */
+  double oldlo, /**< minimum value in old scale */
+  double oldhi, /**< maximum value in old scale */
+  double newlo, /**< minimum value in new scale */
+  double newhi  /**< maximum value in new scale */
+);
+
 int main(int argc, char *argv[]) {
 
   uint32_t    i;
   dsr_t       hdr;
   uint8_t    *img;
-  char        fname[20];
+  char       *fname;
   args_t      args;
   struct argp argp = {options, _parse_opt, "OUTDIR", doc};
 
@@ -127,10 +144,14 @@ int main(int argc, char *argv[]) {
 
   for (i = 0; i < args.tn; i++) {
 
-    if (_file_name(args.tn+args.ts, i+args.ts, fname)) {
+    fname = _file_name(args.output, args.tn+args.ts, i+args.ts);
+
+    if (fname == NULL) {
       printf("error generating file name (series too long?)\n");
       goto fail;
     }
+
+    printf("creating image %s\n", fname);
 
     if (_create_image(&hdr, &img, &args)) {
       printf("error creating image (%s)\n", fname);
@@ -158,22 +179,93 @@ fail:
   return 1;
 }
 
-uint8_t _file_name(uint16_t tn, uint16_t ti, char *name) {
+char * _file_name(char *outdir, uint16_t tn, uint16_t ti) {
 
   uint8_t fmtlen;
-  char    fmtstr[10];
+  char   *fmtstr;
+  char   *fname;
+
+  fmtstr = NULL;
+  fname  = NULL;
 
   fmtlen = ((int)log10(tn)) + 1;
 
-  if (fmtlen > 9) return 1;
+  if (fmtlen > 9) goto fail;
 
-  sprintf(fmtstr, "%%%02uu", fmtlen);
-  sprintf(name,   fmtstr,    ti);
+  fmtstr = malloc(strlen(outdir) + 7);
+  if (fmtstr == NULL) goto fail;
 
-  return 0;
+  sprintf(fmtstr, "%s/%%%02uu", outdir, fmtlen);
+
+  fname = malloc(strlen(outdir) + fmtlen + 3);
+  if (fname == NULL) goto fail;
+  
+  sprintf(fname, fmtstr, ti);
+
+  free(fmtstr);
+  return fname;
+  
+fail:
+  
+  if (fmtstr != NULL) free(fmtstr);
+  if (fname  != NULL) free(fname);
+
+  return NULL;
 }
 
 uint8_t _create_image(dsr_t *hdr, uint8_t **img, args_t *args) {
 
+  uint64_t i;
+  uint32_t nvals;
+  uint8_t  valsz;
+  uint8_t *limg;
+  double   val;
+
+  memset(hdr, 0, sizeof(dsr_t));
+  limg  = NULL;
+  valsz = analyze_datatype_size(args->dt);
+
+  hdr->hk.sizeof_hdr  = 348;
+  hdr->dime.dim   [0] = 3;
+  hdr->dime.dim   [1] = args->xn;
+  hdr->dime.dim   [2] = args->yn;
+  hdr->dime.dim   [3] = args->zn;
+  
+  hdr->dime.pixdim[1] = args->xl;
+  hdr->dime.pixdim[2] = args->yl;
+  hdr->dime.pixdim[3] = args->zl;
+
+  hdr->dime.datatype = args->dt;
+  hdr->dime.bitpix   = valsz * 8;
+  hdr->rev           = args->re;
+
+  nvals = analyze_num_vals(hdr);
+
+  limg = malloc(nvals*valsz);
+  if (limg == NULL) goto fail;
+
+  for (i = 0; i < nvals; i++) {
+    
+    val = rand();
+    val = _scale_val(val, 0, RAND_MAX, args->lo, args->hi);
+
+    analyze_write_by_idx(hdr, limg, i, val);
+  }
+
+  *img = limg;
   return 0;
+  
+fail:
+  if (limg != NULL) free(limg);
+  return 1;
+}
+
+double _scale_val(
+  double val, double oldlo, double oldhi, double newlo, double newhi) {
+
+  val -= oldlo;
+  val *= (newhi - newlo) / (oldhi - oldlo);
+  val += newlo;
+
+  return val;
 }

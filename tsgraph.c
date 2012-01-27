@@ -203,7 +203,6 @@ int main (int argc, char *argv[]) {
     printf("error creating graph\n");
     goto fail;
   }
-  if (graph_log_init(&graph)) goto fail;
 
   /*connect graph */
   if (_connect_graph(
@@ -234,6 +233,13 @@ int main (int argc, char *argv[]) {
   if (mat_read_hdr_data(mat, mathdrmsg)) {
     printf("error reading header data from %s\n", args.input);
     goto fail;
+  }
+
+  if ((strlen(mathdrmsg) > 0) || args.hdrmsg != NULL) {
+    if (graph_log_init(&graph)) {
+      printf("error initialising graph log\n");
+      goto fail;
+    }
   }
 
   if ((strlen(mathdrmsg) > 0) && graph_log_add(&graph, mathdrmsg))   {

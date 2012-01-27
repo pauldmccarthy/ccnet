@@ -216,7 +216,8 @@ uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
 
   data = NULL;
 
-  if (!graph_log_exists(g)) return 0;
+  if (!graph_log_exists(g))        return 0;
+  if (graph_log_total_len(g) == 0) return 0;
 
   len = graph_log_total_len(g) +
        (graph_log_num_msgs(g)-1) * strlen(delim) + 1;

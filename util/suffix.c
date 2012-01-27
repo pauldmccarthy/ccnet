@@ -58,7 +58,6 @@ fail:
 
 void get_prefix(char *name, char *pref) {
 
-  int32_t  i;
   uint16_t len;
   char    *bn;
   char    *pref_end;

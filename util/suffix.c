@@ -60,28 +60,23 @@ void get_prefix(char *name, char *pref) {
 
   int32_t  i;
   uint16_t len;
-  int32_t  pref_end;
+  char    *bn;
+  char    *pref_end;
 
   if (name == NULL) return;
   if (pref == NULL) return;
 
-  pref_end = -1;
+  pref_end = NULL;
+  bn       = basename(name);
   len      = strlen(name);
 
-  for (i = len-1; i >= 0; i--) {
+  pref_end = strrchr(bn, '.');
+  
+  if (pref_end == NULL) pref_end = name+len;
 
-    if (name[i] == '.') {
+  for (; name < pref_end; name++,pref++) *pref = *name;
 
-      pref_end = i;
-      break;
-    }
-  }
-
-  if (pref_end == -1) pref_end = len;
-
-  for (i = 0; i < pref_end; i++) pref[i] = name[i];
-
-  pref[pref_end] = '\0';
+  *pref = '\0';
 }
 
 void get_suffix(char *name, char *suf) {

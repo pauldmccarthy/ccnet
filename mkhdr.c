@@ -115,7 +115,7 @@ static uint8_t _fill_hdr(dsr_t *hdr, args_t *args) {
 
   hdr->hk.sizeof_hdr = 348;
 
-  hdr->dime.dim[0] = 4;
+  hdr->dime.dim[0] = 3;
   hdr->dime.dim[1] = args->xn;
   hdr->dime.dim[2] = args->yn;
   hdr->dime.dim[3] = args->zn;

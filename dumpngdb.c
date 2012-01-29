@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "graph/graph.h"
 #include "graph/graph_log.h"
@@ -68,6 +69,8 @@ int main(int argc, char *argv[]) {
   struct argp argp = {options, _parse_opt, "INPUT", doc};
   args_t      args; 
   graph_t     g;
+
+  memset(&args, 0, sizeof(args));
 
   startup("dumpngdb", argc, argv, &argp, &args);
 

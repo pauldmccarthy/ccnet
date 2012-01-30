@@ -300,9 +300,11 @@ int main (int argc, char *argv[]) {
     }
   }
 
-  if (_write_labels(&lblhdr, lblimg, mat, incvxls, nincvxls)) {
-    printf("error writing labels to %s\n", args.output);
-    goto fail;
+  if (lblimg != NULL) {
+    if (_write_labels(&lblhdr, lblimg, mat, incvxls, nincvxls)) {
+      printf("error writing labels to %s\n", args.output);
+      goto fail;
+    }
   }
 
   if (_mk_corr_matrix(&vol, mat, args.corrtype, incvxls, nincvxls)) {

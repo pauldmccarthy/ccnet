@@ -25,7 +25,7 @@
  * The amount by which an array's capacity is increased
  * when it runs out of space.
  */
-#define EXPAND_RATIO 1.5
+#define EXPAND_RATIO 1.2
 
 /**
  * Increases the capacity of the given array.

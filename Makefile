@@ -5,7 +5,7 @@ CFLAGS += -Wall
 CFLAGS += -pedantic 
 CFLAGS += -I.
 CFLAGS += -DGIT_REVISION="\"$(gitrev)\""
-CFLAGS += -DFILE_OFFSET_BITS_64
+CFLAGS += -D_FILE_OFFSET_BITS=64
 CFLAGS += -O3
 LDFLAGS = -lm
 

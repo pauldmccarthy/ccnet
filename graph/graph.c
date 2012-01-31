@@ -169,8 +169,8 @@ uint8_t graph_create(graph_t *g, uint32_t numnodes, uint8_t directed) {
   if (g->weights == NULL) goto fail;
 
   for (i = 0; i < numnodes; i++) {
-    if (array_create(&(g->neighbours[i]), sizeof(uint32_t), 10)) goto fail;
-    if (array_create(&(g->weights   [i]), sizeof(float),    10)) goto fail;
+    if (array_create(&(g->neighbours[i]), sizeof(uint32_t), 100)) goto fail;
+    if (array_create(&(g->weights   [i]), sizeof(float),    100)) goto fail;
 
     array_set_cmps(&(g->neighbours[i]), compare_u32, compare_u32_insert);
   }

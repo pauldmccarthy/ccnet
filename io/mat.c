@@ -275,9 +275,9 @@ uint8_t mat_read_row_label(mat_t *mat, uint64_t row, void *data) {
   if (row            >= mat->numrows) goto fail;
   if (mat->labelsize == 0)            goto fail;
 
-  if (_mat_seek_to(mat, MAT_SEEK_ROWLABEL))             goto fail;
-  if (fseek(mat->hd, (mat->labelsize) * row, SEEK_CUR)) goto fail;
-  if (fread(data, mat->labelsize, 1, mat->hd) != 1)     goto fail;
+  if (_mat_seek_to(mat, MAT_SEEK_ROWLABEL))              goto fail;
+  if (fseeko(mat->hd, (mat->labelsize) * row, SEEK_CUR)) goto fail;
+  if (fread(data, mat->labelsize, 1, mat->hd) != 1)      goto fail;
   
   return 0;
   
@@ -293,9 +293,9 @@ uint8_t mat_read_col_label(mat_t *mat, uint64_t col, void *data) {
   if (mat->labelsize == 0)            goto fail;
 
 
-  if (_mat_seek_to(mat, MAT_SEEK_COLLABEL))             goto fail;
-  if (fseek(mat->hd, (mat->labelsize) * col, SEEK_CUR)) goto fail;
-  if (fread(data, mat->labelsize, 1, mat->hd) != 1)     goto fail;
+  if (_mat_seek_to(mat, MAT_SEEK_COLLABEL))              goto fail;
+  if (fseeko(mat->hd, (mat->labelsize) * col, SEEK_CUR)) goto fail;
+  if (fread(data, mat->labelsize, 1, mat->hd) != 1)      goto fail;
 
   return 0;
   
@@ -446,9 +446,9 @@ uint8_t mat_write_row_label(mat_t *mat, uint64_t row, void *data) {
   if (mat->labelsize == 0)               goto fail;
   if (!mat_has_row_labels(mat))          goto fail;
 
-  if (_mat_seek_to(mat, MAT_SEEK_ROWLABEL))           goto fail;
-  if (fseek(mat->hd, (mat->labelsize)*row, SEEK_CUR)) goto fail;
-  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1)  goto fail;
+  if (_mat_seek_to(mat, MAT_SEEK_ROWLABEL))            goto fail;
+  if (fseeko(mat->hd, (mat->labelsize)*row, SEEK_CUR)) goto fail;
+  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1)   goto fail;
 
   return 0;
   
@@ -465,9 +465,9 @@ uint8_t mat_write_col_label(mat_t *mat, uint64_t col, void *data) {
   if (mat->labelsize == 0)               goto fail;
   if (!mat_has_col_labels(mat))          goto fail;
 
-  if (_mat_seek_to(mat, MAT_SEEK_COLLABEL))           goto fail;
-  if (fseek(mat->hd, (mat->labelsize)*col, SEEK_CUR)) goto fail;
-  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1)  goto fail; 
+  if (_mat_seek_to(mat, MAT_SEEK_COLLABEL))            goto fail;
+  if (fseeko(mat->hd, (mat->labelsize)*col, SEEK_CUR)) goto fail;
+  if (fwrite(data, mat->labelsize, 1, mat->hd) != 1)   goto fail; 
 
   return 0;
 
@@ -604,7 +604,7 @@ uint8_t _mat_seek(mat_t *mat, uint64_t row, uint64_t col) {
 
   offset = _mat_calc_offset(mat, row, col);
 
-  if (fseek(mat->hd, offset, SEEK_SET)) goto fail;
+  if (fseeko(mat->hd, offset, SEEK_SET)) goto fail;
 
   return 0;
   
@@ -634,7 +634,7 @@ uint8_t _mat_seek_to(mat_t *mat, mat_seek_loc_t what) {
     default: goto fail;
   }
 
-  if (fseek(mat->hd, off, SEEK_SET)) goto fail;
+  if (fseeko(mat->hd, off, SEEK_SET)) goto fail;
 
   return 0;
 

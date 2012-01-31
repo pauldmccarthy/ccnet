@@ -658,7 +658,7 @@ fail:
 
 static uint8_t _ngdb_read_hdr_data(ngdb_t *ngdb, uint8_t *data) {
 
-  if (fseek(ngdb->fid, 16, SEEK_SET)             != 0) goto fail;
+  if (fseeko(ngdb->fid, 16, SEEK_SET)            != 0) goto fail;
   if (fread(data, ngdb->hdata_len, 1, ngdb->fid) != 1) goto fail;
 
   return 0;
@@ -672,7 +672,7 @@ ngdb_t *ngdb, uint8_t *data, uint16_t dlen) {
   uint8_t tmp;
   tmp = 0;
 
-  if (fseek(ngdb->fid, 16, SEEK_SET)  != 0)  goto fail;
+  if (fseeko(ngdb->fid, 16, SEEK_SET)  != 0) goto fail;
   if (fwrite(data, dlen, 1, ngdb->fid) != 1) goto fail;
 
   for (; dlen < ngdb->hdata_len; dlen++) 
@@ -688,7 +688,7 @@ uint8_t _ngdb_read_node(ngdb_t *ngdb, uint32_t idx, node_t *node) {
   uint16_t sync;
 
   /*seek to the node*/
-  if (fseek(ngdb->fid, _ngdb_idx_to_addr(ngdb, idx), SEEK_SET) != 0)
+  if (fseeko(ngdb->fid, _ngdb_idx_to_addr(ngdb, idx), SEEK_SET) != 0)
     goto fail;
 
   /*check node sync bytes*/
@@ -729,7 +729,7 @@ uint8_t _ngdb_write_node(ngdb_t *ngdb, node_t *node) {
   dlen = node->dlen;
   tmp  = 0;
 
-  if (fseek(ngdb->fid, _ngdb_idx_to_addr(ngdb, node->idx), SEEK_SET) != 0)
+  if (fseeko(ngdb->fid, _ngdb_idx_to_addr(ngdb, node->idx), SEEK_SET) != 0)
     goto fail;
 
   sync = NGDB_NODE_SYNC;
@@ -762,7 +762,7 @@ uint8_t _ngdb_read_ref(ngdb_t *ngdb, uint32_t addr, ref_t *ref) {
   uint16_t sync;
 
   /*seek to the ref*/
-  if (fseek(ngdb->fid, addr, SEEK_SET) != 0) goto fail;
+  if (fseeko(ngdb->fid, addr, SEEK_SET) != 0) goto fail;
  
   /*check the ref sync*/
   if (fread(&sync, sizeof(sync), 1, ngdb->fid) != 1) goto fail;
@@ -798,7 +798,7 @@ uint8_t _ngdb_write_ref(ngdb_t *ngdb, ref_t *ref) {
   dlen = ref->dlen;
   tmp  = 0;
 
-  if (fseek(ngdb->fid, ref->addr, SEEK_SET) != 0) goto fail;
+  if (fseeko(ngdb->fid, ref->addr, SEEK_SET) != 0) goto fail;
 
   sync = NGDB_REF_SYNC;
   if (fwrite(&(sync),      sizeof(sync),      1, ngdb->fid) != 1) goto fail;

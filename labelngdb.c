@@ -5,6 +5,7 @@
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com> 
  */
 #include <argp.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,15 +17,16 @@
 #include "io/ngdb_graph.h"
 
 typedef struct _args {
-  char *input;
-  char *output;
-  char *labelf;
+  char   *input;
+  char   *output;
+  char   *labelf;
+  uint8_t real;
 } args_t;
 
 static char doc[] = "labelngdb -- update node labels in a ngdb file";
 
 static struct argp_option options[] = {
-  {"output", 'o', "FILE", 0, "output file (default: overwrite input file)"},
+  {"real", 'r', NULL, 0, "node labels are in real units (default: false)"},
   {0}
 };
 
@@ -35,16 +37,18 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   args = state->input;
 
   switch (key) {
-    case 'o': args->output = arg; break;
+    
+    case 'r': args->real = 1;         break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) args->input  = arg;
-      else if (state->arg_num == 1) args->labelf = arg;
+      else if (state->arg_num == 1) args->output = arg;
+      else if (state->arg_num == 2) args->labelf = arg;
       else                          argp_usage(state);
       break;
 
     case ARGP_KEY_END:
-      if (state->arg_num != 2) argp_usage(state);
+      if (state->arg_num != 3) argp_usage(state);
       break;
 
     default:
@@ -60,10 +64,11 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
  * \return 0 on success, non-0 on failure.
  */
 static uint8_t _update_labelval(
-  graph_t *g,   /**< graph        */
-  dsr_t   *hdr, /**< label header */
-  uint8_t *img, /**< label image  */
-  uint32_t nidx /**< node id      */
+  graph_t *g,    /**< graph                    */
+  dsr_t   *hdr,  /**< label header             */
+  uint8_t *img,  /**< label image              */
+  uint32_t nidx, /**< node id                  */
+  uint8_t  real  /**< labels are in real units */
 );
 
 int main(int argc, char *argv[]) {
@@ -74,13 +79,11 @@ int main(int argc, char *argv[]) {
   dsr_t       hdr;
   uint8_t    *img;
   args_t      args;
-  struct argp argp = {options, _parse_opt, "INPUT LABELFILE", doc};
+  struct argp argp = {options, _parse_opt, "INPUT OUTPUT LABELFILE", doc};
 
   memset(&args, 0, sizeof(args));
 
   startup("labelngdb", argc, argv, &argp, &args);
-
-  if (args.output == NULL) args.output = args.input;
 
   if (ngdb_read(args.input, &g)) {
     printf("error openineg input file %s\n", args.input);
@@ -100,7 +103,7 @@ int main(int argc, char *argv[]) {
   nnodes = graph_num_nodes(&g);
 
   for (i = 0; i < nnodes; i++) {
-    if (_update_labelval(&g, &hdr, img, i)) {
+    if (_update_labelval(&g, &hdr, img, i, args.real)) {
       printf("error updating label value for node %llu\n", i);
       goto fail;
     }
@@ -120,20 +123,34 @@ fail:
 
 
 uint8_t _update_labelval(
-  graph_t *g, dsr_t *hdr, uint8_t *img, uint32_t nidx) {
+  graph_t *g, dsr_t *hdr, uint8_t *img, uint32_t nidx, uint8_t real) {
 
   graph_label_t  lbl;
   graph_label_t *plbl;
+  double         xl;
+  double         yl;
+  double         zl;
   uint32_t       dims[3];
+
+  xl = analyze_pixdim_size(hdr, 0);
+  yl = analyze_pixdim_size(hdr, 1);
+  zl = analyze_pixdim_size(hdr, 2);
 
   plbl = graph_get_nodelabel(g, nidx);
   if (plbl == NULL) goto fail;
 
   memcpy(&lbl, plbl, sizeof(graph_label_t));
 
-  dims[0] = lbl.xval;
-  dims[1] = lbl.yval;
-  dims[2] = lbl.zval;
+  if (real) {
+    dims[0] = (uint32_t)(round(lbl.xval / xl));
+    dims[1] = (uint32_t)(round(lbl.xval / yl));
+    dims[2] = (uint32_t)(round(lbl.xval / zl));
+  }
+  else {
+    dims[0] = (uint32_t)lbl.xval;
+    dims[1] = (uint32_t)lbl.yval;
+    dims[2] = (uint32_t)lbl.zval;
+  }
 
   if (dims[0] >= analyze_dim_size(hdr, 0)) goto fail;
   if (dims[1] >= analyze_dim_size(hdr, 1)) goto fail;

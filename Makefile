@@ -60,7 +60,8 @@ exes=dumpimg    \
      tsgraph    \
      dumpngdb   \
      labelngdb  \
-     tsgen
+     tsgen      \
+     repimg
 
 
 default: $(exes)

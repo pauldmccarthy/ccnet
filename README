@@ -32,6 +32,7 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
   nanfiximg  - Replace NaN values with zeros in an ANALYZE75 image file.
   ngdb2img   - Convert a NGDB graph file to an ANALYZE75 image.
   patchhdr   - Modify fields in an ANALYZE75 header file.
+  repimg     - Replace values in an ANALYZE75 image file.
   scaleimg   - Apply a scaling factor to every value in an ANALYZE75 image.
   shiftimg   - Shift an ANALYZE75 image along any dimension, with optional
                wrap-around.

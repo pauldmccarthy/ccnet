@@ -28,6 +28,7 @@ typedef struct __args {
   uint8_t  weighted;
   uint8_t  directed;
   double   threshold;
+  uint8_t  reverse;
   uint8_t  ninclbls;
   uint8_t  nexclbls;
   
@@ -50,7 +51,10 @@ static struct argp_option options[] = {
   {"directed",  'd',  NULL,   0,
    "create directed graph (default: false)"}, 
   {"threshold", 't', "FLOAT", 0,
-   "discard correlation values below this (default: 0.9)"}, 
+   "discard correlation values below this (default: 0.9)"},
+  {"reverse",   'r',  NULL,   0,
+   "discard correlation values above the threshold, \
+    rather than below (default: false)"}, 
   {"incl",      'i', "FLOAT", 0,
    "include only rows/columns with this label"},
   {"excl",      'e', "FLOAT", 0,
@@ -68,6 +72,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
     case 'a': args->absval    = 1;         break;
     case 'w': args->weighted  = 1;         break;
     case 't': args->threshold = atof(arg); break;
+    case 'r': args->reverse   = 1;         break;
       
     case 'i':
       if (args->ninclbls < MAX_LABELS) 
@@ -137,7 +142,9 @@ static uint8_t _connect_graph(
   uint32_t *nodes,     /**< row/column/node ids to include       */
   uint32_t  nnodes,    /**< number of nodes                      */
   double    threshold, /**< ignore correlation values below this */
-  uint8_t   absval     /**< use absolute correlation value       */
+  uint8_t   absval,    /**< use absolute correlation value       */
+  uint8_t   reverse    /**< ignore correlation values above the
+                            threshold, rather than below         */
 );
 
 /**
@@ -211,7 +218,8 @@ int main (int argc, char *argv[]) {
         nodes,
         nnodes,
         args.threshold,
-        args.absval)) {
+        args.absval,
+        args.reverse)) {
     printf("error connecting graph\n");
     goto fail;
   }
@@ -332,11 +340,13 @@ uint8_t _connect_graph(
   uint32_t *nodes,
   uint32_t  nnodes,
   double    threshold,
-  uint8_t   absval) {
+  uint8_t   absval,
+  uint8_t   reverse) {
 
   uint64_t i;
   uint64_t j;
   double   corrval;
+  uint8_t  addedge;
 
   for (i = 0; i < nnodes; i++) {
     for (j = i+1; j < nnodes; j++) {
@@ -344,7 +354,10 @@ uint8_t _connect_graph(
       corrval = mat_read_elem(mat, nodes[i], nodes[j]);
       if (absval) corrval = fabs(corrval);
 
-      if (corrval >= threshold) {
+      if (!reverse) addedge = corrval >= threshold;
+      else          addedge = corrval <= threshold;
+      
+      if (addedge) {
         if (graph_add_edge(graph, i, j, corrval))
           goto fail;
       }

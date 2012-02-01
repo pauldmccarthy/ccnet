@@ -48,6 +48,17 @@ char * graph_log_get_msg(
 );
 
 /**
+ * Copies the log from the input graph to the output graph. Initialises
+ * logging on the output graph if necessary.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t graph_log_copy(
+  graph_t *gin, /**< input graph  */
+  graph_t *gout /**< output graph */
+);
+
+/**
  * \return the total length, combined, of all the messages in the log.
  */
 uint16_t graph_log_total_len(

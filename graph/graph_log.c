@@ -110,6 +110,39 @@ fail:
   return 1;
 }
 
+uint8_t graph_log_copy(graph_t *gin, graph_t *gout) {
+
+  uint32_t i;
+  uint16_t nmsgs;
+  char    *msg;
+
+  if (gin  == NULL) goto fail;
+  if (gout == NULL) goto fail;
+
+  if (!graph_log_exists(gout)) {
+    if (graph_log_init(gout))
+      goto fail;
+  }
+  
+  if (!graph_log_exists(gin)) return 0;
+
+  nmsgs = graph_log_num_msgs(gin);
+
+  for (i = 0; i < nmsgs; i++) {
+
+    msg = graph_log_get_msg(gin, i);
+
+    if (msg == NULL) continue;
+
+    if (graph_log_add(gout, msg)) goto fail;
+  }
+
+  return 0;
+  
+fail:
+  return 1;
+}
+
 uint16_t graph_log_total_len(graph_t *g) {
 
   uint64_t i;
@@ -154,13 +187,16 @@ uint8_t graph_log_import(graph_t *g, char *data, char *delim) {
     if (substr == NULL) substrlen = len;
     else                substrlen = substr - data;
 
-    msg = calloc(substrlen+1, 1);
-    if (msg == NULL) goto fail;
+    if (substrlen > 0) {
 
-    memcpy(msg, data, substrlen);
-    msg[substrlen] = '\0';
+      msg = calloc(substrlen+1, 1);
+      if (msg == NULL) goto fail;
 
-    if (array_append(log, &msg)) goto fail;
+      memcpy(msg, data, substrlen);
+      msg[substrlen] = '\0';
+
+      if (array_append(log, &msg)) goto fail;
+    }
 
     data += (substrlen + dlen);
     len  -= (substrlen + dlen);

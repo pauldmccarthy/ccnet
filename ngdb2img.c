@@ -28,19 +28,21 @@ typedef struct args {
   double   xl;
   double   yl;
   double   zl;
+  uint8_t  real;
   uint8_t  rev;
 
 } args_t;
 
 static struct argp_option options[] = {
 
-  {"xn",  'x', "INT",   0, "X dimension size"},
-  {"yn",  'y', "INT",   0, "Y dimension size"},
-  {"zn",  'z', "INT",   0, "Z dimension size"},
-  {"xl",  'a', "FLOAT", 0, "X voxel length"},
-  {"yl",  'b', "FLOAT", 0, "Y voxel length"},
-  {"zl",  'c', "FLOAT", 0, "Z voxel length"},
-  {"rev", 'r', NULL,    0, "reverse endianness"},
+  {"xn",   'x', "INT",   0, "X dimension size"},
+  {"yn",   'y', "INT",   0, "Y dimension size"},
+  {"zn",   'z', "INT",   0, "Z dimension size"},
+  {"xl",   'a', "FLOAT", 0, "X voxel length"},
+  {"yl",   'b', "FLOAT", 0, "Y voxel length"},
+  {"zl",   'c', "FLOAT", 0, "Z voxel length"},
+  {"real", 'e', NULL,    0, "node labels are in real units (default: false)"},
+  {"rev",  'r', NULL,    0, "reverse endianness"},
   {0}
 };
 
@@ -49,13 +51,14 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
   args_t *a = state->input;
 
   switch (key) {
-    case 'x': a->xn  = atoi(arg); break;
-    case 'y': a->yn  = atoi(arg); break;
-    case 'z': a->zn  = atoi(arg); break;
-    case 'a': a->xl  = atof(arg); break;
-    case 'b': a->yl  = atof(arg); break;
-    case 'c': a->zl  = atof(arg); break;
-    case 'r': a->rev = 1;         break;
+    case 'x': a->xn   = atoi(arg); break;
+    case 'y': a->yn   = atoi(arg); break;
+    case 'z': a->zn   = atoi(arg); break;
+    case 'a': a->xl   = atof(arg); break;
+    case 'b': a->yl   = atof(arg); break;
+    case 'c': a->zl   = atof(arg); break;
+    case 'e': a->real = 1;         break;
+    case 'r': a->rev  = 1;         break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;
@@ -84,7 +87,8 @@ static void _fill_hdr(
 static uint8_t _graph_to_img(
   graph_t *g,
   dsr_t   *dsr,
-  uint8_t *img);
+  uint8_t *img,
+  uint8_t  real);
 
 
 int main(int argc, char *argv[]) {
@@ -122,7 +126,7 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (_graph_to_img(&gin, &hdr, img)) {
+  if (_graph_to_img(&gin, &hdr, img, args.real)) {
     printf("Could not convert graph to image\n");
     goto fail;
   }
@@ -149,9 +153,9 @@ static void _fill_hdr(dsr_t *dsr, args_t *args) {
 
   memset(dsr, 0, sizeof(dsr_t));
 
-  dsr->hk.sizeof_hdr = sizeof(dsr_t);
+  dsr->hk.sizeof_hdr = 348;
 
-  dsr->dime.dim[0] = 4;
+  dsr->dime.dim[0] = 3;
   dsr->dime.dim[1] = args->xn;
   dsr->dime.dim[2] = args->yn;
   dsr->dime.dim[3] = args->zn;
@@ -172,7 +176,7 @@ static void _fill_hdr(dsr_t *dsr, args_t *args) {
 }
 
 static uint8_t _graph_to_img(
-  graph_t *g, dsr_t *hdr, uint8_t *img) {
+  graph_t *g, dsr_t *hdr, uint8_t *img, uint8_t real) {
 
   uint64_t       i;
   uint32_t       nnodes;
@@ -185,6 +189,8 @@ static uint8_t _graph_to_img(
 
   uint32_t imgi[4];
 
+  memset(imgi, 0, sizeof(imgi));
+
   xl = analyze_pixdim_size(hdr, 0);
   yl = analyze_pixdim_size(hdr, 1);
   zl = analyze_pixdim_size(hdr, 2);
@@ -196,11 +202,19 @@ static uint8_t _graph_to_img(
     lbl = graph_get_nodelabel(    g, i);
     val = stats_degree_centrality(g, i);
 
-    imgi[0] = (uint32_t)(round(lbl->xval / xl));
-    imgi[1] = (uint32_t)(round(lbl->yval / yl));
-    imgi[2] = (uint32_t)(round(lbl->zval / zl));
+    if (real) {
 
-    analyze_write_float(hdr, img + analyze_get_offset(hdr, imgi), val);
+      imgi[0] = (uint32_t)(round(lbl->xval / xl));
+      imgi[1] = (uint32_t)(round(lbl->yval / yl));
+      imgi[2] = (uint32_t)(round(lbl->zval / zl));
+    }
+    else {
+      imgi[0] = (uint32_t)lbl->xval;
+      imgi[1] = (uint32_t)lbl->yval;
+      imgi[2] = (uint32_t)lbl->zval;
+    }
+
+    analyze_write_val(hdr, img, imgi, val);
   }
 
   return 0;

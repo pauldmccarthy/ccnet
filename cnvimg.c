@@ -36,7 +36,8 @@ static uint8_t _clone_img(
                          to point to new image data    */
   dsr_t    *oldhdr, /**< old header                    */
   dsr_t    *newhdr, /**< new header                    */
-  uint16_t  newfmt  /**< new data type                 */
+  uint16_t  newfmt, /**< new data type                 */
+  uint8_t   rev     /**< endianness                    */
 );
 
 static char doc[] = "cnvimg -- convert ANALYZE75 image files\v\
@@ -50,6 +51,7 @@ Supported formats:\n\
 
 static struct argp_option options[] = {
   {"format", 'f', "INT",  0, "output image format (default: 16 - DT_FLOAT)"},
+  {"rev",    'r', NULL,   0, "save in reverse endianness"},
   {0}
 };
 
@@ -57,6 +59,7 @@ struct arguments {
   char    *input;
   char    *output;
   uint16_t format;
+  uint8_t  rev;
 };
 
 int main (int argc, char *argv[]) {
@@ -71,6 +74,7 @@ int main (int argc, char *argv[]) {
 
   oldimg      = NULL;
   newimg      = NULL;
+  memset(&args, 0, sizeof(args));
   args.format = 16;
 
   startup("cnvimg", argc, argv, &argp, &args);
@@ -87,7 +91,7 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  if (_clone_img(oldimg,&newimg, &oldhdr, &newhdr, args.format)) {
+  if (_clone_img(oldimg,&newimg, &oldhdr, &newhdr, args.format, args.rev)) {
     printf("error creating new image\n");
     goto fail;
   }
@@ -122,6 +126,7 @@ error_t _parse_opt (int key, char *arg, struct argp_state *state) {
       arguments->format = atoi(arg);
       if (_check_format(arguments->format)) argp_usage(state);
       break;
+    case 'r': arguments->rev = 1; break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) arguments->input  = arg;
@@ -157,7 +162,8 @@ uint8_t _clone_img(
   uint8_t **newimg,
   dsr_t    *oldhdr,
   dsr_t    *newhdr,
-  uint16_t  newfmt)
+  uint16_t  newfmt,
+  uint8_t   rev)
 {
   uint64_t i;
   uint32_t nvals;
@@ -173,6 +179,7 @@ uint8_t _clone_img(
   memcpy(newhdr, oldhdr, sizeof(dsr_t));
   newhdr->dime.datatype = newfmt;
   newhdr->dime.bitpix   = newvalsz * 8;
+  newhdr->rev           = rev;
 
   for (i = 0; i < nvals; i++) {
     val = analyze_read_by_idx(oldhdr, oldimg,  i);

@@ -24,7 +24,7 @@ typedef enum {
 } corrtype_t;
 
 #define MAX_LABELS        50
-#define MAT_HDR_DATA_SIZE 512
+#define MAT_HDR_DATA_SIZE 8192
 
 typedef struct __args {
 
@@ -37,6 +37,7 @@ typedef struct __args {
   double  *hithres;
   double   lothresval;
   double   hithresval;
+  double   sampletime;
   uint8_t  corrtype;
   uint8_t  ninclbls;
   uint8_t  nexclbls;
@@ -50,17 +51,18 @@ static char doc[] =
 "tsmat -- generate a correlation matrix from an ANALYZE75 volume";
 
 static struct argp_option options[] = {
-  {"hdrmsg",  's', "MSG",   0, "message to save to .mat file header"},
-  {"labelf",  'f', "FILE",  0,
+  {"hdrmsg",     's', "MSG",   0, "message to save to .mat file header"},
+  {"labelf",     'f', "FILE",  0,
    "ANALYZE75 label file (must have same datat type as volume files)"},
-  {"maskf",   'm', "FILE",  0,
+  {"maskf",      'm', "FILE",  0,
    "ANALYZE75 mask file (must have same data type as volume files)"},
-  {"lothres", 'l', "FLOAT", 0, "low threshold"},
-  {"hithres", 'h', "FLOAT", 0, "high threshold"},
-  {"pcorr",   'p', NULL,    0, "use pearson correlation"},
-  {"cohe",    'c', NULL,    0, "use coherence"},
-  {"incl",    'i', "FLOAT", 0, "include only voxels with this label"},
-  {"excl",    'e', "FLOAT", 0, "exclude voxels with this label"},
+  {"lothres",    'l', "FLOAT", 0, "low threshold"},
+  {"hithres",    'h', "FLOAT", 0, "high threshold"},
+  {"sampletime", 't', "FLOAT", 0, "time between samples"},
+  {"pcorr",      'p', NULL,    0, "use pearson correlation"},
+  {"cohe",       'c', NULL,    0, "use coherence"},
+  {"incl",       'i', "FLOAT", 0, "include only voxels with this label"},
+  {"excl",       'e', "FLOAT", 0, "exclude voxels with this label"},
   {0}
 };
 
@@ -190,11 +192,12 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   args = state->input;
 
   switch (key) {
-    case 'f': args->labelf   = arg;                break;
-    case 'm': args->maskf    = arg;                break;
-    case 's': args->hdrmsg   = arg;                break;
-    case 'p': args->corrtype = CORRTYPE_PEARSON;   break;
-    case 'c': args->corrtype = CORRTYPE_COHERENCE; break;
+    case 'f': args->labelf     = arg;                break;
+    case 'm': args->maskf      = arg;                break;
+    case 's': args->hdrmsg     = arg;                break;
+    case 'p': args->corrtype   = CORRTYPE_PEARSON;   break;
+    case 'c': args->corrtype   = CORRTYPE_COHERENCE; break;
+    case 't': args->sampletime = atof(arg);          break;
     case 'l':
       args->lothresval = atof(arg);
       args->lothres    = &(args->lothresval);
@@ -240,12 +243,16 @@ int main (int argc, char *argv[]) {
   dsr_t            lblhdr;
   dsr_t           *hdrs[2];
   uint8_t         *lblimg;
+  char            *imgmsg;
+  char            *hdrdata;
   args_t           args;
   struct argp      argp = {options, _parse_opt, "INPUT OUTPUT", doc};
 
   lblimg  = NULL;
   incvxls = NULL;
   mat     = NULL;
+  imgmsg  = NULL;
+  hdrdata = NULL;
 
   memset(&args, 0, sizeof(args));
 
@@ -292,12 +299,44 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  if (args.hdrmsg != NULL) {
-    if (mat_write_hdr_data(mat, args.hdrmsg, strlen(args.hdrmsg)+1)) {
-      printf(
-        "error writing header message \"%s\" to %s\n",
-        args.hdrmsg, args.output);
-    }
+  imgmsg = malloc(200);
+  if (imgmsg == NULL) {
+    printf("out of memory?\n");
+    goto fail;
+  } 
+  
+  sprintf(
+    imgmsg,
+    "x: %u (%0.6f), y: %u (%0.6f), z: %u (%0.6f), t: %u (%0.6f)",
+    analyze_dim_size(   vol.hdrs, 0),
+    analyze_pixdim_size(vol.hdrs, 0),
+    analyze_dim_size(   vol.hdrs, 1),
+    analyze_pixdim_size(vol.hdrs, 1),
+    analyze_dim_size(   vol.hdrs, 2),
+    analyze_pixdim_size(vol.hdrs, 2),
+    vol.nimgs,
+    args.sampletime);
+
+
+  if (args.hdrmsg != NULL) 
+    hdrdata = malloc(strlen(imgmsg) + strlen(args.hdrmsg) + 3);
+  else
+    hdrdata = malloc(strlen(imgmsg) + 2);
+  
+  if (hdrdata == NULL) {
+    printf("out of memory?\n");
+    goto fail;
+  }
+
+  if (args.hdrmsg != NULL) 
+    sprintf(hdrdata, "%s\n%s\n", args.hdrmsg, imgmsg);
+  else
+    sprintf(hdrdata, "%s\n", imgmsg);
+
+  if (mat_write_hdr_data(mat, hdrdata, strlen(hdrdata)+1)) {
+    printf("error writing header message \"%s\" to %s\n",
+           hdrdata, args.output);
+    goto fail;
   }
 
   if (lblimg != NULL) {
@@ -314,6 +353,8 @@ int main (int argc, char *argv[]) {
 
   mat_close(mat);
   analyze_free_volume(&vol);
+  free(imgmsg);
+  free(hdrdata);
   free(lblimg);
   free(incvxls);
 

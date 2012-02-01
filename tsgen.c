@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
   struct argp argp = {options, _parse_opt, "OUTDIR", doc};
 
   memset(&args, 0, sizeof(args));
+  args.dt = DT_FLOAT;
 
   startup("tsgen", argc, argv, &argp, &args);
 
@@ -150,8 +151,6 @@ int main(int argc, char *argv[]) {
       printf("error generating file name (series too long?)\n");
       goto fail;
     }
-
-    printf("creating image %s\n", fname);
 
     if (_create_image(&hdr, &img, &args)) {
       printf("error creating image (%s)\n", fname);
@@ -224,6 +223,8 @@ uint8_t _create_image(dsr_t *hdr, uint8_t **img, args_t *args) {
   memset(hdr, 0, sizeof(dsr_t));
   limg  = NULL;
   valsz = analyze_datatype_size(args->dt);
+
+  if (valsz == 0) goto fail;
 
   hdr->hk.sizeof_hdr  = 348;
   hdr->dime.dim   [0] = 3;

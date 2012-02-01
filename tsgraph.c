@@ -250,7 +250,7 @@ int main (int argc, char *argv[]) {
     }
   }
 
-  if ((strlen(mathdrmsg) > 0) && graph_log_add(&graph, mathdrmsg))   {
+  if ((strlen(mathdrmsg) > 0) && graph_log_import(&graph, mathdrmsg, "\n")) {
     printf("error adding header message: %s\n", mathdrmsg);
     goto fail;
   }

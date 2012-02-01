@@ -307,7 +307,7 @@ int main (int argc, char *argv[]) {
   
   sprintf(
     imgmsg,
-    "x: %u (%0.6f), y: %u (%0.6f), z: %u (%0.6f), t: %u (%0.6f)",
+    "vol dims: %u (%0.6f), y: %u (%0.6f), z: %u (%0.6f), t: %u (%0.6f)",
     analyze_dim_size(   vol.hdrs, 0),
     analyze_pixdim_size(vol.hdrs, 0),
     analyze_dim_size(   vol.hdrs, 1),

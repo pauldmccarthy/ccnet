@@ -15,6 +15,7 @@
 
 #include "graph/graph.h"
 #include "graph/graph_prune.h"
+#include "graph/graph_log.h"
 #include "io/ngdb_graph.h"
 #include "util/startup.h"
 
@@ -27,11 +28,13 @@ static char doc[] = "cprune - remove disconnected nodes/components "\
 typedef struct args {
   char    *input;
   char    *output;
+  char    *hdrmsg;
   uint32_t size;
 } args_t;
 
 static struct argp_option options[] = {
-  {"size", 's', "INT", 0, "remove components below this size"},
+  {"size",   's', "INT", 0, "remove components below this size"},
+  {"hdrmsg", 'h', "MSG", 0, "message to save to .ngdb file header"},
   {0}
 };
 
@@ -40,7 +43,8 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
   args_t *a = state->input;
 
   switch(key) {
-    case 's': a->size = atoi(arg); break;
+    case 's': a->size   = atoi(arg); break;
+    case 'h': a->hdrmsg = arg;       break;
       
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;
@@ -78,6 +82,18 @@ int main(int argc, char *argv[]) {
   if (graph_prune(&gin, &gout, args.size)) {
     printf("Graph prune failed\n");
     goto fail;
+  }
+
+  if (graph_log_copy(&gin, &gout)) {
+    printf("Error copying graph log\n");
+    goto fail;
+  }
+
+  if (args.hdrmsg != NULL) {
+    if (graph_log_add(&gout, args.hdrmsg)) {
+      printf("Error adding header message\n");
+      goto fail;
+    }
   }
 
   if (ngdb_write(&gout, args.output)) {

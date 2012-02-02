@@ -307,7 +307,7 @@ uint8_t mat_read_hdr_data(mat_t *mat, void *hdrdata) {
 
   if (mat          == NULL) goto fail;
   if (hdrdata      == NULL) goto fail;
-  if (mat->hdrsize == 0)    goto fail;
+  if (mat->hdrsize == 0)    return 0;
 
   if (_mat_seek_to(mat, MAT_SEEK_HDRDATA))           goto fail;
   if (fread(hdrdata, mat->hdrsize, 1, mat->hd) != 1) goto fail;

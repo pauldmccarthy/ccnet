@@ -61,18 +61,21 @@ exes=dumpimg    \
      dumpngdb   \
      labelngdb  \
      tsgen      \
-     repimg
+     repimg     \
+     ccnet
 
 
 default: $(exes)
 
 %.o: %.c
 	@mkdir -p obj
-	gcc $(CFLAGS) -c -o obj/$(@F) $<
+	@echo $@
+	@gcc $(CFLAGS) -c -o obj/$(@F) $<
 
 $(exes): $(objtargets)
 	@mkdir -p bin
-	gcc $(CFLAGS) $(LDFLAGS) -o bin/$@ $@.c $(objfiles)
+	@echo $@
+	@gcc $(CFLAGS) $(LDFLAGS) -o bin/$@ $@.c $(objfiles)
 
 clean:
 	rm -rf bin obj

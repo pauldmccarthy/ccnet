@@ -262,6 +262,19 @@ double stats_cache_inter_edges(graph_t *g) {
   return inter;
 }
 
+double stats_cache_max_degree(graph_t *g) {
+
+  double maxdeg;
+
+  if (stats_cache_check(g, STATS_CACHE_MAX_DEGREE, 0, -1, &maxdeg) == 1)
+    return maxdeg;
+
+  maxdeg = stats_max_degree(g);
+
+
+  return maxdeg;
+}
+
 uint8_t stats_cache_betweenness_centrality(
   graph_t *g, int64_t n, double *data) {
 

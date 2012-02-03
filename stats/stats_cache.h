@@ -51,6 +51,7 @@ enum {
   STATS_CACHE_MODULARITY,
   STATS_CACHE_INTRA_EDGES,
   STATS_CACHE_INTER_EDGES,
+  STATS_CACHE_MAX_DEGREE,
 
   /*list statistics*/
 
@@ -246,6 +247,7 @@ double stats_cache_global_efficiency(graph_t *g);
 double stats_cache_modularity(       graph_t *g);
 double stats_cache_intra_edges(      graph_t *g);
 double stats_cache_inter_edges(      graph_t *g);
+double stats_cache_max_degree(       graph_t *g);
 
 uint8_t stats_cache_node_clustering(
   graph_t *g, int64_t n, double *data);

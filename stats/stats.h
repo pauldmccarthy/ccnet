@@ -31,6 +31,13 @@ double stats_avg_degree(
 );
 
 /**
+ * \return the maximum degree of the given graph.
+ */
+double stats_max_degree(
+  graph_t *g /**< the graph to query */
+);
+
+/**
  * \return the average clustering coefficient of the given graph.
  */
 double stats_avg_clustering(

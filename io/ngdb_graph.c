@@ -245,7 +245,7 @@ fail:
 
 uint8_t _write_nodes(ngdb_t *ngdb, graph_t *g) {
 
-  uint32_t       i;
+  uint64_t       i;
   uint32_t       nnodes;
   graph_label_t *lbl;
 

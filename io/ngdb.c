@@ -478,7 +478,7 @@ uint16_t hdata_len, uint16_t ndata_len, uint16_t rdata_len) {
   ngdb = malloc(sizeof(ngdb_t));
   if (ngdb == NULL) goto fail;
 
-  ngdb->fid = fopen(filename, "wb");
+  ngdb->fid = fopen(filename, "wb+");
   if (ngdb->fid == NULL) goto fail;
 
   ngdb->hdata_len  = hdata_len;

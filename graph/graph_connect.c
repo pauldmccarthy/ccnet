@@ -103,9 +103,6 @@ uint8_t graph_connect(graph_t *g, uint32_t *group, uint32_t ngroup) {
 
   uint64_t i;
   uint64_t j;
-  uint32_t nnodes;
-
-  nnodes = graph_num_nodes(g);
 
   /* add edges at random until the group is connected */
   printf("              ");

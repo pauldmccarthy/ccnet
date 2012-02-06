@@ -290,11 +290,9 @@ static void _free_edge_field(
 
 uint8_t stats_cache_init(graph_t *g) {
 
-  uint32_t       nnodes;
   stats_cache_t *c;
 
   c      = NULL;
-  nnodes = graph_num_nodes(g);
 
   /*allocate space for the cache struct*/
   c = calloc(1, sizeof(stats_cache_t));
@@ -816,10 +814,8 @@ fail:
 uint8_t _update_edge_field(
   stats_cache_t *c, cache_entry_t *e, uint32_t u, int64_t v, void *d) {
 
-  uint32_t      nnbrs;
   edge_cache_t *ec;
 
-  nnbrs = graph_num_neighbours(c->g, u);
   ec    = e->cache;
 
   if (v < 0) 

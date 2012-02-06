@@ -40,9 +40,6 @@ double stats_closeness_centrality(graph_t *g, uint32_t nidx) {
 
   double    closeness;
   double    avg_pathlen;
-  uint32_t  nnodes;
-
-  nnodes = graph_num_nodes(g);
 
   /*
    * Closeness centrality for a node i is (n-1)/(sli), where sli is the sum of

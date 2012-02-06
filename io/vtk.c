@@ -20,13 +20,10 @@ uint8_t vtk_print_graph(
 )
 {
   uint8_t  i;
-  uint32_t nnodes;
 
   if (vtk_print_hdr(  f, g)) goto fail;
   if (vtk_print_nodes(f, g)) goto fail;
   if (vtk_print_edges(f, g)) goto fail;
-
-  nnodes = graph_num_nodes(g);
 
   for (i = 0; i < nscalars; i++) {
     if (vtk_print_node_scalar(f, g, i == 0, scalar_names[i], scalars[i]))

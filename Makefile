@@ -9,6 +9,7 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 CFLAGS += -O3
 LDFLAGS = -lm
 
+
 # Add macports lib locations, and getline 
 # hack, on OS X. OSTYPE is defined by 
 # default, but needs to be exported, 
@@ -75,7 +76,7 @@ default: $(exes)
 $(exes): $(objtargets)
 	@mkdir -p bin
 	@echo $@
-	@gcc $(CFLAGS) $(LDFLAGS) -o bin/$@ $@.c $(objfiles)
+	@gcc $(CFLAGS) -o bin/$@ $@.c $(objfiles) $(LDFLAGS)
 
 clean:
 	rm -rf bin obj

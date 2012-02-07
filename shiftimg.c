@@ -247,15 +247,13 @@ uint8_t _shift(
   int64_t   i;
   int64_t   newi;
   double   *slice;
-  uint8_t   valsz;
   uint32_t  dimsz;
   uint32_t  slicesz;
 
   slice = NULL;
 
-  dimsz   = analyze_dim_size(  hdr, dim);
-  valsz   = analyze_value_size(hdr);
-  slicesz = _calc_slicesize(   hdr, dim);
+  dimsz   = analyze_dim_size(hdr, dim);
+  slicesz = _calc_slicesize( hdr, dim);
 
   slice = malloc(slicesz * sizeof(double));
   if (slice == NULL) goto fail;
@@ -327,11 +325,9 @@ void _writeslice(
   uint32_t i;
   uint8_t  j;
   uint8_t  ndims;
-  uint8_t  valsz;
   uint32_t dimidx[4];
 
   ndims = analyze_num_dims(hdr);
-  valsz = analyze_value_size(hdr);
 
   memset(dimidx, 0, 4 * sizeof(uint32_t));
   dimidx[dim] = sliceno;

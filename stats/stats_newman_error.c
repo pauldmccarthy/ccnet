@@ -80,12 +80,10 @@ static uint8_t _find_max_groups(
   node_group_t grp1;
   node_group_t grp2;
   uint32_t     nlblvals;
-  uint32_t    *lblvals;
   int64_t     *maxidx;
 
   maxidx      = NULL;
   nlblvals    = graph_num_labelvals(g);
-  lblvals     = graph_get_labelvals(g);
   maxidx      = malloc(nlblvals*sizeof(int64_t));
   if (maxidx == NULL) goto fail;
   

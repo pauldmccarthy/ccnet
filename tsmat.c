@@ -527,7 +527,6 @@ int64_t _apply_file_mask(
   dsr_t    maskhdr;
   uint8_t *maskimg;
   double   maskval;  
-  uint8_t  maskvalsz;
   uint64_t i;
   uint32_t masked;
   uint32_t nvals;
@@ -542,8 +541,6 @@ int64_t _apply_file_mask(
   hdrs[1] = vol->hdrs;
 
   if (analyze_hdr_compat_ptr(2, hdrs)) goto fail;
-
-  maskvalsz = analyze_num_vals(&maskhdr);
 
   for (i = 0; i < nvals; i++) {
 

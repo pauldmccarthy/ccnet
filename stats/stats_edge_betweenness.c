@@ -92,7 +92,6 @@ uint8_t _all_edge_betweenness(
   graph_t *g, edge_array_t *betw, edge_array_t *ttlbetw, uint32_t cmp) { 
 
   uint64_t     i;
-  uint32_t     nedges;
   uint32_t     nnodes;
   double      *numpaths;
   double      *pathlens;
@@ -102,7 +101,6 @@ uint8_t _all_edge_betweenness(
   pathlens   = NULL;
   components = NULL;
   nnodes   = graph_num_nodes(g);
-  nedges   = graph_num_edges(g);
 
   numpaths = calloc(nnodes, sizeof(double));
   if (numpaths == NULL) goto fail;
@@ -155,7 +153,6 @@ uint8_t _node_betweenness(
   uint64_t   j;
   uint32_t   ni;
   uint32_t   nj;
-  uint32_t   nnodes;
   uint32_t   nnbrs;
   uint32_t  *nbrs;
   double     tmp;
@@ -165,7 +162,6 @@ uint8_t _node_betweenness(
   array_t   *level;
 
   levels.data = NULL;
-  nnodes      = graph_num_nodes(g);
 
   stats_cache_pair_numpaths(   g, v, numpaths);
   stats_cache_pair_pathlength( g, v, pathlens);

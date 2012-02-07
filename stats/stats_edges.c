@@ -22,9 +22,6 @@ double stats_num_intra_edges(graph_t *g, double *inter_out) {
   graph_label_t *jlbl;
   double         intra;
   double         inter;
-  uint32_t      *all_intra;
-
-  all_intra = NULL;
 
   if (graph_num_labelvals(g) <= 1) {
     if (inter_out != NULL) *inter_out = 0;

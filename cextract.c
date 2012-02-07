@@ -12,9 +12,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <argp.h>
 
 #include "stats/stats.h"
 #include "graph/graph.h"
+#include "graph/graph_log.h"
 #include "util/startup.h"
 #include "util/array.h"
 #include "io/ngdb_graph.h"
@@ -28,11 +30,14 @@
 /**
  * Input arguments.
  */
-typedef struct args {
+typedef struct _args {
   char    *input;                    /**< name of input file               */
   char    *output;                   /**< name of output file              */
-  uint8_t  labelext;                 /**< non-0: extract by labels (default),
-                                          otherwise extract by component   */
+  char    *hdrmsg;                   /**< message to add to output file    */
+  uint8_t  component;                /**< extract by component
+                                          instead of by label              */ 
+  uint8_t  exclude;                  /**< exclude by label/component
+                                          instead of include               */
   uint32_t labels[MAX_LABEL_VALUES]; /**< labels (or components) to
                                           include in subgraph              */
   uint8_t  nlabels;                  /**< number of labels (or components) */
@@ -40,8 +45,48 @@ typedef struct args {
 
 static char doc[]   = "cextract - extract a subgraph by "\
                       "label value or component";
-static char usage[] = "usage: cextract INPUT OUTPUT " \
-                      "[cmp|lbl] LABEL [LABEL ...]";
+
+static struct argp_option options[] = {
+  {"component", 'c', NULL,  0, "extract by component instead of by label"},
+  {"exclude",   'e', NULL,  0, "exclude by label/component, "\
+                               "instead of include"},
+  {"hdrmsg",    'h', "MSG", 0, "message to save to .ngdb file header"},  
+  {"lblval",    'l', "INT", 0, "label/component value/number"},
+  {0}
+};
+
+static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
+  
+  args_t *args;
+
+  args = state->input;
+
+  switch(key) {
+
+    case 'c': args->component = 1;   break;
+    case 'e': args->exclude   = 1;   break;
+    case 'h': args->hdrmsg    = arg; break;
+    case 'l':
+      if (args->nlabels < MAX_LABEL_VALUES) 
+        args->labels[args->nlabels++] = atoi(arg);
+      break;
+
+    case ARGP_KEY_ARG:
+      if      (state->arg_num == 0) args->input  = arg;
+      else if (state->arg_num == 1) args->output = arg;
+      else argp_usage(state);
+      break;
+
+    case ARGP_KEY_END:
+      if (state->arg_num != 2) argp_usage(state);
+      break;
+
+    default:
+      return ARGP_ERR_UNKNOWN;
+  }
+
+  return 0;    
+}
 
 /**
  * Struct which provides an index mapping for a node, 
@@ -60,10 +105,11 @@ typedef struct _node {
  * \return 0 on success, non-0 on failure.
  */
 static uint8_t _extract_by_label(
-  graph_t  *gin,    /**< input graph            */
-  graph_t  *gout,   /**< empty graph for output */
-  uint32_t *labels, /**< labels to include      */
-  uint8_t   nlabels /**< number of labels       */
+  graph_t  *gin,     /**< input graph                          */
+  graph_t  *gout,    /**< empty graph for output               */
+  uint8_t   exclude, /**< exclude by label, instead of include */
+  uint32_t *labels,  /**< labels to include/exclude            */
+  uint8_t   nlabels  /**< number of labels                     */
 );
 
 /**
@@ -73,10 +119,12 @@ static uint8_t _extract_by_label(
  * \return 0 on success, non-0 on failure.
  */
 static uint8_t _extract_by_component(
-  graph_t  *gin,  /**< input graph            */
-  graph_t  *gout, /**< empty graph for output */
-  uint32_t *cmps, /**< components to include  */
-  uint8_t   ncmps /**< number of components   */
+  graph_t  *gin,     /**< input graph                              */
+  graph_t  *gout,    /**< empty graph for output                   */
+  uint8_t   exclude, /**< exclude by component, instead of include */  
+  uint32_t *cmps,    /**< components to include/exclude            */
+  uint8_t   ncmps    /**< number of components                     */
+
 );
 
 /**
@@ -87,6 +135,7 @@ static uint8_t _extract_by_component(
  */
 static uint8_t _find_nodes_by_label(
   graph_t   *g,       /**< input graph                           */
+  uint8_t    exclude, /**< exclude by label, instead of include  */
   uint32_t  *labels,  /**< labels to search for                  */
   uint8_t    nlabels, /**< number of labels                      */
   array_t   *nodes    /**< will be populated with node_t structs */
@@ -99,10 +148,11 @@ static uint8_t _find_nodes_by_label(
  * \return 0 on success, non-0 on failure.
  */
 static uint8_t _find_nodes_by_component(
-  graph_t   *g,     /**< input graph                           */
-  uint32_t  *cmps,  /**< components to include                 */
-  uint8_t    ncmps, /**< number of components                  */
-  array_t   *nodes  /**< will be populated with node_t structs */
+  graph_t   *g,       /**< input graph                              */
+  uint8_t    exclude, /**< exclude by component, instead of include */  
+  uint32_t  *cmps,    /**< components to include                    */
+  uint8_t    ncmps,   /**< number of components                     */
+  array_t   *nodes    /**< will be populated with node_t structs    */
 );
 
 /**
@@ -111,13 +161,14 @@ static uint8_t _find_nodes_by_component(
  * \return 1 if the node label matches, 0 otherwise.
  */
 static uint8_t _test_label(
-  graph_t  *g,      /**< graph             */
-  uint32_t  nid,    /**< node to test      */
-  uint32_t *labels, /**< labels to include */
-  uint8_t   nlabels /**< number of labels  */
+  graph_t  *g,       /**< graph                      */
+  uint8_t   exclude, /**< exclude instead of include */
+  uint32_t  nid,     /**< node to test               */
+  uint32_t *labels,  /**< labels to include          */
+  uint8_t   nlabels  /**< number of labels           */
 );
 
-/**
+ /**
  * Copies node labels from the input graph to the output graph, for the
  * given list of nodes.
  *
@@ -141,71 +192,53 @@ static uint8_t _copy_edges(
   array_t *nodes /**< node index mappings */
 );
 
-/**
- * Parses command line arguments, and populates the given args_t 
- * struct. Exits if command line arguments are invalid.
- */
-static void _parse_opt(int argc, char *argv[], args_t *args) {
-
-  uint16_t i;
-  uint32_t off;
-
-  if (argc >= 2 && !strcmp(argv[1], "-?")) {
-
-    printf("%s\n", doc);
-    printf("%s\n", usage);
-    exit(0);
-  }
-
-  if (argc < 4) goto fail;
-
-  args->input   = argv[1];
-  args->output  = argv[2];
-
-  args->labelext = 1;
-  off            = 4;
-
-  if      (!strcmp(argv[3], "cmp")) args->labelext = 0;
-  else if (!strcmp(argv[3], "lbl")) args->labelext = 1;
-  else                             off            = 3;
-
-  args->nlabels  = argc - off;
-
-  for (i = off; i < argc; i++) 
-    args->labels[i-off] = atoi(argv[i]);
-
-  return;
-
-fail:
-  printf("%s\n", usage);
-  exit(1);
-}
-
 int main (int argc, char *argv[]) {
 
-  graph_t  gin;
-  graph_t  gout;
-  args_t   args;
+  graph_t     gin;
+  graph_t     gout;
+  struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
+  args_t      args;  
 
   memset(&args, 0, sizeof(args_t));
 
-  startup("cextract", argc, argv, NULL, NULL);
-  _parse_opt(argc, argv, &args);
+  startup("cextract", argc, argv, &argp, &args);
 
   if (ngdb_read(args.input, &gin)) {
     printf("Could not read in %s\n", args.input);
     goto fail;
   }
 
-  if (args.labelext) {
-    if (_extract_by_label(&gin, &gout, args.labels, args.nlabels)) {
+  if (!args.component) {
+    if (_extract_by_label(
+          &gin,
+          &gout,
+          args.exclude,
+          args.labels,
+          args.nlabels)) {
       printf("Could not extract subgraph by labels\n");
       goto fail;
     }
   }
   else {
-    if (_extract_by_component(&gin, &gout, args.labels, args.nlabels)) {
+    if (_extract_by_component(
+          &gin,
+          &gout,
+          args.exclude,
+          args.labels,
+          args.nlabels)) {
       printf("Could not extract subgraph by components\n");
+      goto fail;
+    }
+  }
+
+  if (graph_log_copy(&gin, &gout)) {
+    printf("Error copying graph log\n");
+    goto fail;
+  }
+
+  if (args.hdrmsg != NULL) {
+    if (graph_log_add(&gout, args.hdrmsg)) {
+      printf("Error adding header message\n");
       goto fail;
     }
   }
@@ -222,17 +255,20 @@ fail:
 }
 
 static uint8_t _extract_by_label(
-  graph_t *gin, graph_t *gout, uint32_t *labels, uint8_t nlabels) {
+  graph_t  *gin,
+  graph_t  *gout,
+  uint8_t   exclude,
+  uint32_t *labels,
+  uint8_t   nlabels) {
 
   array_t nodes;
   nodes.data = NULL;
 
-  if (array_create(&nodes, sizeof(node_t), 100))          goto fail;
-  
-  if (_find_nodes_by_label(gin, labels, nlabels, &nodes)) goto fail;
-  if (graph_create(        gout, nodes.size, 0))          goto fail;
-  if (_copy_nodelabels(    gin, gout, &nodes))            goto fail;
-  if (_copy_edges(         gin, gout, &nodes))            goto fail;
+  if (array_create(&nodes, sizeof(node_t), 100))                   goto fail;
+  if (_find_nodes_by_label(gin, exclude, labels, nlabels, &nodes)) goto fail;
+  if (graph_create(        gout, nodes.size, 0))                   goto fail;
+  if (_copy_nodelabels(    gin, gout, &nodes))                     goto fail;
+  if (_copy_edges(         gin, gout, &nodes))                     goto fail;
 
   array_free(&nodes);
 
@@ -244,8 +280,12 @@ fail:
   return 1;
 }
 
-static uint8_t _find_nodes_by_label(graph_t *gin,
-  uint32_t *labels, uint8_t nlabels, array_t *nodes) {
+static uint8_t _find_nodes_by_label(
+  graph_t  *gin,
+  uint8_t   exclude,
+  uint32_t *labels,
+  uint8_t   nlabels,
+  array_t  *nodes) {
 
   uint64_t i;
   uint64_t j;
@@ -256,7 +296,7 @@ static uint8_t _find_nodes_by_label(graph_t *gin,
 
   j = 0;
   for (i = 0; i < nnodes; i++) {
-    if (_test_label(gin, i, labels, nlabels)) {
+    if (_test_label(gin, exclude, i, labels, nlabels)) {
 
       node.gin_idx  = i;
       node.gout_idx = j;
@@ -273,34 +313,48 @@ fail:
 }
 
 uint8_t _test_label(
-  graph_t *g, uint32_t nid, uint32_t *labels, uint8_t nlabels) {
+  graph_t  *g,
+  uint8_t   exclude,
+  uint32_t  nid,
+  uint32_t *labels,
+  uint8_t   nlabels) {
 
   uint16_t       i;
   graph_label_t *label;
+  uint8_t        haslbl;
+
+  haslbl = 0;
 
   label = graph_get_nodelabel(g, nid);
   if (label == NULL) return 0;
 
   for (i = 0; i < nlabels; i++) {
 
-    if (label->labelval == labels[i]) return 1;
+    if (label->labelval == labels[i]) {
+      haslbl = 1;
+      if (!exclude) return 1;
+    }
   }
 
+  if (exclude && !haslbl) return 1;
   return 0;
 }
 
 uint8_t _extract_by_component(
-  graph_t *gin, graph_t *gout, uint32_t *cmps, uint8_t ncmps) {
+  graph_t  *gin,
+  graph_t  *gout,
+  uint8_t   exclude,
+  uint32_t *cmps,
+  uint8_t   ncmps) {
 
   array_t nodes;
   nodes.data = NULL;
 
-  if (array_create(&nodes, sizeof(node_t), 100))          goto fail;
-  
-  if (_find_nodes_by_component(gin, cmps, ncmps, &nodes)) goto fail;
-  if (graph_create(            gout, nodes.size, 0))      goto fail;
-  if (_copy_nodelabels(        gin, gout, &nodes))        goto fail;
-  if (_copy_edges(             gin, gout, &nodes))        goto fail;
+  if (array_create(&nodes, sizeof(node_t), 100))                   goto fail;
+  if (_find_nodes_by_component(gin, exclude, cmps, ncmps, &nodes)) goto fail;
+  if (graph_create(            gout, nodes.size, 0))               goto fail;
+  if (_copy_nodelabels(        gin, gout, &nodes))                 goto fail;
+  if (_copy_edges(             gin, gout, &nodes))                 goto fail;
 
   array_free(&nodes);
 
@@ -315,7 +369,11 @@ fail:
 }
 
 uint8_t _find_nodes_by_component(
-  graph_t *g, uint32_t *cmps, uint8_t ncmps, array_t *nodes) {
+  graph_t  *g,
+  uint8_t   exclude,
+  uint32_t *cmps,
+  uint8_t   ncmps,
+  array_t  *nodes) {
 
   uint64_t  i;
   uint64_t  j;
@@ -339,6 +397,8 @@ uint8_t _find_nodes_by_component(
 
       if (cmps[j] == componentnums[i]) {
 
+        if (exclude) break;
+
         node.gin_idx  = i;
         node.gout_idx = nnewnodes++;
 
@@ -346,6 +406,12 @@ uint8_t _find_nodes_by_component(
 
         break;
       }
+    }
+
+    if (exclude && j == ncmps) {
+      node.gin_idx  = i;
+      node.gout_idx = nnewnodes++;
+      if (array_append(nodes, &node)) goto fail;
     }
   }
 

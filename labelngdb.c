@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
   for (i = 0; i < nnodes; i++) {
     if (_update_labelval(&g, &hdr, img, i, args.real)) {
-      printf("error updating label value for node %llu\n", i);
+      printf("error updating label value for node %lu\n", i);
       goto fail;
     }
   }

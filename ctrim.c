@@ -218,7 +218,7 @@ static uint8_t _trim(graph_t *gin, graph_t *gout, args_t *a) {
 
       if (modopt.ncmps[i] != oldcmp) {
 
-        printf("%05llu, %04u, %0.6f\n", 
+        printf("%05lu, %04u, %0.6f\n", 
                i, modopt.ncmps[i], modopt.modularity[i]);
         oldcmp = modopt.ncmps[i];
       }

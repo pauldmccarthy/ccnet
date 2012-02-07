@@ -126,7 +126,7 @@ void _labels(graph_t *g) {
     lbl = graph_get_nodelabel(g, i);
 
     printf(
-      "node %5llu: %0.3f %0.3f %0.3f %u\n",
+      "node %5lu: %0.3f %0.3f %0.3f %u\n",
       i, lbl->xval, lbl->yval, lbl->zval, lbl->labelval);
   }
 
@@ -147,7 +147,7 @@ void _graph(graph_t *g) {
     nnbrs = graph_num_neighbours(g, i);
     nbrs  = graph_get_neighbours(g, i);
 
-    printf("%5llu: ", i);
+    printf("%5lu: ", i);
 
     for (j = 0; j < nnbrs; j++) {
       printf("%5u", nbrs[j]);

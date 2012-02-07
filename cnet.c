@@ -255,7 +255,7 @@ void print_stats(graph_t *g, struct args *args) {
 
     for (i = nodestart; i < nodeend; i++) {
       label = graph_get_nodelabel(g,i);
-      printf("label %llu:\t%u,%f,%f,%f\n", i, 
+      printf("label %lu:\t%u,%f,%f,%f\n", i, 
         label->labelval, 
         label->xval, 
         label->yval, 
@@ -270,7 +270,7 @@ void print_stats(graph_t *g, struct args *args) {
       tmp = stats_degree(g, i);
       degree += tmp;
 
-      printf("degree %llu:\t%f\n", i, tmp);
+      printf("degree %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -281,7 +281,7 @@ void print_stats(graph_t *g, struct args *args) {
       tmp = stats_degree_centrality(g, i);
       degcent += tmp;
 
-      printf("degree centraliy %llu:\t%f\n", i, tmp);
+      printf("degree centraliy %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   } 
@@ -296,7 +296,7 @@ void print_stats(graph_t *g, struct args *args) {
       stats_cache_node_clustering(g, i, &tmp);
       clustering += tmp;
 
-      printf("clustering %llu:\t%f\n", i, tmp);
+      printf("clustering %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -307,7 +307,7 @@ void print_stats(graph_t *g, struct args *args) {
       stats_cache_node_pathlength(g, i, &tmp);
       pathlength += tmp;
 
-      printf("pathlength %llu:\t%f\n", i, tmp);
+      printf("pathlength %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -318,7 +318,7 @@ void print_stats(graph_t *g, struct args *args) {
       tmp = stats_closeness_centrality(g, i);
       closeness += tmp;
       
-      printf("closeness %llu:\t%f\n", i, tmp);
+      printf("closeness %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -329,7 +329,7 @@ void print_stats(graph_t *g, struct args *args) {
       stats_cache_betweenness_centrality(g, i, &tmp);
       betweenness += tmp;
       
-      printf("betweenness %llu:\t%f\n", i, tmp);
+      printf("betweenness %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -341,7 +341,7 @@ void print_stats(graph_t *g, struct args *args) {
       stats_cache_node_local_efficiency(g, i, &tmp);
       locefficiency += tmp;
 
-      printf("efficiency %llu:\t%f\n", i, tmp);
+      printf("efficiency %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -351,7 +351,7 @@ void print_stats(graph_t *g, struct args *args) {
     for (i = nodestart; i < nodeend; i++) {
 
       stats_cache_node_numpaths(g, i, &tmp);
-      printf("numpaths %llu:\t%f\n", i, tmp);
+      printf("numpaths %lu:\t%f\n", i, tmp);
     }
     printf("\n");
   }
@@ -359,10 +359,10 @@ void print_stats(graph_t *g, struct args *args) {
   if (args->components) {
     stats_num_components(g, 1, &cmpsizes, components);
     for (i = nodestart; i < nodeend; i++) {
-      printf("component %llu:\t%u\n", i, components[i]);
+      printf("component %lu:\t%u\n", i, components[i]);
     }
     for (i = 0; i < cmpsizes.size; i++) {
-      printf("component %llu size:\t%u\n", i,
+      printf("component %lu size:\t%u\n", i,
              ((uint32_t *)(cmpsizes.data))[i]);
     }
     printf("\n");
@@ -372,10 +372,10 @@ void print_stats(graph_t *g, struct args *args) {
     stats_num_components(g, 1, &cmpsizes, components);
 
     for (i = 0; i < cmpsizes.size; i++) {
-      printf("component %llu population: ", i);
+      printf("component %lu population: ", i);
 
       for (j = 0; j < numnodes; j++) {
-        if (components[j] == i) printf("%llu ", (j+1));
+        if (components[j] == i) printf("%lu ", (j+1));
       }
       printf("\n");
     }
@@ -388,7 +388,7 @@ void print_stats(graph_t *g, struct args *args) {
 
     for (i = 0; i < nlblvals; i++) {
       tmp = stats_num_labelled_nodes(g, lblvals[i]);
-      printf("label value %llu: %u (%0.0f)\n", i, lblvals[i], tmp);
+      printf("label value %lu: %u (%0.0f)\n", i, lblvals[i], tmp);
     }
   }
 
@@ -397,7 +397,7 @@ void print_stats(graph_t *g, struct args *args) {
 
     for (i = 0; i < numcmps; i++) {
 
-      printf("component %llu span: %0.6f\n", i, stats_component_span(g, i));
+      printf("component %lu span: %0.6f\n", i, stats_component_span(g, i));
     }
   }
 
@@ -405,7 +405,7 @@ void print_stats(graph_t *g, struct args *args) {
 
     for (i = 0; i < numnodes; i++) {
 
-      printf("avg edge distance %llu: %0.6f\n",
+      printf("avg edge distance %lu: %0.6f\n",
              i, stats_avg_edge_distance(g, i));
     }
   }
@@ -492,7 +492,7 @@ void print_matrix(
   d      = malloc(nnodes*sizeof(double));
 
   printf("    | ");
-  for (i = 0; i < nnodes; i++) printf("%03llu     ", i); printf("\n");
+  for (i = 0; i < nnodes; i++) printf("%03lu     ", i); printf("\n");
   printf("    | ");
   for (i = 0; i < nnodes; i++) printf("--------"); printf("\n");
 
@@ -546,7 +546,7 @@ void print_edge_vals(
 
       val = func(g, i, nbrs[j]);
 
-      printf("%s %llu -- %u: %0.6f\n", prefix, i, nbrs[j], val);
+      printf("%s %lu -- %u: %0.6f\n", prefix, i, nbrs[j], val);
     }
   }
 }

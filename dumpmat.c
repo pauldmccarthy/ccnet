@@ -130,13 +130,13 @@ static void _print_meta(mat_t *mat) {
   hdrdata = NULL;
   hdrsize = mat_hdr_data_size(mat);
 
-  printf("rows:           %llu\n", mat_num_rows(    mat));
-  printf("cols:           %llu\n", mat_num_cols(    mat));
-  printf("hdr data size:  %u\n", hdrsize);
-  printf("label size:     %u\n", mat_label_size(    mat));
-  printf("symmetric:      %u\n", mat_is_symmetric(  mat));
-  printf("has row labels: %u\n", mat_has_row_labels(mat));
-  printf("has col labels: %u\n", mat_has_col_labels(mat));
+  printf("rows:           %lu\n", mat_num_rows(      mat));
+  printf("cols:           %lu\n", mat_num_cols(      mat));
+  printf("hdr data size:  %u\n",  hdrsize);
+  printf("label size:     %u\n",  mat_label_size(    mat));
+  printf("symmetric:      %u\n",  mat_is_symmetric(  mat));
+  printf("has row labels: %u\n",  mat_has_row_labels(mat));
+  printf("has col labels: %u\n",  mat_has_col_labels(mat));
 
   if (hdrsize > 0) {
     
@@ -181,11 +181,11 @@ static void _print_labels(mat_t *mat) {
   if (mat_has_row_labels(mat)) {
     for (i = 0; i < nrows; i++) {
       if (mat_read_row_label(mat, i, &label)) {
-        printf("error reading row label %llu\n", i);
+        printf("error reading row label %lu\n", i);
         break;
       }
       printf(
-        "row %5llu: %0.3f %0.3f %0.3f %u\n",
+        "row %5lu: %0.3f %0.3f %0.3f %u\n",
         i, label.xval, label.yval, label.zval, label.labelval);
     }
   }
@@ -193,11 +193,11 @@ static void _print_labels(mat_t *mat) {
   if (mat_has_col_labels(mat)) {
     for (i = 0; i < ncols; i++) {
       if (mat_read_col_label(mat, i, &label)) {
-        printf("error reading col label %llu\n", i);
+        printf("error reading col label %lu\n", i);
         break;
       }
       printf(
-        "col %5llu: %0.3f %0.3f %0.3f %u\n",
+        "col %5lu: %0.3f %0.3f %0.3f %u\n",
         i, label.xval, label.yval, label.zval, label.labelval);
     }
   }
@@ -221,7 +221,7 @@ static void _print_data(mat_t *mat) {
   for (i = 0; i < nrows; i++) {
 
     if (mat_read_row(mat, i, rowvals)) {
-      printf("error reading row %llu data\n", i);
+      printf("error reading row %lu data\n", i);
       goto fail;
     }
 

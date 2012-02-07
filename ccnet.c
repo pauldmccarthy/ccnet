@@ -134,11 +134,11 @@ void _print_global_stats(graph_t *g) {
   printf("# edges              %u\n",    graph_num_edges(               g));
   printf("# density            %0.6f\n", stats_density(                 g));
   printf("# degree             %0.3f\n", stats_avg_degree(              g));
-  printf("# max degree         %u\n",    stats_cache_max_degree(        g));
-  printf("# components         %u\n",    stats_cache_num_components(    g));
+  printf("# max degree         %0.0f\n", stats_cache_max_degree(        g));
+  printf("# components         %0.0f\n", stats_cache_num_components(    g));
   printf("# largest component  %u\n",    graph_num_nodes(               g));
-  printf("# connected          %u\n",    stats_cache_connected(         g));
-  printf("# disconnected       %u\n",    nnodes - stats_cache_connected(g));  
+  printf("# connected          %0.0f\n", stats_cache_connected(         g));
+  printf("# disconnected       %0.0f\n", nnodes - stats_cache_connected(g));  
   printf("# clustering         %0.6f\n", stats_cache_graph_clustering(  g));
   printf("# pathlength         %0.6f\n", stats_cache_graph_pathlength(  g));
   printf("# smallworld index   %0.6f\n", stats_smallworld_index(        g));

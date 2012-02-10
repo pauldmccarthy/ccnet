@@ -63,7 +63,8 @@ exes=dumpimg    \
      labelngdb  \
      tsgen      \
      repimg     \
-     ccnet
+     ccnet      \
+     cthres
 
 
 default: $(exes)

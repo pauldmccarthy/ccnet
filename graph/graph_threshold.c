@@ -305,8 +305,8 @@ uint8_t _threshold_edges(graph_t *gin, graph_t *gout, double threshold) {
 
     for (v = 0; v < nnbrs; v++) {
 
-      if (wts[v] < threshold)                    continue;
-      if (graph_add_edge(gout, u, nbrs[v], 1.0)) goto fail;
+      if (wts[v] < threshold)                       continue;
+      if (graph_add_edge(gout, u, nbrs[v], wts[v])) goto fail;
     }
   }
 

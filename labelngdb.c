@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "graph/graph.h"
 #include "util/startup.h"
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]) {
 
   for (i = 0; i < nnodes; i++) {
     if (_update_labelval(&g, &hdr, img, i, args.real)) {
-      printf("error updating label value for node %lu\n", i);
+      printf("error updating label value for node %" PRIu64 "\n", i);
       goto fail;
     }
   }

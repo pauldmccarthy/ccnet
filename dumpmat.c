@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "io/mat.h"
 #include "util/startup.h"
@@ -130,13 +131,13 @@ static void _print_meta(mat_t *mat) {
   hdrdata = NULL;
   hdrsize = mat_hdr_data_size(mat);
 
-  printf("rows:           %lu\n", mat_num_rows(      mat));
-  printf("cols:           %lu\n", mat_num_cols(      mat));
-  printf("hdr data size:  %u\n",  hdrsize);
-  printf("label size:     %u\n",  mat_label_size(    mat));
-  printf("symmetric:      %u\n",  mat_is_symmetric(  mat));
-  printf("has row labels: %u\n",  mat_has_row_labels(mat));
-  printf("has col labels: %u\n",  mat_has_col_labels(mat));
+  printf("rows:           %" PRIu64 "\n", mat_num_rows(      mat));
+  printf("cols:           %" PRIu64 "\n", mat_num_cols(      mat));
+  printf("hdr data size:  %u\n",          hdrsize);
+  printf("label size:     %u\n",          mat_label_size(    mat));
+  printf("symmetric:      %u\n",          mat_is_symmetric(  mat));
+  printf("has row labels: %u\n",          mat_has_row_labels(mat));
+  printf("has col labels: %u\n",          mat_has_col_labels(mat));
 
   if (hdrsize > 0) {
     
@@ -181,11 +182,11 @@ static void _print_labels(mat_t *mat) {
   if (mat_has_row_labels(mat)) {
     for (i = 0; i < nrows; i++) {
       if (mat_read_row_label(mat, i, &label)) {
-        printf("error reading row label %lu\n", i);
+        printf("error reading row label %" PRIu64 "\n", i);
         break;
       }
       printf(
-        "row %5lu: %0.3f %0.3f %0.3f %u\n",
+        "row %5" PRIu64 ": %0.3f %0.3f %0.3f %u\n",
         i, label.xval, label.yval, label.zval, label.labelval);
     }
   }
@@ -193,11 +194,11 @@ static void _print_labels(mat_t *mat) {
   if (mat_has_col_labels(mat)) {
     for (i = 0; i < ncols; i++) {
       if (mat_read_col_label(mat, i, &label)) {
-        printf("error reading col label %lu\n", i);
+        printf("error reading col label %" PRIu64 "\n", i);
         break;
       }
       printf(
-        "col %5lu: %0.3f %0.3f %0.3f %u\n",
+        "col %5" PRIu64 ": %0.3f %0.3f %0.3f %u\n",
         i, label.xval, label.yval, label.zval, label.labelval);
     }
   }
@@ -221,7 +222,7 @@ static void _print_data(mat_t *mat) {
   for (i = 0; i < nrows; i++) {
 
     if (mat_read_row(mat, i, rowvals)) {
-      printf("error reading row %lu data\n", i);
+      printf("error reading row %" PRIu64 " data\n", i);
       goto fail;
     }
 

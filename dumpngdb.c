@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "graph/graph.h"
 #include "graph/graph_log.h"
@@ -126,7 +127,7 @@ void _labels(graph_t *g) {
     lbl = graph_get_nodelabel(g, i);
 
     printf(
-      "node %5lu: %0.3f %0.3f %0.3f %u\n",
+      "node %5" PRIu64 ": %0.3f %0.3f %0.3f %u\n",
       i, lbl->xval, lbl->yval, lbl->zval, lbl->labelval);
   }
 
@@ -147,7 +148,7 @@ void _graph(graph_t *g) {
     nnbrs = graph_num_neighbours(g, i);
     nbrs  = graph_get_neighbours(g, i);
 
-    printf("%5lu: ", i);
+    printf("%5" PRIu64 ": ", i);
 
     for (j = 0; j < nnbrs; j++) {
       printf("%5u", nbrs[j]);

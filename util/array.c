@@ -264,7 +264,10 @@ uint8_t array_insert_sorted(
     }
   }
 
-  if (cmpval == 0 && unique) return 1;
+  if (cmpval == 0 && unique) {
+    if (idx != NULL) (*idx) = i - 1;
+    return 1;
+  }
   
   if (array_insert(a, i, val)) goto fail;
 

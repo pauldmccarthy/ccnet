@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "graph/graph.h"
 #include "util/startup.h"
@@ -117,7 +118,7 @@ void _print_map(nlbl_map_t *map, char **inputs, uint16_t ninputs) {
 
   nnodes = map->labels.size;
   
-  printf("                   ");
+  printf("                   \t");
   for (j = 0; j < ninputs; j++) {
     printf("%s\t", inputs[j]);
   }
@@ -128,12 +129,12 @@ void _print_map(nlbl_map_t *map, char **inputs, uint16_t ninputs) {
     lbl     = array_getd(&(map->labels),  i);
     nodeids = array_getd(&(map->nodeids), i);
 
-    printf("%0.2f %0.2f %0.2f: ", lbl->xval, lbl->yval, lbl->zval);
+    printf("%0.2f %0.2f %0.2f: \t", lbl->xval, lbl->yval, lbl->zval);
 
     for (j = 0; j < ninputs; j++) {
 
       nidx = *(int64_t *)array_getd(nodeids, j);
-      printf("%4li\t", nidx);
+      printf("%4" PRIi64 "\t", nidx);
     }
 
     printf("\n");
@@ -155,6 +156,8 @@ int main(int argc, char *argv[]) {
     printf("error creating node label map\n");
     goto fail;
   }
+
+  _print_map(&map, args.inputs, args.ninputs);
 
 
   return 0;
@@ -209,9 +212,13 @@ uint8_t _update_nlbl_map(
     
     lbl = graph_get_nodelabel(g, i);
 
+    printf("node %" PRIi64 " (%0.2f %0.2f %0.2f)\n",
+           i, lbl->xval, lbl->yval, lbl->zval);
+
     switch (array_insert_sorted(&(map->labels), lbl, 1, &lblidx)) {
 
       case 0:
+        printf("new label - inserting new array (%" PRIu32 ")\n", lblidx);
         if (array_create(&nodeids, sizeof(int64_t), ninputs)) goto fail; 
         for (j = 0; j < ninputs; j++) array_set(&nodeids, j, &tmp);
         
@@ -219,12 +226,16 @@ uint8_t _update_nlbl_map(
 
         break;
 
-      case 1:  break;
+      case 1:
+        printf("existing label (%" PRIu32 "\n", lblidx);
+        break;
       default: goto fail;
     }
 
     pnodeids = array_getd(&(map->nodeids), lblidx);
-    array_set(pnodeids, lblidx, &i);
+
+    printf("setting index %" PRIu16 ": %" PRIi64 "\n", inidx, i);
+    array_set(pnodeids, inidx, &i);
   }
 
   return 0;
@@ -243,6 +254,8 @@ uint8_t _mk_nlbl_map(char **inputs, uint16_t ninputs, nlbl_map_t *map) {
   array_set_cmps(&(map->labels), _compare_glbl, _compare_glbl_ins);
 
   for (i = 0; i < ninputs; i++) {
+
+    printf("loading %s ...\n", inputs[i]);
 
     if (ngdb_read(inputs[i], &g))              goto fail;
     if (_update_nlbl_map(&g, ninputs, i, map)) goto fail;

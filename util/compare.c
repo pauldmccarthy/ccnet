@@ -8,20 +8,6 @@
 
 #include "util/compare.h"
 
-/**
- * Generic compare function used by compare_*_insert functions, for managing
- * state during a bsearch_insert search.
- * 
- * Inspiration provided by:
- *   http://blog.dt.in.th/2010/01/where-to-insert-bsearch
- */ 
-static int _compare_insert(
-  const void  *a,
-  const void  *b,
-  const size_t sz,
-  int (*cmp)(const void *, const void *)
-);
-
 int compare_str_numeric(const void *a, const void *b) {
 
   char  *sa;
@@ -66,10 +52,10 @@ int compare_u32(const void *a, const void *b) {
 
 int compare_u32_insert(const void *a, const void *b) {
 
-  return _compare_insert(a, b, sizeof(uint32_t), compare_u32);
+  return compare_insert(a, b, sizeof(uint32_t), compare_u32);
 }
 
-int _compare_insert(
+int compare_insert(
   const void  *a,
   const void  *b,
   const size_t sz,
@@ -112,7 +98,7 @@ void *bsearch_insert(
   cbase = base;
   last  = cbase + ((nmemb-1)*size);
 
-  _compare_insert(NULL, last, 0, NULL);
+  compare_insert(NULL, last, 0, NULL);
 
   return bsearch(key, base, nmemb, size, compar);
 }

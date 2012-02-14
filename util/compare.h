@@ -50,6 +50,23 @@ int compare_u32_insert(
   const void *b  /**< pointer to a uint32_t */
 );
 
+
+/**
+ * Generic compare function used by compare_*_insert functions, for managing
+ * state during a bsearch_insert search.
+ * 
+ * Inspiration provided by:
+ *   http://blog.dt.in.th/2010/01/where-to-insert-bsearch
+ */ 
+int compare_insert(
+  const void  *a,  /**< pointer to first value for comparison  */
+  const void  *b,  /**< pointer to second value for comparison */
+  const size_t sz, /**< size of one value                      */
+  int (*cmp)(
+    const void *,
+    const void *)  /**< regular comparison function            */
+);
+
 /**
  * Alternative version of bsearch which, when a value is not present in the
  * array, instead of returning NULL, returns a pointer to the location of the

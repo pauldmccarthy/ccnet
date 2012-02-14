@@ -64,7 +64,8 @@ exes=dumpimg    \
      tsgen      \
      repimg     \
      ccnet      \
-     cthres
+     cthres     \
+     avgngdb
 
 
 default: $(exes)

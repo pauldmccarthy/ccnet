@@ -288,6 +288,12 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
+  if (nincvxls == 0) {
+
+    printf("All voxels have been thresholded - relax your constraints\n");
+    goto fail;
+  }
+
   mat = mat_create(
     args.output, nincvxls, nincvxls,
     (1 << MAT_IS_SYMMETRIC) | (1 << MAT_HAS_ROW_LABELS),

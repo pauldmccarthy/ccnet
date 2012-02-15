@@ -105,7 +105,9 @@ uint32_t ngdb_node_get_ref(
 uint8_t ngdb_node_get_all_refs(
   ngdb_t    *ngdb, /**< the graph to query                            */
   uint32_t   idx,  /**< the node to query                             */
-  uint32_t  *refs  /**< memory to store ngdb_node_num_refs references */
+  uint32_t  *refs, /**< memory to store ngdb_node_num_refs references */
+  void      *data  /**< NULL, or memory to store
+                        ngdb_node_num_refs*ngdb_ref_data_len bytes    */
 );
 
 /**
@@ -178,7 +180,7 @@ uint32_t ngdb_add_ref(
   ngdb_t   *ngdb,   /**< the graph in question                        */
   uint32_t  idx,    /**< the node to add a reference to               */
   uint32_t  refidx, /**< the reference to add (idx of the other node) */
-  uint8_t  *data,   /**< the data                                     */
+  void     *data,   /**< the data                                     */
   uint16_t  dlen    /**< length of the data                           */
 
 );

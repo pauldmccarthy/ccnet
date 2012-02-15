@@ -349,17 +349,25 @@ fail:
   return 0xFFFFFFFF;
 }
 
-uint8_t ngdb_node_get_all_refs(ngdb_t *ngdb, uint32_t idx, uint32_t *refs) {
+uint8_t ngdb_node_get_all_refs(
+  ngdb_t *ngdb, uint32_t idx, uint32_t *refs, void *data) {
 
-  node_t node;
-  ref_t  ref;
+  uint32_t refno;
+  node_t   node;
+  ref_t    ref;
+  uint8_t *udata;
+
+  refno     = 0;
   node.data = NULL;
   ref.data  = NULL;
+  udata     = data;
 
   if (ngdb      == NULL)            goto fail;
   if (ngdb->fid == NULL)            goto fail;
   if (refs      == NULL)            goto fail;
   if (idx       >= ngdb->num_nodes) goto fail;
+  
+  if (ngdb->rdata_len == 0) udata = NULL;
 
   if (_ngdb_read_node(ngdb, idx, &node) != 0) goto fail;
 
@@ -370,8 +378,12 @@ uint8_t ngdb_node_get_all_refs(ngdb_t *ngdb, uint32_t idx, uint32_t *refs) {
   ref.next = node.first_ref;
   do {
 
+    if (udata != NULL) ref.data = udata + (refno*(ngdb->rdata_len));
+
     if (_ngdb_read_ref(ngdb, ref.next, &ref) != 0) goto fail;
     memcpy(refs++, &(ref.idx), sizeof(ref.idx));
+
+    refno ++;
   } while (ref.next != 0);
 
   return 0;
@@ -517,7 +529,7 @@ fail:
 }
 
 uint32_t ngdb_add_ref(
-ngdb_t *ngdb, uint32_t idx, uint32_t refidx, uint8_t *data, uint16_t dlen) {
+ngdb_t *ngdb, uint32_t idx, uint32_t refidx, void *data, uint16_t dlen) {
 
   node_t   node;
   ref_t    ref;

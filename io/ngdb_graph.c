@@ -110,8 +110,10 @@ uint8_t _read_refs(ngdb_t *ngdb, graph_t *graph, uint32_t nidx) {
   uint64_t  i;
   uint32_t  numrefs;
   uint32_t *refs;
+  double   *wts;
 
   refs = NULL;
+  wts  = NULL;
 
   numrefs = ngdb_node_num_refs(ngdb, nidx);
 
@@ -120,23 +122,28 @@ uint8_t _read_refs(ngdb_t *ngdb, graph_t *graph, uint32_t nidx) {
   if (numrefs > 0) {
 
     refs = malloc(numrefs*sizeof(uint32_t));
+    wts  = malloc(numrefs*sizeof(double));
 
-    if (refs                                     == NULL)   goto fail;
-    if (ngdb_node_get_all_refs(ngdb, nidx, refs) != 0)      goto fail;
-    if (array_expand(&graph->neighbours[nidx], numrefs+1))  goto fail;
-    if (array_expand(&graph->weights[   nidx], numrefs+1))  goto fail;
+    if (refs                                          == NULL) goto fail;
+    if (wts                                           == NULL) goto fail;
+    if (ngdb_node_get_all_refs(ngdb, nidx, refs, wts) != 0)    goto fail;
+    if (array_expand(&graph->neighbours[nidx], numrefs+1))     goto fail;
+    if (array_expand(&graph->weights[   nidx], numrefs+1))     goto fail;
 
     for (i = 0; i < numrefs; i++) {
-      if (graph_add_edge(graph, nidx, refs[i], 1.0)) goto fail;
+      if (graph_add_edge(graph, nidx, refs[i], wts[i])) goto fail;
     }
     
     free(refs);
+    free(wts);
     refs = NULL;
+    wts  = NULL;
   }
 
   return 0;
 fail:
   if (refs != NULL) free(refs);
+  if (wts  != NULL) free(wts);
   return 1;
 }
 
@@ -193,7 +200,7 @@ uint8_t ngdb_write(graph_t *g, char *f) {
     graph_num_nodes(g),
     NGDB_HDR_DATA_SIZE,
     sizeof(graph_label_t),
-    8);
+    sizeof(double));
 
   if (ngdb == NULL)          goto fail;
   if (_write_hdr  (ngdb, g)) goto fail;
@@ -276,7 +283,7 @@ uint8_t _write_refs(ngdb_t *ngdb, graph_t *g) {
   uint32_t  nnbrs;
   uint32_t *nbrs;
   float    *wts;
-  uint8_t  *data;
+  double    data;
   uint8_t   dlen;
 
   nnodes = graph_num_nodes(g);
@@ -289,10 +296,10 @@ uint8_t _write_refs(ngdb_t *ngdb, graph_t *g) {
 
     for (v = 0; v < nnbrs; v++) {
 
-      data = (wts == NULL) ? NULL : (uint8_t *)(wts+v);
-      dlen = (wts == NULL) ? 0    : sizeof(float);
+      data = (wts == NULL) ? 0 : wts[v];
+      dlen = (wts == NULL) ? 0 : sizeof(double);
       
-      if (ngdb_add_ref(ngdb, u, nbrs[v], data, dlen) == 0xFFFFFFFF)
+      if (ngdb_add_ref(ngdb, u, nbrs[v], &data, dlen) == 0xFFFFFFFF)
         goto fail;
     }
   }

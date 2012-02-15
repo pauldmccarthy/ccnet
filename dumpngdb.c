@@ -20,15 +20,17 @@ typedef struct _args {
   uint8_t meta;
   uint8_t labels;
   uint8_t graph;
+  uint8_t weights;
 } args_t;
 
 static char doc[] =
   "dumpngdb -- print the contents of a .ngdb file";
 
 static struct argp_option options[] = {
-  {"meta",   'm', NULL, 0, "print information about the file"},
-  {"labels", 'l', NULL, 0, "print node labels"},
-  {"graph",  'g', NULL, 0, "print out nodes and neighbours"},
+  {"meta",    'm', NULL, 0, "print information about the file"},
+  {"labels",  'l', NULL, 0, "print node labels"},
+  {"graph",   'g', NULL, 0, "print nodes and neighbours"},
+  {"weights", 'w', NULL, 0, "print edge weights"},
   {0}
 };
 
@@ -40,9 +42,10 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
   switch(key) {
     
-    case 'm': args->meta   = 1; break;
-    case 'l': args->labels = 1; break;
-    case 'g': args->graph  = 1; break;
+    case 'm': args->meta    = 1; break;
+    case 'l': args->labels  = 1; break;
+    case 'g': args->graph   = 1; break;
+    case 'w': args->weights = 1; break;
       
     case ARGP_KEY_ARG:
       if (state->arg_num == 0) args->input = arg;
@@ -63,7 +66,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
 static void _meta(  graph_t *g);
 static void _labels(graph_t *g);
-static void _graph( graph_t *g);
+static void _graph( graph_t *g, uint8_t weights);
 
 int main(int argc, char *argv[]) {
 
@@ -82,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   if (args.meta)   _meta(  &g);
   if (args.labels) _labels(&g);
-  if (args.graph)  _graph( &g);
+  if (args.graph)  _graph( &g, args.weights);
 
   graph_free(&g);
   return 0;
@@ -133,13 +136,14 @@ void _labels(graph_t *g) {
 
 }
 
-void _graph(graph_t *g) {
+void _graph(graph_t *g, uint8_t weights) {
 
   uint64_t  i;
   uint64_t  j;
   uint32_t  nnodes;
   uint32_t  nnbrs;
   uint32_t *nbrs;
+  float    *wts;
 
   nnodes = graph_num_nodes(g);
 
@@ -147,11 +151,13 @@ void _graph(graph_t *g) {
 
     nnbrs = graph_num_neighbours(g, i);
     nbrs  = graph_get_neighbours(g, i);
+    wts   = graph_get_weights(   g, i);
 
     printf("%5" PRIu64 ": ", i);
 
     for (j = 0; j < nnbrs; j++) {
       printf("%5u", nbrs[j]);
+      if (weights) printf(" (%0.1f)", wts[j]);
       if (j < nnbrs-1) printf(" ");
     }
     printf("\n");

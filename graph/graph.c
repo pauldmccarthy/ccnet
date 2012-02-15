@@ -86,6 +86,32 @@ double graph_get_weight(graph_t *g, uint32_t u, uint32_t v) {
   return wt;
 }
 
+uint8_t graph_set_weight(graph_t *g, uint32_t u, uint32_t v, float wt) {
+
+  int64_t vidx;
+  int64_t uidx;
+
+  if (g->weights == NULL) return 0;
+
+  vidx = graph_get_nbr_idx(g, u, v);
+  if (vidx < 0) goto fail;
+
+  array_set(&(g->weights[u]), vidx, &wt);
+
+  if (!graph_is_directed(g)) {
+
+    uidx = graph_get_nbr_idx(g, v, u);
+    if (uidx < 0) goto fail;
+
+    array_set(&(g->weights[v]), uidx, &wt);
+  }
+
+  return 0;
+  
+fail:
+  return 1;
+}
+
 float *graph_get_weights(graph_t *g, uint32_t nidx) {
 
   return (g->weights == NULL) 

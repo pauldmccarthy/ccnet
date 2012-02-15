@@ -179,6 +179,16 @@ double graph_get_weight(
 );
 
 /**
+ * Sets the weight for the given edge.
+ */
+uint8_t graph_set_weight(
+  graph_t *g, /**< the graph           */
+  uint32_t u, /**< edge endpoint       */
+  uint32_t v, /**< other edge endpoint */
+  float    wt /**< new edge weight     */
+);
+
+/**
  * \return a pointer to the weights for neighbours of the given node.
  */
 float *graph_get_weights(

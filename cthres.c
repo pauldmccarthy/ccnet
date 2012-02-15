@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
   memset(&args, 0, sizeof(args));
 
-  startup("labelngdb", argc, argv, &argp, &args);
+  startup("cthres", argc, argv, &argp, &args);
 
   if (ngdb_read(args.input, &gin)) {
     printf("error openineg input file %s\n", args.input);

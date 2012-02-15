@@ -158,54 +158,6 @@ static uint8_t _mk_avg_graph(
   nlbl_map_t *map      /**< label->node index mapping      */
 );
 
-void _print_map(nlbl_map_t *map, char **inputs, uint16_t ninputs) {
-
-  uint64_t       i;
-  uint64_t       j;
-  int64_t        nidx;
-  uint32_t       nnodes;
-  graph_label_t *lbl;
-  array_t       *nodeids;
-
-  nnodes = map->labels.size;
-  
-  printf("                      \t");
-  for (j = 0; j < ninputs; j++) {
-    printf("%s\t", inputs[j]);
-  }
-  printf("\n");
-
-  for (i = 0; i < nnodes; i++) {
-
-    lbl     = array_getd(&(map->labels),  i);
-    nodeids = array_getd(&(map->nodeids), i);
-
-    printf("%" PRIu64 " %0.2f %0.2f %0.2f: \t",
-           i, lbl->xval, lbl->yval, lbl->zval);
-
-    for (j = 0; j < ninputs; j++) {
-
-      nidx = *(int64_t *)array_getd(nodeids, j);
-      printf("%4" PRIi64 "\t", nidx);
-    }
-
-    printf("\n");
-  }
-
-  for (i = 0; i < ninputs; i++) {
-
-    printf("\n%s\n", inputs[i]);
-
-    nodeids = array_getd(&(map->idmap), i);
-
-    for (j = 0; j < nodeids->size; j++) {
-
-      printf("%" PRIu64 " -> %" PRIu32 "\n",
-             j, *(uint32_t *)array_getd(nodeids, j));
-    }
-  }
-}
-
 int main(int argc, char *argv[]) {
 
   nlbl_map_t  map;
@@ -223,8 +175,6 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  _print_map(&map, args.inputs, args.ninputs);
-
   if (_mk_avg_graph(args.inputs, args.ninputs, &gavg, &map)) {
     printf("error creating average graph\n");
     goto fail;
@@ -234,7 +184,6 @@ int main(int argc, char *argv[]) {
     printf("error writing graph to %s\n", args.output);
     goto fail;
   }
-
 
   return 0;
   
@@ -409,7 +358,6 @@ uint8_t _update_avg_graph(
       graph_add_edge(gavg, outi, outj, 0.0);
 
       wt = graph_get_weight(gavg, outi, outj);
-      printf("%2u <-> %2u   (%2" PRIu64 " <-> %2u): %0.0f\n", outi, outj, i, nbrs[j], wt+1);
       if (graph_set_weight(gavg, outi, outj, wt + 1)) goto fail;
     }
   }
@@ -444,8 +392,6 @@ uint8_t _mk_avg_graph(
 
   for (i = 0; i < ninputs; i++) {
 
-    printf("%s\n", inputs[i]);
-
     nodemap = array_getd(&(map->idmap), i);
     
     if (ngdb_read(inputs[i], &gin)) goto fail;
@@ -459,5 +405,3 @@ uint8_t _mk_avg_graph(
 fail:
   return 1;
 }
-
-

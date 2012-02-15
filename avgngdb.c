@@ -27,11 +27,6 @@ typedef struct _args {
 static char doc[] = "avgngdb -- create an average graph from "\
                     "a collection of input graph files";
 
-static struct argp_option options[] = {
-  {"input", 'i', "FILE", 0, "input file"},
-  {0}
-};
-
 static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
   args_t *args;
@@ -39,21 +34,19 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   args = state->input;
 
   switch (key) {
-    
-    case 'i':
-      if (args->ninputs < MAX_INPUTS)
-        args->inputs[args->ninputs++] = arg;
-      else
-        printf("too many inputs - ignoring %s\n", arg);
-      break;
 
     case ARGP_KEY_ARG:
       if (state->arg_num == 0) args->output = arg;
-      else                     argp_usage(state);
+      else {
+        
+        if (args->ninputs < MAX_INPUTS) args->inputs[args->ninputs++] = arg;
+        else printf("too many inputs - ignoring %s\n", arg);
+      }
+        
       break;
 
     case ARGP_KEY_END:
-      if (state->arg_num != 1) argp_usage(state);
+      if (state->arg_num <= 1) argp_usage(state);
       break;
 
     default:
@@ -218,7 +211,7 @@ int main(int argc, char *argv[]) {
   nlbl_map_t  map;
   args_t      args;
   graph_t     gavg;
-  struct argp argp = {options, _parse_opt, "OUTPUT", doc};
+  struct argp argp = {NULL, _parse_opt, "OUTPUT [INPUT ...]", doc};
 
   memset(&args, 0, sizeof(args));
   memset(&map,  0, sizeof(map));
@@ -412,8 +405,6 @@ uint8_t _update_avg_graph(
       if (i >= nbrs[j]) continue;
 
       outj = *(uint32_t *)array_getd(nodemap, nbrs[j]);
-
-      
 
       graph_add_edge(gavg, outi, outj, 0.0);
 

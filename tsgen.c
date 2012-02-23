@@ -1,5 +1,5 @@
 /**
- * Program which Generates random time series data, and saves it to an
+ * Program which generates random time series data, and saves it to an
  * ANALYZE75 volume.
  * 
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>

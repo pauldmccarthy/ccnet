@@ -65,7 +65,8 @@ exes=dumpimg    \
      repimg     \
      ccnet      \
      cthres     \
-     avgngdb
+     avgngdb    \
+     cmask
 
 
 default: $(exes)

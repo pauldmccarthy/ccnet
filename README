@@ -2,12 +2,16 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
 
   avgimg     - Average a collection of ANALYZE75 image files (the inputs 
                must have the same dimensions).
+  avgngdb    - Create a weighted ngdb file by accumulating edges from a 
+               number of inputs.
   catimg     - Concatenate a collection of ANALYZE75 image files into a 
                volume (the inputs must have the same dimensions).
   cdot       - Convert a ngdb graph to a graphviz dot file.
   ceo        - Convert a radatools lol file to a ngdb graph file.
   cextract   - Extract subgraphs by label.
   cgen       - Generate graphs of different types.
+  cmask      - Mask the nodes of a ngdb file with the values from a 
+               corresponding ANALYZE75 image file.
   cmerge     - Merge nodes by label.
   cnet       - Calculate statistics over NGDB graph files.
   cnvimg     - Convert an ANALYZE75 image to a different data type.
@@ -17,6 +21,7 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
   creduce    - Reduce a graph by label value, creating a new 
                weighted/thresholded graph.
   cropimg    - Extract a portion of an ANALYZE75 file.
+  cthres     - Threshold the edges of a weighted ngdb file.
   ctrim      - Remove edges from a graph based on a given criteria.
   cutimg     - Split an ANALYZE75 volume into a collection of image files.
   cvtk       - Convert a ngdb graph to a vtk model file.
@@ -36,6 +41,7 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
   scaleimg   - Apply a scaling factor to every value in an ANALYZE75 image.
   shiftimg   - Shift an ANALYZE75 image along any dimension, with optional
                wrap-around.
+  tsgen      - Generate random ANALYZE75 time series volumes.
   tsgraph    - Create a NGDB file from a MAT file generated from tsmat.
   tsmat      - Create a MAT file containing a correlation matrix between time
                series from an ANALYZE75 volume.

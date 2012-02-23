@@ -33,9 +33,9 @@ uint8_t graph_remove(
  * \return 0 on success, non-0 on failure.
  */
 uint8_t graph_mask(
-  graph_t *gin,     /**< graph to mask                       */
-  graph_t *gout,    /**< uninitialised graph to store output */
-  uint8_t *nodemask /**< mask specifying nodes to remove     */
+  graph_t *gin,  /**< graph to mask                       */
+  graph_t *gout, /**< uninitialised graph to store output */
+  uint8_t *mask  /**< mask specifying nodes to remove     */
 );
 
 #endif

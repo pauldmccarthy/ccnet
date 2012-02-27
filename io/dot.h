@@ -21,7 +21,9 @@ typedef enum {
   DOT_NODE_POS      = 2, /**< Include node positions               */
   DOT_NODE_LABELVAL = 3, /**< Include node labels in dot labels    */
   DOT_NODE_NODEID   = 4, /**< Include node IDs in dot labels       */
-  DOT_CMP_COLOUR    = 5  /**< randomise per-component node colours */
+  DOT_CMP_COLOUR    = 5, /**< randomise per-component node colours */
+  DOT_EDGE_WEIGHT   = 6, /**< Set edge line width proportional
+                              to edge weight                       */
 
 } dot_opts_t;
 

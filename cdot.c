@@ -29,6 +29,7 @@ static struct argp_option options[] = {
   {"colormap",   'c', "FILE", 0, "file specifying label <-> color mappings"},
   {"randcolor",  'r', NULL,   0, "randomise per-label colours"},
   {"edgelabels", 'e', NULL,   0, "set edge weights as labels"},
+  {"edgewidth",  'w', NULL,   0, "set edge width proportional to edge weight"},
   {"nodelval",   'n', NULL,   0, "include node labels in dot labels"},
   {"nodeid",     'i', NULL,   0, "include node IDs in dot labels"},
   {"nodepos",    'p', NULL,   0, "include node positions"},
@@ -45,6 +46,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'c': a->cmap     = arg;                      break;
     case 'r': a->dotopts |= (1 << DOT_RAND_COLOUR);   break;
     case 'e': a->dotopts |= (1 << DOT_EDGE_LABELS);   break;
+    case 'w': a->dotopts |= (1 << DOT_EDGE_WEIGHT);   break;
     case 'n': a->dotopts |= (1 << DOT_NODE_LABELVAL); break;
     case 'i': a->dotopts |= (1 << DOT_NODE_NODEID);   break;
     case 'p': a->dotopts |= (1 << DOT_NODE_POS);      break;

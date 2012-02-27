@@ -246,6 +246,17 @@ void _write_edges(
   uint32_t *nbrs;
   float    *wts;
 
+  char  lblstr[50];
+  char  wtstr [50];
+  char *tkns  [2];
+  char  atts  [200];
+
+  tkns  [0] = lblstr;
+  tkns  [1] = wtstr;
+  atts  [0] = '\0';
+  lblstr[0] = '\0';
+  wtstr [0] = '\0';
+
   nnbrs = graph_num_neighbours(g, u);
   nbrs  = graph_get_neighbours(g, u);
   wts   = graph_get_weights(   g, u);
@@ -253,9 +264,14 @@ void _write_edges(
   for (i = 0; i < nnbrs; i++) {
 
     if ((opts >> DOT_EDGE_LABELS) & 1)
-      fprintf(hd, "%u -- %u [label=%0.4f];\n", u, nbrs[i], wts[i]);
-    else
-      fprintf(hd, "%u -- %u;\n", u, nbrs[i]);
+      sprintf(lblstr, "label=%0.4f", wts[i]);
+    if ((opts >> DOT_EDGE_WEIGHT) & 1)
+      sprintf(lblstr, "penwidth=%0.4f", 1.0+wts[i]*4.0);
+
+    _join(atts, tkns, 2, ',');
+
+    if (atts[0] == '\0') fprintf(hd, "%u -- %u;\n", u, nbrs[i]);
+    else                 fprintf(hd, "%u -- %u [%s];\n", u, nbrs[i], atts);
   }
 }
 

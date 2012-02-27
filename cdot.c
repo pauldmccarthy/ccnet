@@ -32,6 +32,7 @@ static struct argp_option options[] = {
   {"nodelval",   'n', NULL,   0, "include node labels in dot labels"},
   {"nodeid",     'i', NULL,   0, "include node IDs in dot labels"},
   {"nodepos",    'p', NULL,   0, "include node positions"},
+  {"cmpcolor",   'm', NULL,   0, "randomise per-component colours"},
   {0}
 };
 
@@ -47,6 +48,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'n': a->dotopts |= DOT_NODE_LABELVAL; break;
     case 'i': a->dotopts |= DOT_NODE_NODEID;   break;
     case 'p': a->dotopts |= DOT_NODE_POS;      break;
+    case 'm': a->dotopts |= DOT_CMP_COLOUR;    break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;

@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 
+#include "io/analyze75.h"
 #include "util/array.h"
 #include "util/stack.h"
 
@@ -443,6 +444,22 @@ uint8_t graph_create_clustered_by_degree(
   double   intdegree, /**< intra-cluster degree              */
   double   extdegree, /**< inter-cluster degree              */
   double   sizerange  /**< size range (0.0-1.0)              */
+);
+
+/**
+ * Creates a graph from an ANALYZE75 image, according to the Normalized cut
+ * graph creation algorithm.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t graph_create_ncut(
+  graph_t *graph,
+  dsr_t   *hdr,
+  uint8_t *img,
+  double   si,
+  double   sx,
+  double   rad,
+  double   thres
 );
 
 #endif /* __GRAPH_H__ */

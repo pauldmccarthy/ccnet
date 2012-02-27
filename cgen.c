@@ -16,13 +16,14 @@
 typedef enum {
   TYPE_ER_RANDOM = 0, /* "errandom"  */
   TYPE_CLUSTERED = 1, /* "clustered" */
+  TYPE_NCUT      = 2, /* "ncut"      */
 } graph_type_t;
 
 static char doc[] = "cgen - generate graphs";
 
 typedef struct args {
 
-  char *output;
+  char        *output;
 
   uint32_t     numnodes;
   graph_type_t type;
@@ -35,6 +36,11 @@ typedef struct args {
   uint8_t      intext;
   uint8_t      intdens;
   
+  char        *imgf;
+  double       si;
+  double       sx;
+  double       radius;
+  double       threshold;
 } args_t;
 
 static struct argp_option options[] = {
@@ -55,6 +61,11 @@ static struct argp_option options[] = {
                                     "for clustered graphs"},
   {"intdens",     's',  NULL,    0, "use internal and total density "\
                                     "for clustered graphs"},
+  {"imgf",        'm', "FILE",   0, "image file, for ncut graphs"},
+  {"si",          'a', "DOUBLE", 0, "similarity sigma, for ncut graphs"},
+  {"sx",          'x', "DOUBLE", 0, "distance sigma, for ncut graphs"},
+  {"radius",      'u', "DOUBLE", 0, "connectivity radius, for ncut graphs"},
+  {"threshold",   'h', "DOUBLE", 0, "threshold, for ncut graphs"},
   {0}
 };
 
@@ -64,10 +75,12 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
   switch(key) {
 
+    
     case 'n': a->numnodes = atoi(arg); break;
     case 't':
       if      (!strcmp(arg, "errandom"))  a->type = TYPE_ER_RANDOM;
       else if (!strcmp(arg, "clustered")) a->type = TYPE_CLUSTERED;
+      else if (!strcmp(arg, "ncut"))      a->type = TYPE_NCUT;
       else argp_usage(state);
       break;
 
@@ -79,6 +92,11 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'g': a->iedegree    = 0xFF;      break;
     case 'l': a->intext      = 0xFF;      break;
     case 's': a->intdens     = 0xFF;      break;
+    case 'm': a->imgf        = arg;       break;
+    case 'a': a->sx          = atof(arg); break;
+    case 'x': a->si          = atof(arg); break; 
+    case 'u': a->radius      = atof(arg); break;
+    case 'h': a->threshold   = atof(arg); break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->output = arg;
@@ -96,11 +114,14 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 }
 
 int main(int argc, char *argv[]) {
-  
+
+  dsr_t          hdr;
+  uint8_t       *img;
   graph_t        g;
   args_t         args;
   struct argp    argp = {options, _parse_opt, "OUTPUT", doc};
 
+  img = NULL;
   memset(&args, 0, sizeof(args_t));
   startup("cgen", argc, argv, &argp, &args);
 
@@ -151,6 +172,28 @@ int main(int argc, char *argv[]) {
         }
       }
       break;
+
+    case TYPE_NCUT:
+
+      if (analyze_load(args.imgf, &hdr, &img)) {
+        printf("could not load image file\n");
+        goto fail;
+      }
+
+      if (graph_create_ncut(
+            &g,
+            &hdr,
+            img,
+            args.si,
+            args.sx,
+            args.radius,
+            args.threshold)) {
+        printf("could not create ncut graph\n");
+        goto fail;
+      }
+
+      break;
+      
     default:
       printf("unknown graph type");
       goto fail;

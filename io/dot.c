@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dot.h"
+#include "io/dot.h"
+#include "stats/stats.h"
+#include "stats/stats_cache.h"
 #include "graph/graph.h"
 #include "util/getline.h"
 
@@ -72,7 +74,8 @@ static int64_t _read_colourmap(
  * string. There must be space for 7 characters in the string.
  */
 static void _mk_rand_color(
-  char *hex /**< place to store colour string */
+  char *hex, /**< place to store colour string */
+  int   seed /**< generator seed               */
 );
 
 /**
@@ -99,6 +102,9 @@ uint8_t dot_write(FILE *hd, graph_t *g, char *cmap, uint16_t opts) {
 
   ncolours = _read_colourmap(cmap, &lblvals, &colours);
   if (ncolours < 0) goto fail;
+
+  stats_cache_init(g);
+  stats_num_components(g, 1, NULL, NULL);
 
   _write_graph(hd, g, opts, lblvals, colours, ncolours);
 
@@ -162,6 +168,7 @@ void _write_node(
   char           clrstr[50];
   char          *tkns  [3];
   char           atts  [200];
+  uint32_t       cmpnum;
 
   tkns  [0] = lblstr;
   tkns  [1] = posstr;
@@ -173,28 +180,38 @@ void _write_node(
   
   lbl = graph_get_nodelabel(g, u);
 
-  if ((opts & DOT_NODE_LABELVAL) &&
-      (opts & DOT_NODE_NODEID)) 
+  if (((opts >> DOT_NODE_LABELVAL) & 1) &&
+      ((opts >> DOT_NODE_NODEID)   & 1))
     sprintf(lblstr, "label=\"%u:%u\"", u, lbl->labelval);
   
-  else if (opts & DOT_NODE_LABELVAL)
+  else if ((opts >> DOT_NODE_LABELVAL) & 1)
     sprintf(lblstr, "label=\"%u\"", lbl->labelval);
   
-  else if (opts & DOT_NODE_NODEID) 
+  else if ((opts >> DOT_NODE_NODEID) & 1) 
     sprintf(lblstr, "label=\"%u\"", u);
   
   else
     sprintf(lblstr, "label=\"\"");
   
-  if (opts & DOT_NODE_POS)
+  if ((opts >>  DOT_NODE_POS) & 1)
     sprintf(posstr,
             "pos=\"%0.6f,%0.6f,%0.6f\"",
             lbl->xval, lbl->yval, lbl->zval);
 
-  if (opts & DOT_RAND_COLOUR) {
+  if ((opts >> DOT_CMP_COLOUR) & 1) {
+
+    stats_cache_node_component(g, u, &cmpnum);
+
 
     sprintf(clrstr, "fillcolor=\"#");
-    _mk_rand_color(clrstr + 12);
+    _mk_rand_color(clrstr + 12, cmpnum);
+    clrstr[18] = '"';
+    clrstr[19] = '\0';
+  }
+  else if ((opts >> DOT_RAND_COLOUR) & 1) {
+
+    sprintf(clrstr, "fillcolor=\"#");
+    _mk_rand_color(clrstr + 12, lbl->labelval);
     clrstr[18] = '"';
     clrstr[19] = '\0';
 
@@ -235,7 +252,7 @@ void _write_edges(
 
   for (i = 0; i < nnbrs; i++) {
 
-    if (opts & DOT_EDGE_LABELS)
+    if ((opts >> DOT_EDGE_LABELS) & 1)
       fprintf(hd, "%u -- %u [label=%0.4f];\n", u, nbrs[i], wts[i]);
     else
       fprintf(hd, "%u -- %u;\n", u, nbrs[i]);
@@ -314,7 +331,9 @@ fail:
   return -1;
 }
 
-void _mk_rand_color(char *hex) {
+void _mk_rand_color(char *hex, int seed) {
+
+  srand(seed+105);
 
   uint8_t r;
   uint8_t g;

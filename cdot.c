@@ -42,13 +42,13 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
   switch(key) {
 
-    case 'c': a->cmap     = arg;               break;
-    case 'r': a->dotopts |= DOT_RAND_COLOUR;   break;
-    case 'e': a->dotopts |= DOT_EDGE_LABELS;   break;
-    case 'n': a->dotopts |= DOT_NODE_LABELVAL; break;
-    case 'i': a->dotopts |= DOT_NODE_NODEID;   break;
-    case 'p': a->dotopts |= DOT_NODE_POS;      break;
-    case 'm': a->dotopts |= DOT_CMP_COLOUR;    break;
+    case 'c': a->cmap     = arg;                      break;
+    case 'r': a->dotopts |= (1 << DOT_RAND_COLOUR);   break;
+    case 'e': a->dotopts |= (1 << DOT_EDGE_LABELS);   break;
+    case 'n': a->dotopts |= (1 << DOT_NODE_LABELVAL); break;
+    case 'i': a->dotopts |= (1 << DOT_NODE_NODEID);   break;
+    case 'p': a->dotopts |= (1 << DOT_NODE_POS);      break;
+    case 'm': a->dotopts |= (1 << DOT_CMP_COLOUR);    break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;

@@ -48,8 +48,6 @@ uint8_t graph_create_ncut(
 
   nnodes = analyze_num_vals(hdr);
 
-  printf("creating graph - %u nodes\n", nnodes);
-
   if (graph_create(g, nnodes, 0))      goto fail;
   if (_label(g, hdr, img))             goto fail;
   if (_connect(g, si, sx, rad, thres)) goto fail;
@@ -82,9 +80,6 @@ uint8_t _label(graph_t *g, dsr_t *hdr, uint8_t *img) {
     lbl.yval     = dims[1];
     lbl.zval     = 0.0;
 
-    printf("node %02lu label: %0.1f %0.1f %0.1f %u\n",
-           i, lbl.xval, lbl.yval, lbl.zval, lbl.labelval);
-    
     if (graph_set_nodelabel(g, i, &lbl)) goto fail;
   }
 
@@ -122,10 +117,10 @@ fail:
 
 double _edge_weight(
   graph_t *g,
+  double   si,
+  double   sx, 
   double   rad,
   double   thres,
-  double   si,
-  double   sx,
   uint32_t i,
   uint32_t j) {
 
@@ -138,14 +133,15 @@ double _edge_weight(
   li = graph_get_nodelabel(g, i);
   lj = graph_get_nodelabel(g, j);
 
-  df = li->labelval - lj->labelval;
+  df = (double)li->labelval - lj->labelval;
   dx = stats_edge_distance(g, i, j);
 
   if (dx > rad) return 0.0;
   
   wt = exp(-(df*df)/(si*si)) * exp(-(dx*dx)/(sx*sx));
 
-  printf("%02u -- %02u: %0.4f\n", i, j, wt);
+  printf("%02u -- %02u: %0.4f (df %0.4f si %0.4f dx %0.4f sx %0.4f\n",
+          i, j, wt, df, si, dx, sx);
 
   if (wt < thres) return 0.0;
   else            return wt;

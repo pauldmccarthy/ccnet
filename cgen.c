@@ -93,8 +93,8 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'l': a->intext      = 0xFF;      break;
     case 's': a->intdens     = 0xFF;      break;
     case 'm': a->imgf        = arg;       break;
-    case 'a': a->sx          = atof(arg); break;
-    case 'x': a->si          = atof(arg); break; 
+    case 'a': a->si          = atof(arg); break;
+    case 'x': a->sx          = atof(arg); break; 
     case 'u': a->radius      = atof(arg); break;
     case 'h': a->threshold   = atof(arg); break;
 

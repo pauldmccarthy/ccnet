@@ -1,8 +1,9 @@
 /**
  * Function which implements path-sharing. The path-sharing between a pair of
- * nodes, u and v, is the ratio of edges which connect the subgraph formed by
- * u and its neighbours to the subgraph formed by v and its neighbours, to all
- * such possible edges.
+ * nodes, u and v, is the ratio of edge weights which connect the subgraph
+ * formed by u and its neighbours to the subgraph formed by v and its
+ * neighbours, to the maximum possible edge weight (edge weights are assumed
+ * to lie between 0.0 and 1.0).
  *
  * Path-sharing is symmetric, i.e. sharing(u,v) == sharing(v,u)
  *
@@ -24,7 +25,9 @@ double stats_edge_pathsharing(graph_t *g, uint32_t u, uint32_t v) {
   uint32_t  nunbrs;
   uint32_t  nvnbrs;
   uint32_t *unbrs;
+  float    *uwts;
   uint32_t *vnbrs;
+  float    *vwts;  
   double    count;
   double    divisor;
   double    ps;
@@ -36,20 +39,22 @@ double stats_edge_pathsharing(graph_t *g, uint32_t u, uint32_t v) {
   nvnbrs = graph_num_neighbours(g, v);
   unbrs  = graph_get_neighbours(g, u);
   vnbrs  = graph_get_neighbours(g, v);
+  uwts   = graph_get_weights   (g, u);
+  vwts   = graph_get_weights   (g, v);
 
-  count   = 1;
+  count   = 0;
   divisor = (nunbrs) * (nvnbrs);
 
   for (j = 0; j < nvnbrs; j++) {
     
-    if (vnbrs[j] == u) continue;
-    if (graph_are_neighbours(g, u, vnbrs[j])) count ++;
+    if (vnbrs[j] == u) {count += vwts[j]; continue;}
+    if (graph_are_neighbours(g, u, vnbrs[j])) count += vwts[j];
   }
 
   for (i = 0; i < nunbrs; i++) {
 
     if (unbrs[i] == v) continue;
-    if (graph_are_neighbours(g, v, unbrs[i])) count ++;
+    if (graph_are_neighbours(g, v, unbrs[i])) count += uwts[i];
 
     for (j = 0; j < nvnbrs; j++) {
 
@@ -57,7 +62,7 @@ double stats_edge_pathsharing(graph_t *g, uint32_t u, uint32_t v) {
       if (unbrs[i] == vnbrs[j]) {divisor -= 1; continue;}
 
       if (graph_are_neighbours(g, unbrs[i], vnbrs[j]))
-          count++;
+        count += graph_get_weight(g, unbrs[i], vnbrs[j]);
     }
   }
 

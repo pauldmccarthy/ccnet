@@ -66,7 +66,8 @@ exes=dumpimg    \
      ccnet      \
      cthres     \
      avgngdb    \
-     cmask
+     cmask      \
+     cedgenorm 
 
 
 default: $(exes)

@@ -8,6 +8,7 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
                volume (the inputs must have the same dimensions).
   cdot       - Convert a ngdb graph to a graphviz dot file.
   ceo        - Convert a radatools lol file to a ngdb graph file.
+  cedgenorm  - Normalise edge weights in a ngdb graph file.
   cextract   - Extract subgraphs by label.
   cgen       - Generate graphs of different types.
   cmask      - Mask the nodes of a ngdb file with the values from a 

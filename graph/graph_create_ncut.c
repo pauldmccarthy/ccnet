@@ -1,7 +1,14 @@
 /**
+ * Create a graph from an ANALYZE75 image file, according to the greyscale
+ * creation procedure introduced by Shi and Malik in their presentation of the
+ * Normalized Cut algorithm:
  *
+ * Jianbo Shi and Jitendra Malik 2000. Normalized Cuts and Image Segmentation.
+ * IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 22,
+ * no. 8, pp. 888-905.
+ *
+ * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
-
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -11,28 +18,51 @@
 #include "stats/stats.h"
 #include "io/analyze75.h"
 
+/**
+ * Gives each node in the graph a label corresponding to its pixel
+ * location and value in the image.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
 static uint8_t _label(
-  graph_t *g,
-  dsr_t   *hdr,
-  uint8_t *img
+  graph_t *g,   /**< the graph    */
+  dsr_t   *hdr, /**< image header */
+  uint8_t *img  /**< image data   */
 );
 
+/**
+ * Adds weighted edges to the graph, based on distance between nodes, and
+ * similarity of their pixel value.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
 static uint8_t _connect(
-  graph_t *g,
-  double   si,
-  double   sx,
-  double   rad,
-  double   thres
+  graph_t *g,    /**< the graph                                 */
+  double   si,   /**< intensity sigma, strength of edge weight
+                      decreases exponentially as the intensity
+                      difference increases up to this value     */
+  double   sx,   /**< distance sigma - strength of edge weight
+                      decreases exponentially as the distance
+                      increases up to this value                */
+  double   rad,  /**< do not add edges between nodes which
+                      are further away than this radius         */
+  double   thres /**< do not add edges with a weight
+                      below this threshold                      */
 );
 
+/**
+ * Calculate the weight of the edge between the two specified nodes.
+ *
+ * \return the weight of the edge between the specified nodes.
+ */
 static double _edge_weight(
-  graph_t *g,
-  double   si,
-  double   sx,
-  double   rad,
-  double   thres,
-  uint32_t i,
-  uint32_t j
+  graph_t *g,     /**< the graph             */
+  double   si,    /**< intensity sigma       */
+  double   sx,    /**< distance sigma        */
+  double   rad,   /**< distance threshold    */
+  double   thres, /**< edge weight threshold */
+  uint32_t i,     /**< index of first node   */
+  uint32_t j      /**< index of second node  */
 );
 
 uint8_t graph_create_ncut(
@@ -139,9 +169,6 @@ double _edge_weight(
   if (dx > rad) return 0.0;
   
   wt = exp(-(df*df)/(si*si)) * exp(-(dx*dx)/(sx*sx));
-
-  printf("%02u -- %02u: %0.4f (df %0.4f si %0.4f dx %0.4f sx %0.4f\n",
-          i, j, wt, df, si, dx, sx);
 
   if (wt < thres) return 0.0;
   else            return wt;

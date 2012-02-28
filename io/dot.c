@@ -140,7 +140,7 @@ void _write_graph(
   fprintf(hd, "node [style=filled];\n");
   fprintf(hd, "node [fontsize=6];\n");
   fprintf(hd, "node [fontcolor=\"#33333388\"];\n");
-  fprintf(hd, "edge [color=\"#333333\"];\n");
+  fprintf(hd, "edge [color=\"#33333344\"];\n");
   fprintf(hd, "edge [penwidth=0.3];\n");
 
   for (i = 0; i < nnodes; i++)
@@ -266,7 +266,7 @@ void _write_edges(
     if ((opts >> DOT_EDGE_LABELS) & 1)
       sprintf(lblstr, "label=%0.4f", wts[i]);
     if ((opts >> DOT_EDGE_WEIGHT) & 1)
-      sprintf(lblstr, "penwidth=%0.4f", 1.0+wts[i]*4.0);
+      sprintf(lblstr, "penwidth=%0.4f", 0.5+wts[i]*4.5);
 
     _join(atts, tkns, 2, ',');
 

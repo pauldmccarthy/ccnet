@@ -13,36 +13,50 @@
 
 #include "graph/graph.h"
 #include "stats/stats.h"
+#include "stats/stats_cache.h"
 #include "util/startup.h"
 #include "io/ngdb_graph.h"
 #include "io/analyze75.h"
 
 
+typedef enum {
+
+  N2I_DEGREE,
+  N2I_DEGCENT,
+  N2I_CMPNUM,
+
+} img_val_t;
+
+
 typedef struct args {
 
-  char    *input;
-  char    *output;
-  uint16_t xn;
-  uint16_t yn;
-  uint16_t zn;
-  double   xl;
-  double   yl;
-  double   zl;
-  uint8_t  real;
-  uint8_t  rev;
+  char     *input;
+  char     *output;
+  uint16_t  xn;
+  uint16_t  yn;
+  uint16_t  zn;
+  double    xl;
+  double    yl;
+  double    zl;
+  uint8_t   real;
+  uint8_t   rev;
+  img_val_t value;
 
 } args_t;
 
 static struct argp_option options[] = {
 
-  {"xn",   'x', "INT",   0, "X dimension size"},
-  {"yn",   'y', "INT",   0, "Y dimension size"},
-  {"zn",   'z', "INT",   0, "Z dimension size"},
-  {"xl",   'a', "FLOAT", 0, "X voxel length"},
-  {"yl",   'b', "FLOAT", 0, "Y voxel length"},
-  {"zl",   'c', "FLOAT", 0, "Z voxel length"},
-  {"real", 'e', NULL,    0, "node labels are in real units (default: false)"},
-  {"rev",  'r', NULL,    0, "reverse endianness"},
+  {"xn",      'x', "INT",   0, "X dimension size"},
+  {"yn",      'y', "INT",   0, "Y dimension size"},
+  {"zn",      'z', "INT",   0, "Z dimension size"},
+  {"xl",      'a', "FLOAT", 0, "X voxel length"},
+  {"yl",      'b', "FLOAT", 0, "Y voxel length"},
+  {"zl",      'c', "FLOAT", 0, "Z voxel length"},
+  {"real",    'e', NULL,    0, "node labels are in real units (default: false)"},
+  {"rev",     'r', NULL,    0, "reverse endianness"},
+  {"degree",  'd', NULL,    0, "output degree values"},
+  {"degcent", 'g', NULL,    0, "output degree centrality values"},
+  {"cmpnum",  'm', NULL,    0, "output component number"},
   {0}
 };
 
@@ -51,15 +65,18 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
   args_t *a = state->input;
 
   switch (key) {
-    case 'x': a->xn   = atoi(arg); break;
-    case 'y': a->yn   = atoi(arg); break;
-    case 'z': a->zn   = atoi(arg); break;
-    case 'a': a->xl   = atof(arg); break;
-    case 'b': a->yl   = atof(arg); break;
-    case 'c': a->zl   = atof(arg); break;
-    case 'e': a->real = 1;         break;
-    case 'r': a->rev  = 1;         break;
-
+    case 'x': a->xn    = atoi(arg);   break;
+    case 'y': a->yn    = atoi(arg);   break;
+    case 'z': a->zn    = atoi(arg);   break;
+    case 'a': a->xl    = atof(arg);   break;
+    case 'b': a->yl    = atof(arg);   break;
+    case 'c': a->zl    = atof(arg);   break;
+    case 'e': a->real  = 1;           break;
+    case 'r': a->rev   = 1;           break;
+    case 'd': a->value = N2I_DEGREE;  break;
+    case 'g': a->value = N2I_DEGCENT; break;
+    case 'm': a->value = N2I_CMPNUM;  break;
+      
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;
       else if (state->arg_num == 1) a->output = arg;
@@ -85,10 +102,12 @@ static void _fill_hdr(
   args_t *args);
 
 static uint8_t _graph_to_img(
-  graph_t *g,
-  dsr_t   *dsr,
-  uint8_t *img,
-  uint8_t  real);
+  graph_t  *g,
+  dsr_t    *dsr,
+  uint8_t  *img,
+  uint8_t   real,
+  img_val_t val
+);
 
 
 int main(int argc, char *argv[]) {
@@ -116,6 +135,8 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
+  stats_cache_init(&gin);
+
   _fill_hdr(&hdr, &args);
 
   nbytes = analyze_value_size(&hdr)*analyze_num_vals(& hdr);
@@ -126,7 +147,7 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (_graph_to_img(&gin, &hdr, img, args.real)) {
+  if (_graph_to_img(&gin, &hdr, img, args.real, args.value)) {
     printf("Could not convert graph to image\n");
     goto fail;
   }
@@ -176,7 +197,7 @@ static void _fill_hdr(dsr_t *dsr, args_t *args) {
 }
 
 static uint8_t _graph_to_img(
-  graph_t *g, dsr_t *hdr, uint8_t *img, uint8_t real) {
+  graph_t *g, dsr_t *hdr, uint8_t *img, uint8_t real, img_val_t valtype) {
 
   uint64_t       i;
   uint32_t       nnodes;
@@ -186,6 +207,7 @@ static uint8_t _graph_to_img(
   double yl;
   double zl;
   float  val;
+  uint32_t uval;
 
   uint32_t imgi[4];
 
@@ -200,7 +222,16 @@ static uint8_t _graph_to_img(
   for (i = 0; i < nnodes; i++) {
 
     lbl = graph_get_nodelabel(    g, i);
-    val = stats_degree_centrality(g, i);
+
+    switch (valtype) {
+      case N2I_DEGREE:  val = stats_degree           (g, i); break;
+      case N2I_DEGCENT: val = stats_degree_centrality(g, i); break;
+      case N2I_CMPNUM:
+        stats_cache_node_component(g, i, &uval);
+        val = uval;
+        break;
+      default: return 1;
+    }
 
     if (real) {
 

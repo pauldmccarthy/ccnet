@@ -145,9 +145,11 @@ void _write_graph(
 
   for (i = 0; i < nnodes; i++)
     _write_node( hd, g, i, opts, lblvals, colours, ncolours);
-  
+
+  if (!((opts >> DOT_OMIT_EDGES) & 1)) {
   for (i = 0; i < nnodes; i++)
     _write_edges(hd, g, i, opts, lblvals, colours, ncolours);
+  }
 
   fprintf(hd, "}\n");
 }

@@ -23,6 +23,7 @@ typedef enum {
 
   N2I_DEGREE,
   N2I_DEGCENT,
+  N2I_LBLVAL,
   N2I_CMPNUM,
 
 } img_val_t;
@@ -56,6 +57,7 @@ static struct argp_option options[] = {
   {"rev",     'r', NULL,    0, "reverse endianness"},
   {"degree",  'd', NULL,    0, "output degree values"},
   {"degcent", 'g', NULL,    0, "output degree centrality values"},
+  {"lblval",  'l', NULL,    0, "output node label value"},
   {"cmpnum",  'm', NULL,    0, "output component number"},
   {0}
 };
@@ -75,6 +77,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'r': a->rev   = 1;           break;
     case 'd': a->value = N2I_DEGREE;  break;
     case 'g': a->value = N2I_DEGCENT; break;
+    case 'l': a->value = N2I_LBLVAL;  break;
     case 'm': a->value = N2I_CMPNUM;  break;
       
     case ARGP_KEY_ARG:
@@ -226,6 +229,7 @@ static uint8_t _graph_to_img(
     switch (valtype) {
       case N2I_DEGREE:  val = stats_degree           (g, i); break;
       case N2I_DEGCENT: val = stats_degree_centrality(g, i); break;
+      case N2I_LBLVAL:  val = lbl->labelval;                 break;
       case N2I_CMPNUM:
         stats_cache_node_component(g, i, &uval);
         val = uval;

@@ -108,24 +108,19 @@ uint8_t graph_threshold_components(
     graph_t      *g,
     graph_edge_t *edge)
 ) {
-  uint64_t     i;
-  uint32_t     sz;
   uint32_t     nnodes;
   uint64_t     ncmps;
   double      *space;
   array_t      edges;
   graph_edge_t edge;
-  array_t      cmpszs;
 
   edges.data  = NULL;
-  cmpszs.data = NULL;
   space       = NULL;
   nnodes      = graph_num_nodes(gin);
 
   if (cmplimit > nnodes) goto fail;
 
   if (array_create(&edges,  sizeof(graph_edge_t), 10)) goto fail;
-  if (array_create(&cmpszs, sizeof(uint32_t),     10)) goto fail;
 
   if (graph_copy(gin,  gout)) goto fail;
   if (stats_cache_init(gout)) goto fail;
@@ -135,23 +130,14 @@ uint8_t graph_threshold_components(
 
   init(gout);
   
-  ncmps = stats_num_components(gout, 1, NULL, NULL);
+  ncmps = stats_num_components(gout, igndis, NULL, NULL);
   while (ncmps < cmplimit) {
 
     array_clear(&edges);
-    array_clear(&cmpszs);
 
     if (remove(gout, space, &edges, &edge)) goto fail;
 
-    ncmps = stats_num_components(gout, 1, &cmpszs, NULL);
-
-    if (igndis) {
-      for (i = 0; i < cmpszs.size; i++) {
-      
-        if (array_get(&cmpszs, i, &sz)) goto fail;
-        if (sz <= igndis) ncmps--;
-      }
-    }
+    ncmps = stats_num_components(gout, igndis, NULL, NULL);
 
     if (ncmps >= cmplimit)   break;
     if (recalc(gout, &edge)) goto fail;
@@ -159,13 +145,11 @@ uint8_t graph_threshold_components(
 
   free(space);
   array_free(&edges);
-  array_free(&cmpszs);
   return 0;
   
 fail:
   if (space       != NULL) free(space);
   if (edges.data  != NULL) array_free(&edges);
-  if (cmpszs.data != NULL) array_free(&cmpszs);
   return 1;
 }
 

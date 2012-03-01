@@ -14,9 +14,9 @@
 #include "io/ngdb_graph.h"
 
 typedef enum {
-  TYPE_ER_RANDOM = 0, /* "errandom"  */
-  TYPE_CLUSTERED = 1, /* "clustered" */
-  TYPE_NCUT      = 2, /* "ncut"      */
+  TYPE_ER_RANDOM = 1, /* "errandom"  */
+  TYPE_CLUSTERED,     /* "clustered" */
+  TYPE_NCUT,          /* "ncut"      */
 } graph_type_t;
 
 static char doc[] = "cgen - generate graphs";
@@ -78,7 +78,8 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     
     case 'n': a->numnodes = atoi(arg); break;
     case 't':
-      if      (!strcmp(arg, "errandom"))  a->type = TYPE_ER_RANDOM;
+      if      (arg == NULL)               argp_usage(state);
+      else if (!strcmp(arg, "errandom"))  a->type = TYPE_ER_RANDOM;
       else if (!strcmp(arg, "clustered")) a->type = TYPE_CLUSTERED;
       else if (!strcmp(arg, "ncut"))      a->type = TYPE_NCUT;
       else argp_usage(state);
@@ -195,7 +196,7 @@ int main(int argc, char *argv[]) {
       break;
       
     default:
-      printf("unknown graph type");
+      printf("unknown graph type\n");
       goto fail;
   }
 

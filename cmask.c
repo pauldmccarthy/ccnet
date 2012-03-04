@@ -1,5 +1,6 @@
 /**
- * Mask a ngdb graph file using values from an ANALYZE75 image.
+ * Include/exclude nodes in a ngdb graph file using values from an ANALYZE75
+ * image.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com> 
  */
@@ -17,19 +18,7 @@
 #include "io/ngdb_graph.h"
 #include "io/analyze75.h"
 
-#define MAX_OPS 50
-
-/**
- * The masking operators that are available.
- */
-typedef enum {
-  CMASK_EQ  = 'e', /**< Equal to                 */
-  CMASK_NEQ = 'n', /**< Not equal to             */
-  CMASK_GT  = 'g', /**< Greater than             */
-  CMASK_GE  = 'a', /**< Greater than or equal to */
-  CMASK_LT  = 'l', /**< Less than                */
-  CMASK_LE  = 's'  /**< Less than or equal to    */
-} op_t;
+#define MAX_MASKS 50
 
 typedef struct _args {
 
@@ -37,33 +26,29 @@ typedef struct _args {
   char    *maskf;
   char    *output;
   char    *hdrmsg;
-  uint16_t nops;
-  op_t     ops[MAX_OPS];
-  double   op_params[MAX_OPS];
+  uint8_t  include;
+  uint16_t nmasks;
+  double   maskvals[MAX_MASKS];
   uint8_t  real;
 
 } args_t;
 
 static struct argp_option options[] = {
-  {"eq",   CMASK_EQ,  "DOUBLE", 0, "Mask nodes with value == parameter"},
-  {"neq",  CMASK_NEQ, "DOUBLE", 0, "Mask nodes with value != parameter"},
-  {"gt",   CMASK_GT,  "DOUBLE", 0, "Mask nodes with value >  parameter"},
-  {"ge",   CMASK_GE,  "DOUBLE", 0, "Mask nodes with value >= parameter"},
-  {"lt",   CMASK_LT,  "DOUBLE", 0, "Mask nodes with value <  parameter"},
-  {"le",   CMASK_LE,  "DOUBLE", 0, "Mask nodes with value <= parameter"},
-  {"real", 'r',        NULL,    0, "Node coordinates are in real units"},
+  {"inc",     'i',  NULL,    0, "Include all nodes with any of the "\
+                                "given values (default is to exclude)"},
+  {"maskval", 'm', "DOUBLE", 0, "Mask value"},
+  {"real",    'r',  NULL,    0, "Node coordinates are in real units"},
   {0}
 };
 
 static char doc[] = "cmask -- mask the nodes of a ngdb file using "\
                     "corresponding voxels from an ANALYZE75 image file\v"\
-                    "All nodes with a corresponding image value that passes "\
-                    "any of the given operators will be removed from the "\
-                    "output graph.";
+                    "Nodes can either be included, or excluded based on "\
+                    "their voxel value.";
 
 /**
- * Populates the given mask array, by applying the mask operator on values
- * from the mask image whcih correspond to nodes in the given graph.
+ * Populates the given mask array, by including/excluding
+ * nodes based on the corresponding value in the mask image.
  *
  * \return 0 on success, non-0 on failure.
  */
@@ -73,9 +58,10 @@ static uint8_t _mask_nodes(
   uint8_t *img,       /**< mask image data                    */
   uint8_t *mask,      /**< mask array to populate             */
   uint8_t  real,      /**< node coordinates are in real units */
-  op_t    *ops,       /**< mask operators                     */
-  double  *op_params, /**< mask parameters                    */
-  uint16_t nops       /**< number of operations               */
+  uint8_t  include,   /**< include nodes based on voxel value,
+                           instead of exclude                 */
+  double  *maskvals,  /**< mask values                        */
+  uint16_t nmasks     /**< number of mask values              */
 );
 
 static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
@@ -86,18 +72,13 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
   switch (key) {
 
-    case CMASK_EQ:
-    case CMASK_NEQ:
-    case CMASK_GT:
-    case CMASK_GE:
-    case CMASK_LT:
-    case CMASK_LE:
-      if (args->nops >= MAX_OPS) {
-        printf("Too many operations - ignoring any more\n");
+    case 'i': args->include = 1; break;
+    case 'm':
+      if (args->nmasks >= MAX_MASKS) {
+        printf("Too many mask values - ignoring any more\n");
       }
       else {
-        args->ops      [args->nops]   = key;
-        args->op_params[args->nops++] = atof(arg);
+        args->maskvals [args->nmasks++] = atof(arg);
       }
       break;      
 
@@ -163,9 +144,9 @@ int main(int argc, char *argv[]) {
         img,
         mask,
         args.real,
-        args.ops,
-        args.op_params,
-        args.nops)) {
+        args.include,
+        args.maskvals,
+        args.nmasks)) {
     printf("error masking nodes\n");
     goto fail;
   }
@@ -192,9 +173,9 @@ uint8_t _mask_nodes(
   uint8_t *img,
   uint8_t *mask,
   uint8_t  real,
-  op_t    *ops,
-  double  *op_params,
-  uint16_t nops) {
+  uint8_t  include,
+  double  *maskvals,
+  uint16_t nmasks) {
 
   uint64_t       i;
   uint32_t       j;
@@ -205,6 +186,7 @@ uint8_t _mask_nodes(
   double         xl;
   double         yl;
   double         zl;
+  uint16_t       maskhits;
 
   memset(imgi, 0, sizeof(imgi));
 
@@ -230,18 +212,13 @@ uint8_t _mask_nodes(
     }
 
     imgval = analyze_read_val(hdr, img, imgi);
+    maskhits = 0;
 
-    for (j = 0; j < nops; j++) {
+    for (j = 0; j < nmasks; j++) 
+      if (imgval == maskvals[j]) maskhits++;
 
-      if      (ops[j] == CMASK_EQ)  {if (imgval == op_params[j]) break;}
-      else if (ops[j] == CMASK_NEQ) {if (imgval != op_params[j]) break;}
-      else if (ops[j] == CMASK_GT)  {if (imgval >  op_params[j]) break;}
-      else if (ops[j] == CMASK_GE)  {if (imgval >= op_params[j]) break;}
-      else if (ops[j] == CMASK_LT)  {if (imgval <  op_params[j]) break;}
-      else if (ops[j] == CMASK_LE)  {if (imgval <= op_params[j]) break;}
-    }
-
-    if (j == nops) mask[i] = 1;
+    if (include) {if (maskhits >  0) mask[i] = 1;}
+    else         {if (maskhits == 0) mask[i] = 1;}
   }
 
   return 0;

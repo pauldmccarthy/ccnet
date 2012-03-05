@@ -111,7 +111,6 @@ double stats_cache_assortativity(graph_t *g) {
   return stats_assortativity(g);
 }
 
-
 double stats_cache_num_components(graph_t *g) {
 
   double ncmps;
@@ -120,6 +119,16 @@ double stats_cache_num_components(graph_t *g) {
     return ncmps;
 
   return stats_num_components(g, 1, NULL, NULL);
+}
+
+double stats_cache_largest_component(graph_t *g) {
+
+  double lcmp;
+
+  if (stats_cache_check(g, STATS_CACHE_LARGEST_COMPONENT, 0, -1, &lcmp) == 1)
+    return lcmp;
+
+  return stats_largest_component(g);
 }
 
 uint8_t stats_cache_node_component(graph_t *g, int64_t n, uint32_t *data) {

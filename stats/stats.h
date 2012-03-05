@@ -122,6 +122,13 @@ double stats_component_span(
 );
 
 /**
+ * \return the size of the largest component in the given graph, 0 on failure.
+ */
+uint32_t stats_largest_component(
+  graph_t *g /**< the graph */
+);
+
+/**
  * \return the number of connected nodes 
  * (nodes with a degree >= 1) in the graph.
  */

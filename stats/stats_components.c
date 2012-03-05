@@ -12,6 +12,7 @@
 #include "graph/graph.h"
 #include "graph/bfs.h"
 #include "util/array.h"
+#include "util/compare.h"
 #include "stats/stats.h"
 #include "stats/stats_cache.h"
 
@@ -165,5 +166,36 @@ static uint8_t _bfs_cb(bfs_state_t *state, void *context) {
   
   ctx->size += state->thislevel.size;
 
+  return 0;
+}
+
+uint32_t stats_largest_component(graph_t *g) {
+
+  uint32_t lcmp;
+  array_t  sizes;
+  
+  memset(&sizes, 0, sizeof(sizes));
+
+  if (array_create(&sizes, sizeof(uint32_t), 10)) goto fail;
+  array_set_cmps(&sizes, &compare_u32, &compare_u32_insert);
+
+  stats_num_components(g, 0, &sizes, NULL);
+
+  array_sort(&sizes);
+
+  if (array_get(&sizes, sizes.size - 1, &lcmp)) goto fail;
+
+  stats_cache_add(g,
+                  STATS_CACHE_LARGEST_COMPONENT,
+                  STATS_CACHE_TYPE_GRAPH,
+                  sizeof(uint32_t));
+  stats_cache_update(g, STATS_CACHE_LARGEST_COMPONENT, 0, -1, &lcmp);
+
+  array_free(&sizes);
+  
+  return lcmp;
+  
+fail:
+  if (sizes.data != NULL) array_free(&sizes);
   return 0;
 }

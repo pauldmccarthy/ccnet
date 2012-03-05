@@ -46,6 +46,7 @@ enum {
   STATS_CACHE_GRAPH_PATHLENGTH,
   STATS_CACHE_ASSORTATIVITY,
   STATS_CACHE_NUM_COMPONENTS,
+  STATS_CACHE_LARGEST_COMPONENT,
   STATS_CACHE_CONNECTED,
   STATS_CACHE_GLOBAL_EFFICIENCY,
   STATS_CACHE_MODULARITY,
@@ -242,6 +243,7 @@ double stats_cache_graph_clustering( graph_t *g);
 double stats_cache_graph_pathlength( graph_t *g);
 double stats_cache_assortativity(    graph_t *g);
 double stats_cache_num_components(   graph_t *g);
+double stats_cache_largest_component(graph_t *g);
 double stats_cache_connected(        graph_t *g);
 double stats_cache_global_efficiency(graph_t *g);
 double stats_cache_modularity(       graph_t *g);

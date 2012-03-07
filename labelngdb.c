@@ -59,24 +59,9 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-/**
- * Updates the label value for the given node.
- *
- * \return 0 on success, non-0 on failure.
- */
-static uint8_t _update_labelval(
-  graph_t *g,    /**< graph                    */
-  dsr_t   *hdr,  /**< label header             */
-  uint8_t *img,  /**< label image              */
-  uint32_t nidx, /**< node id                  */
-  uint8_t  real  /**< labels are in real units */
-);
-
 int main(int argc, char *argv[]) {
 
   graph_t     g;
-  uint64_t    i;
-  uint32_t    nnodes;
   dsr_t       hdr;
   uint8_t    *img;
   args_t      args;
@@ -96,18 +81,9 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (analyze_num_dims(&hdr) != 3) {
-    printf("label file does not have 3 dimensions\n");
+  if (graph_relabel(&g, &hdr, img, args.real)) {
+    printf("error relabelling graph\n");
     goto fail;
-  }
-
-  nnodes = graph_num_nodes(&g);
-
-  for (i = 0; i < nnodes; i++) {
-    if (_update_labelval(&g, &hdr, img, i, args.real)) {
-      printf("error updating label value for node %" PRIu64 "\n", i);
-      goto fail;
-    }
   }
 
   if (ngdb_write(&g, args.output)) {
@@ -118,51 +94,6 @@ int main(int argc, char *argv[]) {
 
   return 0;
   
-fail:
-  return 1;
-}
-
-
-uint8_t _update_labelval(
-  graph_t *g, dsr_t *hdr, uint8_t *img, uint32_t nidx, uint8_t real) {
-
-  graph_label_t  lbl;
-  graph_label_t *plbl;
-  double         xl;
-  double         yl;
-  double         zl;
-  uint32_t       dims[3];
-
-  xl = analyze_pixdim_size(hdr, 0);
-  yl = analyze_pixdim_size(hdr, 1);
-  zl = analyze_pixdim_size(hdr, 2);
-
-  plbl = graph_get_nodelabel(g, nidx);
-  if (plbl == NULL) goto fail;
-
-  memcpy(&lbl, plbl, sizeof(graph_label_t));
-
-  if (real) {
-    dims[0] = (uint32_t)(round(lbl.xval / xl));
-    dims[1] = (uint32_t)(round(lbl.xval / yl));
-    dims[2] = (uint32_t)(round(lbl.xval / zl));
-  }
-  else {
-    dims[0] = (uint32_t)lbl.xval;
-    dims[1] = (uint32_t)lbl.yval;
-    dims[2] = (uint32_t)lbl.zval;
-  }
-
-  if (dims[0] >= analyze_dim_size(hdr, 0)) goto fail;
-  if (dims[1] >= analyze_dim_size(hdr, 1)) goto fail;
-  if (dims[2] >= analyze_dim_size(hdr, 2)) goto fail;
-
-  lbl.labelval = analyze_read_val(hdr, img, dims);
-
-  if (graph_set_nodelabel(g, nidx, &lbl)) goto fail;
-
-  return 0;
-
 fail:
   return 1;
 }

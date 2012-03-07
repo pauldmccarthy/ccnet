@@ -462,4 +462,17 @@ uint8_t graph_create_ncut(
   double   thres
 );
 
+/**
+ * Relabels the nodes of a graph using corresponding values from the
+ * given ANALYZE75 image.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t graph_relabel(
+  graph_t *g,   /**< the graph to relabel               */
+  dsr_t   *hdr, /**< image header                       */
+  uint8_t *img, /**< image data                         */
+  uint8_t  real /**< node coordinates are in real units */
+);
+
 #endif /* __GRAPH_H__ */

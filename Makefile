@@ -67,10 +67,11 @@ exes=dumpimg    \
      cthres     \
      avgngdb    \
      cmask      \
-     cedgenorm 
+     cedgenorm  \
+     creg
 
 
-default: $(exes)
+default: clean $(exes)
 
 %.o: %.c
 	@mkdir -p obj

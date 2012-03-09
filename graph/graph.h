@@ -88,15 +88,15 @@ typedef struct _node_group {
 } node_group_t;
 
 /**
- * Struct representing some grouping of nodes into partitions. Used by the
- * graph connect functions.
+ * Struct representing some grouping of nodes into partitions.
  */
 typedef struct _node_partition {
 
-  uint32_t nparts; /**< Number of partitions                  */
-  uint32_t nnodes; /**< Total number of nodes                 */
-  array_t *parts;  /**< List of arrays, each containing
-                        uint32_t values representing node IDs */
+  uint32_t  nparts;  /**< Number of partitions                  */
+  uint32_t  nnodes;  /**< Total number of nodes                 */
+  array_t  *partids; /**< Identifier for each partition         */
+  array_t  *parts;   /**< List of arrays, each containing
+                          uint32_t values representing node IDs */
 
 } node_partition_t;
 
@@ -473,6 +473,11 @@ uint8_t graph_relabel(
   dsr_t   *hdr, /**< image header                       */
   uint8_t *img, /**< image data                         */
   uint8_t  real /**< node coordinates are in real units */
+);
+
+uint8_t graph_group_by_label(
+  graph_t          *g,
+  node_partition_t *ptn
 );
 
 #endif /* __GRAPH_H__ */

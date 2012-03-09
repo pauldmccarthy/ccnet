@@ -13,7 +13,7 @@
 #include "io/analyze75.h"
 #include "util/startup.h"
 
-#define MAX_REPLACEMENTS 50
+#define MAX_REPLACEMENTS 100
 
 typedef struct _args {
 

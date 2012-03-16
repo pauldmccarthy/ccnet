@@ -268,7 +268,7 @@ void _write_edges(
     if ((opts >> DOT_EDGE_LABELS) & 1)
       sprintf(lblstr, "label=%0.4f", wts[i]);
     if ((opts >> DOT_EDGE_WEIGHT) & 1)
-      sprintf(lblstr, "penwidth=%0.4f", 0.5+wts[i]*4.5);
+      sprintf(lblstr, "penwidth=%0.4f", 0.5+wts[i]*19.5);
 
     _join(atts, tkns, 2, ',');
 

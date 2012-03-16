@@ -17,6 +17,7 @@
 
 #include "graph/graph.h"
 #include "graph/graph_threshold.h"
+#include "io/analyze75.h"
 #include "util/startup.h"
 #include "io/ngdb_graph.h"
 
@@ -49,9 +50,11 @@ typedef struct _partition {
 typedef struct args {
   char    *input;     /**< name of input file                 */
   char    *output;    /**< name of outpout file               */
+  char    *lblfile;   /**< optional ANALYZE75 label file      */
   float    threshold; /**< threshold to apply                 */
   uint8_t  pcount;    /**< print out label connectivity       */
   uint8_t  norm;      /**< normalise edge counts to densities */
+  uint8_t  real;      /**< node coordinates are in real units */
 } args_t;
 
 /**
@@ -136,6 +139,8 @@ static struct argp_option options[] = {
                                  "of labels"},
   {"norm",      'n', NULL,    0, "save edge weights as normalised "\
                                  "densities, rather than absolute counts"},
+  {"lblfile",   'l', "FILE",  0, "ANALYZE75 file containing node labels"},
+  {"real",      'r', NULL,    0, "node coordinates are in real units"},
   {0}
 };
 
@@ -149,6 +154,8 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 't': a->threshold = atof(arg); break;
     case 'p': a->pcount    = 0xFF;      break;
     case 'n': a->norm      = 0xFF;      break;
+    case 'l': a->lblfile   = arg;       break;
+    case 'r': a->real      = 0xFF;      break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;
@@ -171,6 +178,8 @@ int main (int argc, char *argv[]) {
   graph_t  gin;
   graph_t  gwt;
   graph_t  gout;
+  dsr_t    hdr;
+  uint8_t *img;
 
   args_t      args;
   struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
@@ -181,6 +190,19 @@ int main (int argc, char *argv[]) {
   if (ngdb_read(args.input, &gin)) {
     printf("Could not read in %s\n", args.input);
     goto fail;
+  }
+
+  if (args.lblfile) {
+
+    if (analyze_load(args.lblfile, &hdr, &img)) {
+      printf("error loading ANALYZE75 image: %s\n", args.lblfile);
+      goto fail;
+    }
+
+    if (graph_relabel(&gin, &hdr, img, args.real)) {
+      printf("error relabelling graph\n");
+      goto fail;
+    }
   }
 
   if (_reduce(&gin, &gwt, &args)) {

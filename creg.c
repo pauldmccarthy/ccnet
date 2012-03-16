@@ -216,7 +216,7 @@ void _print_density_matrix(
         if (i == j) val /= (isz*(isz-1)/2.0);
         else        val /= (isz*jsz/2.0);
 
-        printf("%6.4f ", val);
+        printf("%12.10f ", val);
       }
     }
     printf("\n");

@@ -47,10 +47,11 @@ typedef struct _partition {
  * Input arguments.
  */
 typedef struct args {
-  char    *input;     /**< name of input file           */
-  char    *output;    /**< name of outpout file         */
-  float    threshold; /**< threshold to apply           */
-  uint8_t  pcount;    /**< print out label connectivity */
+  char    *input;     /**< name of input file                 */
+  char    *output;    /**< name of outpout file               */
+  float    threshold; /**< threshold to apply                 */
+  uint8_t  pcount;    /**< print out label connectivity       */
+  uint8_t  norm;      /**< normalise edge counts to densities */
 } args_t;
 
 /**
@@ -133,6 +134,8 @@ static struct argp_option options[] = {
                                  "given threshold"},
   {"pcount"   , 'p', NULL,    0, "print connectivity between all pairs "\
                                  "of labels"},
+  {"norm",      'n', NULL,    0, "save edge weights as normalised "\
+                                 "densities, rather than absolute counts"},
   {0}
 };
 
@@ -145,6 +148,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
   switch (key) {
     case 't': a->threshold = atof(arg); break;
     case 'p': a->pcount    = 0xFF;      break;
+    case 'n': a->norm      = 0xFF;      break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;
@@ -227,8 +231,9 @@ uint8_t _reduce(graph_t *gin, graph_t *gout, args_t *args) {
    *    output graph
    * 3. count number of edges which exist between 
    *    every pair of partitions, in input graph
-   * 4. assign edge counts from #3 as edge weights 
-   *    in output graph
+   * 4. (optional) normalise edge weights
+   * 5. assign edge counts from #3-#4 as edge
+   *    weights in output graph
    */
 
   nnodes = graph_num_nodes(gin);
@@ -243,11 +248,14 @@ uint8_t _reduce(graph_t *gin, graph_t *gout, args_t *args) {
 
       wt = _count_edges(gin, ptns+i, ptns+j);
 
+      if (args->norm) 
+        wt /= ((ptns[i].nnodes) * (ptns[j].nnodes)) / 2.0;
+
       if (args->pcount) {
-        printf("  %u -> %u: %u\n", 
+        printf("  %u -> %u: %0.4f\n", 
           ptns[i].plbl.labelval,
           ptns[j].plbl.labelval,
-          (uint32_t)wt);
+          wt);
       }
 
       /*don't create an edge for partitions with no edges between them*/

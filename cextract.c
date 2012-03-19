@@ -21,6 +21,7 @@
 #include "util/startup.h"
 #include "util/array.h"
 #include "io/ngdb_graph.h"
+#include "io/analyze75.h"
 
 /**
  * Maximum number of label values/components
@@ -34,6 +35,10 @@
 typedef struct _args {
   char    *input;                    /**< name of input file               */
   char    *output;                   /**< name of output file              */
+  char    *lblfile;                  /**< ANALYZE75 file containing
+                                          node labels                      */
+  uint8_t  real;                     /**< node coordinates are in
+                                          real units                       */
   char    *hdrmsg;                   /**< message to add to output file    */
   uint8_t  component;                /**< extract by component
                                           instead of by label              */ 
@@ -48,11 +53,13 @@ static char doc[]   = "cextract - extract a subgraph by "\
                       "label value or component";
 
 static struct argp_option options[] = {
-  {"component", 'c', NULL,  0, "extract by component instead of by label"},
-  {"exclude",   'e', NULL,  0, "exclude by label/component, "\
-                               "instead of include"},
-  {"hdrmsg",    'h', "MSG", 0, "message to save to .ngdb file header"},  
-  {"lblval",    'l', "INT", 0, "label/component value/number"},
+  {"component", 'c',  NULL,  0, "extract by component instead of by label"},
+  {"exclude",   'e',  NULL,  0, "exclude by label/component, "\
+                                "instead of include"},
+  {"hdrmsg",    'h', "MSG",  0, "message to save to .ngdb file header"},  
+  {"lblval",    'l', "INT",  0, "label/component value/number"},
+  {"lblfile",   'f', "FILE", 0, "ANALYZE75 file containing node labels"},
+  {"real",      'r',  NULL,  0, "node coordinates are in real units"},
   {0}
 };
 
@@ -66,6 +73,8 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
     case 'c': args->component = 1;   break;
     case 'e': args->exclude   = 1;   break;
+    case 'f': args->lblfile   = arg; break;
+    case 'r': args->real      = 1;   break;
     case 'h': args->hdrmsg    = arg; break;
     case 'l':
       if (args->nlabels < MAX_LABEL_VALUES) 
@@ -132,20 +141,36 @@ static uint8_t _test_label(
 
 int main (int argc, char *argv[]) {
 
+
   graph_t     gin;
   graph_t     gout;
+  dsr_t       hdr;
+  uint8_t    *img;
   uint32_t    nginnodes;
   uint8_t    *mask;
   struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
   args_t      args;  
 
   memset(&args, 0, sizeof(args_t));
+  img = NULL;
 
   startup("cextract", argc, argv, &argp, &args);
 
   if (ngdb_read(args.input, &gin)) {
     printf("Could not read in %s\n", args.input);
     goto fail;
+  }
+
+  if (args.lblfile) {
+    if (analyze_load(args.lblfile, &hdr, &img)) {
+      printf("Could not load image file %s\n", args.lblfile);
+      goto fail;
+    }
+
+    if (graph_relabel(&gin, &hdr, img, args.real)) {
+      printf("Could not relabel graph\n");
+      goto fail;
+    }
   }
 
   nginnodes = graph_num_nodes(&gin);

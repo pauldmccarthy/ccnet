@@ -18,11 +18,31 @@
 
 #define MAX_INPUTS 50
 
+
+typedef enum {
+
+  SUM_WEIGHTS = 0,
+  COUNT_EDGES,
+  AVG_WEIGHTS,
+
+} edge_weight_t;
+
 typedef struct _args {
-  char    *inputs[MAX_INPUTS];
-  char    *output;
-  uint16_t ninputs;
+  char         *inputs[MAX_INPUTS];
+  char         *output;
+  uint16_t      ninputs;
+  edge_weight_t edgeweight;
 } args_t;
+
+static struct argp_option options[] = {
+  {"sumweights", 's', NULL, 0, "set output edge weights to the sum of "\
+                               "corresponding input edge weights (default)"},
+  {"countedges", 'c', NULL, 0, "set output edge weights to the number "\
+                               "of corresponding input edges"},
+  {"avgweights", 'a', NULL, 0, "set output edge weights to average "\
+                               "of corresponding input edge weights"},
+  {0}
+};
 
 static char doc[] = "avgngdb -- create an average graph from "\
                     "a collection of input graph files";
@@ -34,6 +54,10 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   args = state->input;
 
   switch (key) {
+
+    case 's': args->edgeweight = SUM_WEIGHTS; break; 
+    case 'c': args->edgeweight = COUNT_EDGES; break;
+    case 'a': args->edgeweight = AVG_WEIGHTS; break;
 
     case ARGP_KEY_ARG:
       if (state->arg_num == 0) args->output = arg;
@@ -148,14 +172,29 @@ static int _compare_glbl_ins(
 );
 
 /**
+ * Adds all of the edges from the given input graph to the output graph.
  *
  * \return 0 on success, non-0 on failure.
  */
+static uint8_t _update_avg_graph(
+  graph_t      *gin,        /**< the input graph                     */
+  graph_t      *gavg,       /**< the average (output) graph          */
+  array_t      *nodemap,    /**< input -> output node ID mapping     */
+  edge_weight_t edgeweight, /**< how to set output graph edge weight */
+  uint16_t      ninputs     /**< number of input graphs              */
+);
+
+/**
+ * Creates an average graph from all of the input graphs.
+ * 
+ * \return 0 on success, non-0 on failure.
+ */
 static uint8_t _mk_avg_graph(
-  char      **inputs,  /**< input graph files              */
-  uint16_t    ninputs, /**< number of input files          */
-  graph_t    *gavg,    /**< pointer to uninitialised graph */
-  nlbl_map_t *map      /**< label->node index mapping      */
+  char        **inputs,    /**< input graph files                   */
+  uint16_t      ninputs,   /**< number of input files               */
+  graph_t      *gavg,      /**< pointer to uninitialised graph      */
+  nlbl_map_t   *map,       /**< label->node index mapping           */
+  edge_weight_t edgeweight /**< how to set output graph edge weight */
 );
 
 int main(int argc, char *argv[]) {
@@ -163,7 +202,7 @@ int main(int argc, char *argv[]) {
   nlbl_map_t  map;
   args_t      args;
   graph_t     gavg;
-  struct argp argp = {NULL, _parse_opt, "OUTPUT [INPUT ...]", doc};
+  struct argp argp = {options, _parse_opt, "OUTPUT [INPUT ...]", doc};
 
   memset(&args, 0, sizeof(args));
   memset(&map,  0, sizeof(map));
@@ -175,7 +214,7 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (_mk_avg_graph(args.inputs, args.ninputs, &gavg, &map)) {
+  if (_mk_avg_graph(args.inputs, args.ninputs, &gavg, &map, args.edgeweight)) {
     printf("error creating average graph\n");
     goto fail;
   }
@@ -305,10 +344,13 @@ int _compare_glbl(const void *a, const void *b) {
 
   graph_label_t *ga;
   graph_label_t *gb;
-
+  
   ga = (graph_label_t *)a;
   gb = (graph_label_t *)b;
-  
+
+  if      (ga->labelval > gb->labelval) return  1;
+  else if (ga->labelval < gb->labelval) return -1;
+
   if      (ga->zval > gb->zval) return  1;
   else if (ga->zval < gb->zval) return -1;
   
@@ -328,9 +370,11 @@ int _compare_glbl_ins(const void *a, const void *b) {
 
 
 uint8_t _update_avg_graph(
-  graph_t *gin,
-  graph_t *gavg,
-  array_t *nodemap) {
+  graph_t      *gin,
+  graph_t      *gavg,
+  array_t      *nodemap,
+  edge_weight_t edgeweight,
+  uint16_t      ninputs) {
 
   uint64_t  i;
   uint64_t  j;
@@ -339,7 +383,8 @@ uint8_t _update_avg_graph(
   uint32_t  nnbrs;
   uint32_t  outi;
   uint32_t  outj;
-  float     wt;
+  float     inwt;
+  float     outwt;
 
   ginnodes = graph_num_nodes(gin);
 
@@ -355,10 +400,22 @@ uint8_t _update_avg_graph(
 
       outj = *(uint32_t *)array_getd(nodemap, nbrs[j]);
 
+      /*will have no effect if edge already exists*/
       graph_add_edge(gavg, outi, outj, 0.0);
 
-      wt = graph_get_weight(gavg, outi, outj);
-      if (graph_set_weight(gavg, outi, outj, wt + 1)) goto fail;
+      inwt  = graph_get_weight(gin,  i,    nbrs[j]);
+      outwt = graph_get_weight(gavg, outi, outj);
+
+      switch (edgeweight) {
+
+        case SUM_WEIGHTS: outwt = outwt + inwt;           break;
+        case COUNT_EDGES: outwt = outwt + 1;              break;
+        case AVG_WEIGHTS: outwt = outwt + (inwt/ninputs); break;
+        default:          goto fail;
+      }
+
+      if (graph_set_weight(gavg, outi, outj, outwt))
+         goto fail;
     }
   }
 
@@ -369,10 +426,11 @@ fail:
 }
 
 uint8_t _mk_avg_graph(
-  char      **inputs,
-  uint16_t    ninputs,
-  graph_t    *gavg,
-  nlbl_map_t *map) {
+  char        **inputs,
+  uint16_t      ninputs,
+  graph_t      *gavg,
+  nlbl_map_t   *map,
+  edge_weight_t edgeweight) {
 
   uint64_t       i;
   uint32_t       nnodes;
@@ -396,7 +454,8 @@ uint8_t _mk_avg_graph(
     
     if (ngdb_read(inputs[i], &gin)) goto fail;
 
-    if (_update_avg_graph(&gin, gavg, nodemap)) goto fail;
+    if (_update_avg_graph(&gin, gavg, nodemap, edgeweight, ninputs))
+      goto fail;
     graph_free(&gin);
   }
 

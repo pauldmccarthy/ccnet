@@ -63,6 +63,7 @@ enum {
   STATS_CACHE_BETWEENNESS_CENTRALITY,
   STATS_CACHE_NODE_NUMPATHS,
   STATS_CACHE_NODE_COMPONENT,
+  STATS_CACHE_NODE_EDGEDIST,
 
   /*pair-level statistics*/
   STATS_CACHE_PAIR_PATHLENGTH,
@@ -263,6 +264,8 @@ uint8_t stats_cache_node_numpaths(
   graph_t *g, int64_t n, double *data);
 uint8_t stats_cache_node_component(
   graph_t *g, int64_t n, uint32_t *data);
+uint8_t stats_cache_node_edgedist(
+  graph_t *g, int64_t n, double *data);
 
 uint8_t stats_cache_pair_pathlength(graph_t *g, uint32_t n, double *paths);
 uint8_t stats_cache_pair_numpaths(  graph_t *g, uint32_t n, double *paths);

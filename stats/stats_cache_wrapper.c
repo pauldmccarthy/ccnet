@@ -340,6 +340,35 @@ uint8_t stats_cache_node_numpaths(graph_t *g, int64_t n, double *data) {
   return 0;
 }
 
+uint8_t stats_cache_node_edgedist(graph_t *g, int64_t n, double *data) {
+
+  uint64_t i;
+  uint32_t nnodes;
+
+  nnodes = graph_num_nodes(g); 
+
+  if (stats_cache_check(g, STATS_CACHE_NODE_EDGEDIST, n, -1, data) == 1)
+    return 0;
+
+  if (data != NULL) {
+    
+    if (n < 0 || n >= nnodes) {
+
+      for (i = 0; i < nnodes; i++) {
+        data[i] = stats_avg_edge_distance(g, i);
+      }
+    }
+
+    else {
+      *data = stats_avg_edge_distance(g, n);
+    }
+  }
+  
+
+
+  return 0;
+}
+
 uint8_t stats_cache_pair_numpaths(graph_t *g, uint32_t n, double *paths) {
 
   if (stats_cache_check(g, STATS_CACHE_PAIR_NUMPATHS, n, -1, paths) == 1)

@@ -148,6 +148,7 @@ void _print_node_stats_header(graph_t *g, args_t *args) {
   printf("clustering,");
   printf("pathlength,");
   printf("closeness,");
+  printf("edgedist,");
   printf("component\n");
 }
 
@@ -156,12 +157,14 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   graph_label_t *lbl;
   double         clust;
   double         plen;
+  double         edgedist;
   uint32_t       cmp;
 
   lbl = graph_get_nodelabel(  g, n);
   stats_cache_node_clustering(g, n, &clust);
   stats_cache_node_pathlength(g, n, &plen);
   stats_cache_node_component( g, n, &cmp);
+  stats_cache_node_edgedist(  g, n, &edgedist);
 
   printf("%u,",    n);
   printf("%0.6f,", lbl->xval);
@@ -172,5 +175,6 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   printf("%0.6f,", clust);
   printf("%0.6f,", plen);
   printf("%0.6f,", stats_closeness_centrality(g, n));
+  printf("%0.6f,", edgedist);
   printf("%u\n",   cmp);
 }

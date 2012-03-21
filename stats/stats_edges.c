@@ -107,5 +107,11 @@ double stats_avg_edge_distance(graph_t *g, uint32_t u) {
 
   avg /= nnbrs;
 
+  stats_cache_add(g,
+                  STATS_CACHE_NODE_EDGEDIST,
+                  STATS_CACHE_TYPE_NODE,
+                  sizeof(double));
+  stats_cache_update(g, STATS_CACHE_NODE_EDGEDIST, u, -1, &avg); 
+
   return avg;
 }

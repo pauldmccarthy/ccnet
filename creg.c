@@ -17,7 +17,7 @@
 #include "io/analyze75.h"
 #include "util/startup.h"
 
-static char doc[] = "cseg -- calculate and print inter/intra regional "\
+static char doc[] = "creg -- calculate and print inter/intra regional "\
                     "densities";
 
 static struct argp_option opts[] = {

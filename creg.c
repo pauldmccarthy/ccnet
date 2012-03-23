@@ -23,6 +23,7 @@ static char doc[] = "cseg -- calculate and print inter/intra regional "\
 static struct argp_option opts[] = {
   {"lblfile", 'l', "FILE", 0, "ANALYZE75 file containing node labels"},
   {"real",    'r',  NULL,  0, "node coordinates are in real units"},
+  {"sizes",   's',  NULL,  0, "print out number of nodes in each region"},
   {"nonorm",  'n',  NULL,  0, "show edge counts, rather "\
                               "than normalised densities"},
   {0}
@@ -33,6 +34,7 @@ typedef struct _args {
   char   *input;
   char   *lblfile;
   uint8_t real;
+  uint8_t sizes;
   uint8_t nonorm;
 
 } args_t;
@@ -45,6 +47,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
     case 'l': args->lblfile = arg; break;
     case 'r': args->real    = 1;   break;
+    case 's': args->sizes   = 1;   break;
     case 'n': args->nonorm  = 1;   break;
 
     case ARGP_KEY_ARG:
@@ -71,6 +74,10 @@ static void _print_density_matrix(
   node_partition_t *ptn,
   double           *matrix,
   uint8_t           nonorm
+);
+
+static void _print_region_sizes(
+  node_partition_t *ptn
 );
 
 int main (int argc, char *argv[]) {
@@ -121,6 +128,11 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
   _print_density_matrix(&g, &ptn, matrix, args.nonorm);
+
+  if (args.sizes) {
+    printf("\n");
+    _print_region_sizes(&ptn);
+  }
 
   return 0;
   
@@ -220,5 +232,19 @@ void _print_density_matrix(
       }
     }
     printf("\n");
+  }
+}
+
+void _print_region_sizes(node_partition_t *ptn) {
+  
+  uint64_t i;
+  uint32_t id;
+  array_t  part;
+
+  for (i = 0; i < ptn->nparts; i++) {
+
+    array_get(ptn->partids, i, &id);
+    array_get(ptn->parts,   i, &part);
+    printf("%u %u\n", id,  part.size);
   }
 }

@@ -38,8 +38,8 @@ uint8_t graph_relabel(graph_t *g, dsr_t *hdr, uint8_t *img, uint8_t real) {
 
     if (real) {
       dims[0] = (uint32_t)(round(lbl.xval / xl));
-      dims[1] = (uint32_t)(round(lbl.xval / yl));
-      dims[2] = (uint32_t)(round(lbl.xval / zl));
+      dims[1] = (uint32_t)(round(lbl.yval / yl));
+      dims[2] = (uint32_t)(round(lbl.zval / zl));
     }
     else {
       dims[0] = (uint32_t)lbl.xval;

@@ -60,7 +60,7 @@ static struct argp_option options[] = {
   {"hithres",    'h', "FLOAT", 0, "high threshold"},
   {"sampletime", 't', "FLOAT", 0, "time between samples"},
   {"pcorr",      'p', NULL,    0, "use pearson correlation"},
-  {"cohe",       'c', NULL,    0, "use coherence"},
+  {"cohe",       'c', NULL,    0, "use coherence (not supported yet)"},
   {"incl",       'i', "FLOAT", 0, "include only voxels with this label"},
   {"excl",       'e', "FLOAT", 0, "exclude voxels with this label"},
   {0}

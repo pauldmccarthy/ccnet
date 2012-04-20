@@ -68,7 +68,8 @@ exes=dumpimg    \
      avgngdb    \
      cmask      \
      cedgenorm  \
-     creg
+     creg       \
+     searchimg
 
 
 default: clean $(exes)

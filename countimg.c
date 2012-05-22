@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     passed = 0;
     val    = analyze_read_by_idx(&hdr, data, i);
 
-    if (!isnormal(val))
+    if (val && !isnormal(val))
       continue;
 
     nnormalvals ++;

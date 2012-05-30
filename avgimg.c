@@ -13,9 +13,63 @@
 #include <string.h>
 #include <stdlib.h>
 #include <float.h>
+#include <argp.h>
 
 #include "io/analyze75.h"
 #include "util/startup.h"
+
+#define _MAX_INPUTS 2048
+
+typedef struct _args {
+
+  uint16_t ninputs;
+  char    *inputs[_MAX_INPUTS];
+  char    *output;
+  uint16_t format;
+
+} args_t;
+
+static char *doc = "avgimg -- average a collection of ANALYZE75 images\v\
+  Supported formats:\n\
+  2  - unsigned char (1 byte)\n\
+  4  - signed short  (2 bytes)\n\
+  8  - signed int    (4 bytes)\n\
+  16 - float         (4 bytes)\n\
+  64 - double        (8 bytes)\n";
+
+
+static struct argp_option options[] = {
+  {"format", 'f', "INT", 0, "output format"},
+  {0}
+};
+
+static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
+  
+  args_t *args = state->input;
+
+  switch (key) {
+
+    case 'f': args->format = atoi(arg); break;
+
+    case ARGP_KEY_ARG:
+      
+      if (state->arg_num == 0) args->output = arg;
+      
+      else if (args->ninputs  < _MAX_INPUTS)
+        args->inputs[args->ninputs++] = arg;
+          
+      break;
+
+    case ARGP_KEY_END:
+      if (state->arg_num <= 1) argp_usage(state);
+      break;
+
+    default: return ARGP_ERR_UNKNOWN;
+  }
+
+  return 0;
+}
+
 
 /**
  * Loads all of the specified images into memory. Space is allocated
@@ -48,60 +102,48 @@ static uint8_t _mk_avg_img(
 
 int main (int argc, char *argv[]) {
 
-  uint8_t   nimgs;
-  uint16_t  datatype;
-  char     *outfile;
   dsr_t    *hdrs;
   uint8_t **imgs;
   uint8_t  *avgimg;
   dsr_t     avghdr;
   uint16_t  i;
-
-  startup("avgimg", argc, argv, NULL, NULL);
-
-  if (argc < 4) {
-    printf("usage: avgimg format output input1 [input2 ...]\n");
-    printf("Supported formats:\n\
-  2  - unsigned char (1 byte)\n\
-  4  - signed short  (2 bytes)\n\
-  8  - signed int    (4 bytes)\n\
-  16 - float         (4 bytes)\n\
-  64 - double        (8 bytes)\n");
-    return 1;
-  } 
+  args_t    args;
+  struct  argp argp = {options, _parse_opt, "OUTPUT INPUT [INPUT ...]", doc};
+  
+  memset(&args, 0, sizeof(args));
+  startup("avgimg", argc, argv, &argp, &args);
 
   hdrs     = NULL;
   imgs     = NULL;
   avgimg   = NULL;
-  nimgs    = argc-3;
-  datatype = atoi(argv[1]);
-  outfile  = argv[2];
-
+  
   /*load input images and headers in*/
-  if (_load_images(nimgs, argv+3, &hdrs, &imgs)) {
+  if (_load_images(args.ninputs, args.inputs, &hdrs, &imgs)) {
     printf("error loading input images\n");
     goto fail;
   }
 
   /*check that the images can be averaged*/
-  if (analyze_hdr_compat(nimgs, hdrs)) {
+  if (analyze_hdr_compat(args.ninputs, hdrs)) {
     printf("input images failed verification - "\
            "check they are the same dimensions \n");
     goto fail;
   }
 
+  if (args.format == 0) args.format = analyze_datatype(hdrs);
+
   /*make average image*/
-  if (_mk_avg_img(datatype, nimgs, hdrs, imgs, &avgimg, &avghdr)) {
+  if (_mk_avg_img(args.format, args.ninputs, hdrs, imgs, &avgimg, &avghdr)) {
     goto fail;
   }
 
   /*write average image out*/
-  if (analyze_write_hdr(outfile, &avghdr))         goto fail;
-  if (analyze_write_img(outfile, &avghdr, avgimg)) goto fail;
+  if (analyze_write_hdr(args.output, &avghdr))         goto fail;
+  if (analyze_write_img(args.output, &avghdr, avgimg)) goto fail;
   
   free(hdrs);
   free(avgimg);
-  for (i = 0; i < nimgs; i++) free(imgs[i]);
+  for (i = 0; i < args.ninputs; i++) free(imgs[i]);
   free(imgs);
   return 0;
 
@@ -112,7 +154,7 @@ fail:
   if (avgimg != NULL) free(avgimg);
 
   if (imgs != NULL) {
-    for (i = 0; i < nimgs; i++) {
+    for (i = 0; i < args.ninputs; i++) {
       if (imgs[i] != NULL) free(imgs[i]);
     }
     free(imgs);

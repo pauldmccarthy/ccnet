@@ -63,6 +63,7 @@ int main (int argc, char *argv[]) {
   return 0;
 
 fail:
+  printf("Cut failed\n");
   if (img != NULL) free(img);
   return 1;
 }

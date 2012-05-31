@@ -78,6 +78,7 @@ int main (int argc, char *argv[]) {
   return 0;
 
 fail:
+  printf("Cat failed\n");
   if (hdrs != NULL) free(hdrs);
   return 1;
 }

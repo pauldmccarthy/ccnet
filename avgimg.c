@@ -124,7 +124,7 @@ int main (int argc, char *argv[]) {
   }
 
   /*check that the images can be averaged*/
-  if (analyze_hdr_compat(args.ninputs, hdrs)) {
+  if (analyze_hdr_compat(args.ninputs, hdrs, 0)) {
     printf("input images failed verification - "\
            "check they are the same dimensions \n");
     goto fail;

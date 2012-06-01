@@ -72,8 +72,8 @@ uint8_t analyze_open_volume(char *path, analyze_volume_t *vol) {
       goto fail;
   }
   
-  if (analyze_hdr_compat(vol->nimgs, vol->hdrs)) goto fail;
-  if (analyze_num_dims(&(vol->hdrs[0])) != 3)    goto fail;
+  if (analyze_hdr_compat(vol->nimgs, vol->hdrs, 0)) goto fail;
+  if (analyze_num_dims(&(vol->hdrs[0])) != 3)       goto fail;
     
   return 0;
 

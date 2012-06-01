@@ -52,10 +52,8 @@ static char doc[] =
 
 static struct argp_option options[] = {
   {"hdrmsg",     's', "MSG",   0, "message to save to .mat file header"},
-  {"labelf",     'f', "FILE",  0,
-   "ANALYZE75 label file (must have same datat type as volume files)"},
-  {"maskf",      'm', "FILE",  0,
-   "ANALYZE75 mask file (must have same data type as volume files)"},
+  {"labelf",     'f', "FILE",  0, "ANALYZE75 label file"},
+  {"maskf",      'm', "FILE",  0, "ANALYZE75 mask file"},
   {"lothres",    'l', "FLOAT", 0, "low threshold"},
   {"hithres",    'h', "FLOAT", 0, "high threshold"},
   {"sampletime", 't', "FLOAT", 0, "time between samples"},
@@ -273,7 +271,7 @@ int main (int argc, char *argv[]) {
     hdrs[0] = vol.hdrs;
     hdrs[1] = &lblhdr;
 
-    if (analyze_hdr_compat_ptr(2, hdrs)) {
+    if (analyze_hdr_compat_ptr(2, hdrs, 1)) {
       printf(
         "label file %s does not match volume files in %s\n",
         args.labelf, args.input);
@@ -546,7 +544,7 @@ int64_t _apply_file_mask(
   hdrs[0] = &maskhdr;
   hdrs[1] = vol->hdrs;
 
-  if (analyze_hdr_compat_ptr(2, hdrs)) goto fail;
+  if (analyze_hdr_compat_ptr(2, hdrs, 1)) goto fail;
 
   for (i = 0; i < nvals; i++) {
 

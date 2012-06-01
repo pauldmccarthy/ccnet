@@ -314,7 +314,7 @@ fail:
   return 1;
 }
 
-uint8_t analyze_hdr_compat(uint16_t nhdrs, dsr_t *hdrs) {
+uint8_t analyze_hdr_compat(uint16_t nhdrs, dsr_t *hdrs, uint8_t skip_dt) {
 
   uint32_t  i, j;
   uint8_t   ndims;
@@ -353,9 +353,9 @@ uint8_t analyze_hdr_compat(uint16_t nhdrs, dsr_t *hdrs) {
    */
   for (i = 1; i < nhdrs; i++) {
 
-    if (analyze_num_dims(hdrs+i) != ndims) goto fail;
-    if (analyze_datatype(hdrs+i) != dtype) goto fail;
-    if (hdrs[i].rev              != endi)  goto fail; 
+    if (analyze_num_dims(hdrs+i) != ndims)               goto fail;
+    if (analyze_datatype(hdrs+i) != dtype && (!skip_dt)) goto fail;
+    if (hdrs[i].rev              != endi)                goto fail; 
 
     for (j = 0; j < ndims; j++) {
 
@@ -376,7 +376,8 @@ fail:
   return 1;
 }
 
-uint8_t analyze_hdr_compat_ptr(uint16_t nhdrs, dsr_t **hdrs) {
+uint8_t analyze_hdr_compat_ptr(
+  uint16_t nhdrs, dsr_t **hdrs, uint8_t skip_dt) {
 
   uint32_t i;
   uint8_t  compat;  
@@ -390,7 +391,7 @@ uint8_t analyze_hdr_compat_ptr(uint16_t nhdrs, dsr_t **hdrs) {
   for (i = 0; i < nhdrs; i++) 
     memcpy(lhdrs+i, hdrs[i], sizeof(dsr_t));
 
-  compat = analyze_hdr_compat(nhdrs, lhdrs);
+  compat = analyze_hdr_compat(nhdrs, lhdrs, skip_dt);
   
   free(lhdrs);
 

@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
     if (analyze_load_hdr(inputs[i], hdrs+i)) goto fail;
   }
 
-  if (analyze_hdr_compat(ninputs, hdrs)) goto fail;
+  if (analyze_hdr_compat(ninputs, hdrs, 0)) goto fail;
 
   _mk_hdr(&newhdr, hdrs, ninputs, dimsz);
 

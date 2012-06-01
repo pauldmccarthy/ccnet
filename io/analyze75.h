@@ -128,8 +128,9 @@ void analyze_reverse_hdr(
  * \return 0 if all of the headers match, non-0 otherwise.
  */
 uint8_t analyze_hdr_compat(
-  uint16_t  nhdrs, /**< number of headers */
-  dsr_t    *hdrs   /**< headers to check  */
+  uint16_t  nhdrs,   /**< number of headers                    */
+  dsr_t    *hdrs,    /**< headers to check                     */
+  uint8_t   skip_dt  /**< non-0: do not perform datatype check */
 );
 
 /**
@@ -140,8 +141,9 @@ uint8_t analyze_hdr_compat(
  * \return 0 if all of the headers match, non-0 otherwise.
  */
 uint8_t analyze_hdr_compat_ptr(
-  uint16_t nhdrs, /**< number of headers */
-  dsr_t  **hdrs   /**< headers to check  */
+  uint16_t  nhdrs,   /**< number of headers                    */
+  dsr_t   **hdrs,    /**< headers to check                     */
+  uint8_t   skip_dt  /**< non-0: do not perform datatype check */
 );
 
 /**

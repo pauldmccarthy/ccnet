@@ -15,7 +15,9 @@
 
 /**
  * Creates a new graph by pruning the input graph of any disconnected nodes,
- * and components which are smaller than or equal to the given size.
+ * and components which are smaller than or equal to the given size. If
+ * size is 0, the graph is pruned such that only the largest component
+ * remains.
  *
  * \return 0 on success, non-0 otherwise.
  */

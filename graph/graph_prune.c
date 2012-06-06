@@ -64,6 +64,8 @@ uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size) {
   uint32_t *components;
   array_t   sizes;
   uint32_t  nnodes;
+  uint64_t  i;
+  uint32_t  s;
 
   components = NULL;
   sizes.data = NULL;
@@ -78,6 +80,21 @@ uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size) {
 
   if (_find_components(gin, components, &sizes))
     goto fail;
+
+  /*
+   * if size was not specified, prune all but the largest component.
+   * 
+   */
+  if (size == 0) {
+
+    for (i = 0; i < sizes.size; i++) {
+      
+      array_get(&sizes, i, &s);
+      if (s > size) size = s;
+    }
+
+    size -= 1;
+  }
 
   if (_prune(gin, gout, size, components, sizes.size, (uint32_t *)sizes.data))
     goto fail;

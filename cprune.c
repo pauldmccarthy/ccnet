@@ -20,7 +20,9 @@
 #include "util/startup.h"
 
 static char doc[] = "cprune - remove disconnected nodes/components "\
-                    "from a graph";
+                    "from a graph.\v"\
+                    "If a size is not specified, or set to 0, the graph "\
+                    "is pruned such that only the largest component remains.";
 
 /**
  * input arguments
@@ -71,7 +73,6 @@ int main(int argc, char *argv[]) {
   struct argp argp = {options, _parse_opt, "INPUT OUTPUT", doc};
 
   memset(&args, 0, sizeof(args_t));
-  args.size = 1; 
   startup("cprune", argc, argv, &argp, &args);
 
   if (ngdb_read(args.input, &gin)) {

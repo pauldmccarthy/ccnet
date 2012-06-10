@@ -181,6 +181,7 @@ uint8_t _prune(
   uint32_t       ninnodes;
   uint32_t       noutnodes;
   uint32_t      *nbrs;
+  float         *wts;
   uint32_t       nnbrs;
   graph_label_t *lbl;
 
@@ -218,13 +219,14 @@ uint8_t _prune(
 
     nnbrs = graph_num_neighbours(gin, i);
     nbrs  = graph_get_neighbours(gin, i);
+    wts   = graph_get_weights(   gin, i);
 
     for (j = 0; j < nnbrs; j++) {
 
       /*ignore edges to thresholded components*/
       if (nidmap[nbrs[j]] == 0xFFFFFFFF) continue;
       
-      if (graph_add_edge(gout, nidmap[i], nidmap[nbrs[j]], 1.0))
+      if (graph_add_edge(gout, nidmap[i], nidmap[nbrs[j]], wts[j]))
         goto fail;
     }
   }

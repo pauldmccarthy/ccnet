@@ -157,7 +157,7 @@ void _graph(graph_t *g, uint8_t weights) {
 
     for (j = 0; j < nnbrs; j++) {
       printf("%5u", nbrs[j]);
-      if (weights) printf(" (%0.1f)", wts[j]);
+      if (weights) printf(" (%0.4f)", wts[j]);
       if (j < nnbrs-1) printf(" ");
     }
     printf("\n");

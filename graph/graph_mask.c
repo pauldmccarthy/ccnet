@@ -135,6 +135,7 @@ uint8_t _copy_edges(
 
   uint64_t   i;
   uint64_t   j;
+  float      wt;
   nodemap_t *nodei;
   nodemap_t *nodej;
 
@@ -145,7 +146,8 @@ uint8_t _copy_edges(
       nodej = array_getd(nodes, j);
 
       if (graph_are_neighbours(gin, nodei->gin_idx, nodej->gin_idx)) {
-        if (graph_add_edge(gout, nodei->gout_idx, nodej->gout_idx, 1))
+        wt = graph_get_weight(gin, nodei->gin_idx, nodej->gin_idx);
+        if (graph_add_edge(gout, nodei->gout_idx, nodej->gout_idx, wt))
           goto fail;
       }
     }

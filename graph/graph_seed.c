@@ -1,7 +1,7 @@
 /**
  *
- * Extract a subgraph from a seed node, by breadth-first searching out from
- * the seed a specified depth.
+ * Extract a subgraph from one or more seed nodes, by breadth-first searching
+ * out from the seed a specified depth.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com> 
  */
@@ -32,9 +32,15 @@ static uint8_t _bfs_cb(
   void        *context /**< pointer to a ctx_t   */
 );
 
-uint8_t graph_seed(graph_t *gin, graph_t *gout, uint32_t n, uint8_t depth) {
+uint8_t graph_seed(
+  graph_t  *gin,
+  graph_t  *gout,
+  uint32_t *seeds,
+  uint32_t  nseeds,
+  uint8_t   depth) {
 
   ctx_t    ctx;
+  uint64_t i;
   uint32_t nnodes;
 
   nnodes       = graph_num_nodes(gin);
@@ -43,7 +49,9 @@ uint8_t graph_seed(graph_t *gin, graph_t *gout, uint32_t n, uint8_t depth) {
 
   if (ctx.nodemask == NULL) goto fail;
 
-  if (bfs(gin, &n, 1, NULL, &ctx, NULL, _bfs_cb, NULL)) goto fail;
+  for (i = 0; i < nseeds; i++) ctx.nodemask[seeds[i]] = 1;
+
+  if (bfs(gin, seeds, nseeds, NULL, &ctx, NULL, _bfs_cb, NULL)) goto fail;
 
   if (graph_mask(gin, gout, ctx.nodemask)) goto fail;
 

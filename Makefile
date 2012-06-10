@@ -69,7 +69,8 @@ exes=dumpimg    \
      cmask      \
      cedgenorm  \
      creg       \
-     searchimg
+     searchimg  \
+     cseed
 
 
 default: clean $(exes)

@@ -19,11 +19,14 @@
  * \return 0 on success, non-0 on failure.
  */
 uint8_t graph_seed(
-  graph_t  *gin,    /**< input graph                   */
-  graph_t  *gout,   /**< uninitialised output graph    */
-  uint32_t *seeds,  /**< array of seed node IDs        */
-  uint32_t  nseeds, /**< number of seed nodes          */
-  uint8_t   depth   /**< depth of breadth first search */
+  graph_t  *gin,    /**< input graph                              */
+  graph_t  *gout,   /**< uninitialised output graph               */
+  uint32_t *seeds,  /**< array of seed node IDs                   */
+  uint32_t  nseeds, /**< number of seed nodes                     */
+  uint8_t   depth,  /**< depth of breadth first search            */
+  graph_t  *grem    /**< optional uninitialised graph to store
+                         remainder of input graph after removal
+                         of seeded subgraph                       */
 );
 
 #endif

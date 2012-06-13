@@ -19,15 +19,17 @@
 static char doc[] = "cseed -- extract a subgraph from a specified seed node";
 
 static struct argp_option opts[] = {
-  {"x",      'x', "FLOAT",  0, "X coordinate of seed node"},
-  {"y",      'y', "FLOAT",  0, "Y coordinate of seed node"},
-  {"z",      'z', "FLOAT",  0, "Z coordinate of seed node"},
-  {"maxdeg", 'm',  NULL,    0, "Use node with maximum degree as seed node"},
-  {"nodeid", 'n', "INT",    0, "ID of seed node"},
-  {"depth",  'd', "INT",    0, "Depth to extract"},
-  {"labelf", 'l', "FILE",   0, "ANAYLZE75 label file"},
-  {"lblval", 'v', "INT",    0, "Label of seed node(s)"},
-  {"real",   'r',  NULL,    0, "Node coordinates are in real units"},
+  {"x",       'x', "FLOAT",  0, "X coordinate of seed node"},
+  {"y",       'y', "FLOAT",  0, "Y coordinate of seed node"},
+  {"z",       'z', "FLOAT",  0, "Z coordinate of seed node"},
+  {"maxdeg",  'm',  NULL,    0, "Use node with maximum degree as seed node"},
+  {"nodeid",  'n', "INT",    0, "ID of seed node"},
+  {"depth",   'd', "INT",    0, "Depth to extract"},
+  {"labelf",  'l', "FILE",   0, "ANAYLZE75 label file"},
+  {"lblval",  'v', "INT",    0, "Label of seed node(s)"},
+  {"real",    'r',  NULL,    0, "Node coordinates are in real units"},
+  {"saverem", 's', "FILE",   0, "Save remainder of input graph after "\
+                                "subgraph has been extracted"},
   
   {0}
 };
@@ -37,6 +39,7 @@ typedef struct _args {
   char    *input;
   char    *output;
   char    *labelf;
+  char    *saverem;
   
   float    x;
   float    y;
@@ -62,15 +65,16 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
   switch (key) {
 
-    case 'x': args->x      = atof(arg); args->usecds = 1; break;
-    case 'y': args->y      = atof(arg); args->usecds = 1; break;
-    case 'z': args->z      = atof(arg); args->usecds = 1; break;
-    case 'n': args->n      = atoi(arg); args->usen   = 1; break;
-    case 'd': args->depth  = atoi(arg);                   break;
-    case 'm': args->maxdeg = 1;                           break;
-    case 'l': args->labelf = arg;                         break;
-    case 'v': args->lblval = atoi(arg); args->uselbl = 1; break;
-    case 'r': args->real   = 1;                           break;
+    case 'x': args->x       = atof(arg); args->usecds = 1; break;
+    case 'y': args->y       = atof(arg); args->usecds = 1; break;
+    case 'z': args->z       = atof(arg); args->usecds = 1; break;
+    case 'n': args->n       = atoi(arg); args->usen   = 1; break;
+    case 'd': args->depth   = atoi(arg);                   break;
+    case 'm': args->maxdeg  = 1;                           break;
+    case 'l': args->labelf  = arg;                         break;
+    case 'v': args->lblval  = atoi(arg); args->uselbl = 1; break;
+    case 'r': args->real    = 1;                           break;
+    case 's': args->saverem = arg;                         break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) args->input  = arg;
@@ -97,6 +101,7 @@ int main (int argc, char *argv[]) {
 
   graph_t     gin;
   graph_t     gout;
+  graph_t     grem;
   array_t     seeds;
   struct argp argp = {opts, _parse_opt, "INPUT OUTPUT", doc};
   args_t      args;  
@@ -122,7 +127,7 @@ int main (int argc, char *argv[]) {
   }
 
   if (graph_seed(
-        &gin, &gout, (uint32_t *)seeds.data, seeds.size, args.depth)) {
+        &gin, &gout, (uint32_t *)seeds.data, seeds.size, args.depth, &grem)) {
     printf("Error creating seed subgraph\n");
     goto fail;
   }
@@ -130,6 +135,13 @@ int main (int argc, char *argv[]) {
   if (ngdb_write(&gout, args.output)) {
     printf("Could not write to %s\n", args.output);
     goto fail;
+  }
+
+  if (args.saverem) {
+    if (ngdb_write(&grem, args.saverem)) {
+      printf("Could not write to %s\n", args.saverem);
+      goto fail;
+    }
   }
 
   return 0;

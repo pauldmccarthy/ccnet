@@ -37,7 +37,8 @@ uint8_t graph_seed(
   graph_t  *gout,
   uint32_t *seeds,
   uint32_t  nseeds,
-  uint8_t   depth) {
+  uint8_t   depth,
+  graph_t  *grem) {
 
   ctx_t    ctx;
   uint64_t i;
@@ -54,6 +55,12 @@ uint8_t graph_seed(
   if (bfs(gin, seeds, nseeds, NULL, &ctx, NULL, _bfs_cb, NULL)) goto fail;
 
   if (graph_mask(gin, gout, ctx.nodemask)) goto fail;
+
+  if (grem) {
+    
+    for (i = 0; i < nnodes; i++) ctx.nodemask[i] = !ctx.nodemask[i];
+    if (graph_mask(gin, grem, ctx.nodemask)) goto fail;
+  }
 
   free(ctx.nodemask);
   

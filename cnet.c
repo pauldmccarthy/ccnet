@@ -62,6 +62,7 @@ static struct argp_option options[] = {
                                    "node"},
   {"degcent",       'F', NULL,  0, "print the degree centrality for each " \
                                    "node"},
+  {"chira",         'G', NULL,  0, "print the Chira community strength"},
   {"ebmatrix",      '0', NULL,  0, "print edge-betweenness matrix"},
   {"psmatrix",      '1', NULL,  0, "print path-sharing matrix"},
   {0}
@@ -100,6 +101,7 @@ struct args {
   uint8_t  alledges;
   uint8_t  avgedist;
   uint8_t  degcent;
+  uint8_t  chira;
   
   uint8_t  ebmatrix;
   uint8_t  psmatrix;
@@ -150,6 +152,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'D': a->alledges      = 0xFF;      break;
     case 'E': a->avgedist      = 0xFF;      break;
     case 'F': a->degcent       = 0xFF;      break;
+    case 'G': a->chira         = 0xFF;      break;
     
     case '0': a->ebmatrix      = 0xFF;      break;
     case '1': a->psmatrix      = 0xFF;      break;
@@ -461,6 +464,8 @@ void print_stats(graph_t *g, struct args *args) {
     printf("betweenness:           %f\n",    betweenness);
   if (args->modularity)
     printf("modularity:            %f\n",    stats_cache_modularity(g));
+  if (args->chira)
+    printf("chira fitness:         %f\n",    stats_cache_chira(g)); 
   if (args->nintra)
     printf("intra-cluster edges:   %0.0f\n", stats_cache_intra_edges(g));
   if (args->ninter)

@@ -284,6 +284,38 @@ double stats_cache_max_degree(graph_t *g) {
   return maxdeg;
 }
 
+double stats_cache_chira(graph_t *g) {
+
+  double    mod;
+  uint32_t *comms;
+  uint64_t  i;
+  uint32_t  nnodes;
+  uint32_t  ncomms;
+
+  comms = NULL;
+
+  if (stats_cache_check(g, STATS_CACHE_CHIRA, 0, -1, &mod) == 1)
+    return mod;
+
+  nnodes = graph_num_nodes(    g);
+  ncomms = graph_num_labelvals(g);
+
+  comms = calloc(nnodes,sizeof(uint32_t));
+  if (comms == NULL) goto fail;
+
+  for (i = 0; i < nnodes; i++) 
+    comms[i] = graph_get_nodelabel(g, i)->labelval;
+
+  mod = stats_chira(g, ncomms, comms);
+  free(comms);
+  return mod;
+
+fail:
+
+  if (comms != NULL) free(comms);
+  return 0xFF;
+}
+
 uint8_t stats_cache_betweenness_centrality(
   graph_t *g, int64_t n, double *data) {
 

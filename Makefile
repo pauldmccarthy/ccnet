@@ -70,7 +70,8 @@ exes=dumpimg    \
      cedgenorm  \
      creg       \
      searchimg  \
-     cseed
+     cseed      \
+     callseed
 
 
 default: clean $(exes)

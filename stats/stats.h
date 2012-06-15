@@ -258,6 +258,21 @@ double stats_modularity(
 );
 
 /**
+ * Calculates the fitness of a partitioning of a graph into
+ * communities, using the fitness function described in:
+ *
+ * C Chira & A Gog & D Iclanzan 2012 Evolutionary detection of community
+ * structures in complex network: A new fitness function
+ *
+ * \return the Chira fitness of the given partitioning.
+ */
+double stats_chira(
+  graph_t  *g,            /**< graph to query              */
+  uint32_t  ncommunities, /**< number of communities       */
+  uint32_t *communities   /**< community IDs for each node */
+);
+
+/**
  * \return the number of edges which lie between nodes with the same
  * label value. 
  */

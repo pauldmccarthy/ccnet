@@ -16,6 +16,8 @@
 #define _GRAPH_STATS_CACHE_CTX_LOC_  1
 #define _GRAPH_LOG_CTX_LOC_          2
 
+#define _GRAPH_NODE_LABEL_SLOTS      16
+
 /**
  * Graph flag bit locations.
  */
@@ -59,6 +61,9 @@ typedef struct _graph_label {
   float    xval;     /**< x-coordinate */
   float    yval;     /**< y-coordinate */
   float    zval;     /**< z-coordinate */
+
+  uint32_t slots[_GRAPH_NODE_LABEL_SLOTS]; /**< Space for storage of
+                                                extra node metadata  */
 
 } graph_label_t;
 

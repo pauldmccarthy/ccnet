@@ -151,6 +151,8 @@ uint8_t _read_label(ngdb_t *ngdb, graph_t *graph, uint32_t nidx) {
 
   uint8_t bytes[sizeof(graph_label_t)];
 
+  memset(bytes, 0, sizeof(graph_label_t));
+
   if (ngdb_node_get_data(ngdb, nidx, bytes)) goto fail;
 
   graph_set_nodelabel(graph, nidx, (graph_label_t *)bytes);

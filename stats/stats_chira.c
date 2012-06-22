@@ -15,53 +15,86 @@
 #include "stats/stats.h"
 #include "stats/stats_cache.h"
 
+/**
+ * Counts the in- and out-degrees of every node in the graph, using the given
+ * community identifiers to denote node groups.
+ *
+ */
 static void _count_degrees(
-  graph_t  *g,
-  uint32_t *communities,
-  uint32_t *indegrees,
-  uint32_t *outdegrees
+  graph_t  *g,           /**< the graph                               */
+  uint32_t *communities, /**< community identifiers for each noe      */
+  uint32_t *indegrees,   /**< place to store in-degree for each node  */
+  uint32_t *outdegrees   /**< place to store out-degree for each node */
 );
 
+/**
+ * Counts the number of nodes in each community.
+ */
 static void _count_community_sizes(
-  graph_t  *g,
-  uint32_t  ncommunities,
-  uint32_t *communities,
-  uint32_t *communtiy_sizes
+  graph_t  *g,              /**< the graph                             */
+  uint32_t  ncommunities,   /**< number of communities                 */
+  uint32_t *communities,    /**< community identifiers for each node   */
+  uint32_t *communtiy_sizes /**< place to store size of each community */
 );
 
+/**
+ * Counts the number of edges within each community; this is calculated from
+ * the in-degree of each node in the graph.
+ */
 static void _count_community_edges(
-  graph_t  *g,
-  uint32_t  ncommunities,
-  uint32_t *communities,
-  uint32_t *indegrees,
-  double   *community_edges
+  graph_t  *g,              /**< the graph                                  */
+  uint32_t  ncommunities,   /**< number of communities                      */
+  uint32_t *communities,    /**< community identifiers for each node        */
+  uint32_t *indegrees,      /**< in-degree of each node                     */
+  double   *community_edges /**< place to put edge count for each community */
 );
 
+/**
+ * Calculates the strength of each node - see the reference for its
+ * definition.
+ */
 static void _calc_node_strengths(
-  graph_t  *g,
-  uint32_t *indegrees,
-  uint32_t *outdegrees,
-  uint32_t *communities,
-  uint32_t *community_sizes,
-  double   *node_strengths
+  graph_t  *g,               /**< the graph                           */
+  uint32_t *indegrees,       /**< node in-degrees                     */
+  uint32_t *outdegrees,      /**< node out-degrees                    */
+  uint32_t *communities,     /**< community identifiers for each node */
+  uint32_t *community_sizes, /**< size of each community              */
+  double   *node_strengths   /**< place to put node strengths         */
 );
 
+/**
+ * Calculates the strength of each community - see the reference for its
+ * definition.
+ */
 static void _calc_community_strengths(
-  graph_t  *g,
-  uint32_t  ncommunities,
-  uint32_t *communities,
-  uint32_t *community_sizes,
-  double   *node_strengths,
-  double   *comm_strengths);
-
-static double _calc_partition_strength(
-  graph_t  *g,
-  uint32_t  ncommunities,
-  uint32_t *community_sizes,
-  double   *community_edges,
-  double   *community_strengths
+  graph_t  *g,               /**< the graph                           */
+  uint32_t  ncommunities,    /**< number of communities               */
+  uint32_t *communities,     /**< community identifiers for each node */
+  uint32_t *community_sizes, /**< size of each community              */
+  double   *node_strengths,  /**< strength of each node               */
+  double   *comm_strengths   /**< place to store community strengths  */
 );
 
+/**
+ * Calculates the overall strength of the partition defined by the community
+ * identifiers for each node.
+ *
+ * \return the overall fitness of the graph partitioning.
+ */
+static double _calc_partition_strength(
+  graph_t  *g,                  /**< the graph                             */
+  uint32_t  ncommunities,       /**< number of communities                 */
+  uint32_t *community_sizes,    /**< size of each community                */
+  double   *community_edges,    /**< number of edges within each community */
+  double   *community_strengths /**< strength of each community            */
+);
+
+/**
+ * Returns the fitness of the given partitioning, using the fitness
+ * function defined in Chira et. al. 2012.
+ *
+ * \return the Chira fitness of the given partitioning.
+ */
 double stats_chira(graph_t *g, uint32_t ncommunities, uint32_t *communities) {
 
   uint32_t  nnodes;

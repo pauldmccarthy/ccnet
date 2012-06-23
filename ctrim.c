@@ -41,6 +41,7 @@ typedef struct args {
   char      *output;
   criteria_t criteria;
   uint8_t    modularity;
+  uint8_t    chira;
   uint8_t    printmod;
   double     threshold;
   uint32_t   nedges;
@@ -55,7 +56,9 @@ static struct argp_option options[] = {
                                    "graph splits into this many components"},
   {"modularity", 'o', NULL,     0, "output the graph with the maximum " \
                                    "modularity"},
-  {"printmod",   'p', NULL ,    0, "print modularity and number of " \
+  {"chira",      'h', NULL,     0, "output the graph with the maximum " \
+                                   "chira fitness"},
+  {"printmod",   'p', NULL,     0, "print modularity and number of " \
                                    "components for each iteration"},
   {"criteria",   'c', "STRING", 0, "name of the criteria on which "\
                                    "to remove edges "},
@@ -74,10 +77,12 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'n': a->nedges     = atoi(arg); break;
     case 'm': a->cmplimit   = atoi(arg); break;
     case 'o': a->modularity = 0xFF;      break;
+    case 'h': a->chira      = 0xFF;      break;
     case 'p': a->printmod   = 0xFF;      break;
     case 'd':
       if (arg != NULL) a->igndis = atoi(arg);
       else             a->igndis = 1;
+
       break;
     case 'c':
       
@@ -171,6 +176,12 @@ static uint8_t _trim(graph_t *gin, graph_t *gout, args_t *a) {
     if (val == 0) 
       val = graph_num_edges(gin);
   }
+  else if (a->chira) {
+    tfunc = &graph_threshold_chira;
+    val   = a->nedges;
+    if (val == 0) 
+      val = graph_num_edges(gin);
+  } 
   else if (a->nedges   != 0) {
     tfunc = &graph_threshold_edges;
     val   = a->nedges;

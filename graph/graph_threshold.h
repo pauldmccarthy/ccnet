@@ -88,8 +88,8 @@ uint8_t graph_threshold_components(
 );
 
 /**
- * Removes edges from the graph until the modularity is at its maximum possible 
- * value. Removes at most the given number of edges.
+ * Removes edges from the graph until the modularity is at its maximum
+ * possible value. Removes at most the given number of edges.
  *
  * \return 0 on success, non-0 on failure.
  */
@@ -101,6 +101,34 @@ uint8_t graph_threshold_modularity(
   void     *opt,       /**< If not NULL, assumed to be a pointer to a 
                             mod_opt_t struct - memory is allocated to 
                             store the modularity value and number of 
+                            components after each edge has been removed   */
+  uint8_t (*init)(     /**< function which does required initialisation   */
+    graph_t     *g), 
+  uint8_t (*remove)( /**< function which removes a single edge            */
+    graph_t      *g,     /**< the graph                                    */
+    double       *space, /**< space to store graph_num_nodes(gin) doubles  */
+    array_t      *edges, /**< array to put graph_edge_t structs, if needed */
+    graph_edge_t *edge), /**< set to the edge which was removed            */
+  uint8_t (*recalc)(  /**< function which recalculates graph statistics
+                           after an edge has been removed                */
+    graph_t      *g,    /**< the graph                           */
+    graph_edge_t *edge) /**< end point of edge which was removed */
+);
+
+/**
+ * Removes edges from the graph until the chira fitness is at its maximum
+ * possible value. Removes at most the given number of edges.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t graph_threshold_chira(
+  graph_t  *gin,       /**< input graph                                   */
+  graph_t  *gout,      /**< output graph                                  */
+  uint32_t  edgelimit, /**< number of edges to stop on                    */
+  uint32_t  flags,     /**< unused                                        */
+  void     *opt,       /**< If not NULL, assumed to be a pointer to a 
+                            mod_opt_t struct - memory is allocated to 
+                            store the chira value and number of 
                             components after each edge has been removed   */
   uint8_t (*init)(     /**< function which does required initialisation   */
     graph_t     *g), 

@@ -16,7 +16,7 @@
 #define _GRAPH_STATS_CACHE_CTX_LOC_  1
 #define _GRAPH_LOG_CTX_LOC_          2
 
-#define _GRAPH_NODE_LABEL_SLOTS      16
+#define _GRAPH_NODE_LABEL_META      16
 
 /**
  * Graph flag bit locations.
@@ -62,7 +62,7 @@ typedef struct _graph_label {
   float    yval;     /**< y-coordinate */
   float    zval;     /**< z-coordinate */
 
-  uint32_t slots[_GRAPH_NODE_LABEL_SLOTS]; /**< Space for storage of
+  uint32_t meta[_GRAPH_NODE_LABEL_META]; /**< Space for storage of
                                                 extra node metadata  */
 
 } graph_label_t;
@@ -138,6 +138,16 @@ uint32_t graph_num_labelvals(
  */
 uint32_t *graph_get_labelvals(
   graph_t *g /**< graph to query */
+);
+
+/**
+ * Retrieves the metadata in the specified slot, and copies it to the given
+ * meta array.
+ */
+void graph_get_meta(
+  graph_t  *g,    /**< the graph                                 */
+  uint32_t  slot, /**< meta slot (0 to _GRAPH_NODE_LABEL_META-1) */
+  uint32_t *meta  /**< place to store metadata                   */
 );
 
 /**

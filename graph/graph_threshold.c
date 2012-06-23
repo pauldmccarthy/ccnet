@@ -268,6 +268,98 @@ fail:
   return 1;
 }
 
+
+uint8_t graph_threshold_chira(
+  graph_t  *gin,
+  graph_t  *gout,
+  uint32_t  edgelimit,
+  uint32_t  flags,
+  void     *opt,
+  uint8_t (*init)(graph_t *g),
+  uint8_t (*remove)(
+    graph_t      *g,
+    double       *space,
+    array_t      *edges,
+    graph_edge_t *edge),
+  uint8_t (*recalc)(
+    graph_t      *g,
+    graph_edge_t *edge)
+) {
+  uint32_t     nnodes;
+  uint64_t     i;
+  graph_t      lgin;
+  array_t      edges;
+  graph_edge_t edge;
+  graph_t      gmod;
+  double      *space;
+  double       mod;
+  double       maxmod;
+  uint32_t     ncmps;
+  uint32_t    *components;
+
+  maxmod          = -1.0;
+  space           = NULL;
+  edges.data      = NULL;
+  gmod.neighbours = NULL;
+  components      = NULL;
+
+  nnodes = graph_num_nodes(gin);
+
+  if (graph_copy(gin,  &lgin)) goto fail;
+  if (stats_cache_init(&lgin)) goto fail;
+
+  if (array_create(&edges, sizeof(graph_edge_t), 10)) goto fail;
+
+  components = calloc(nnodes,sizeof(uint32_t));
+  if (components == NULL) goto fail;
+
+  space = calloc(nnodes,sizeof(double));
+  if (space == NULL) goto fail;
+
+  init(&lgin);
+
+  for (i = 0; i < edgelimit; i++) {
+
+    array_clear(&edges);
+    if (remove(&lgin, space, &edges, &edge)) goto fail;
+
+    /*
+     * modularity is calculated on the original graph, with 
+     * the discovered components as the community structure
+     */
+    ncmps = stats_num_components(&lgin, 0, NULL, components);
+    mod   = stats_chira(gin, ncmps, components);
+
+    if (mod >= maxmod) {
+
+      maxmod = mod;
+
+      if (gmod.neighbours != NULL) 
+        graph_free(&gmod);
+      gmod.neighbours = NULL;
+      if (graph_copy(&lgin, &gmod)) goto fail;
+    }
+
+    if (recalc(&lgin, &edge)) goto fail;
+  }
+
+  if (graph_copy(&gmod, gout)) goto fail;
+
+  free(space);
+  array_free(&edges);
+
+  return 0;
+
+fail:
+  if (space           != NULL) free(space);
+  if (edges.data      != NULL) array_free(&edges);
+  if (gmod.neighbours != NULL) graph_free(&gmod);
+  if (components      != NULL) free(components);
+
+  return 1;
+}
+
+
 uint8_t _threshold_edges(graph_t *gin, graph_t *gout, double threshold) {
 
   uint32_t  u;

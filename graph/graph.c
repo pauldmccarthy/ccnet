@@ -59,6 +59,26 @@ uint32_t *graph_get_labelvals(graph_t *g) {
   return (uint32_t *)(g->labelvals.data);
 }
 
+void graph_get_meta(graph_t *g, uint32_t slot, uint32_t *meta) {
+
+  uint64_t       i;
+  uint32_t       nnodes;
+  graph_label_t *lbl;
+
+  if (slot >= _GRAPH_NODE_LABEL_META) return;
+  if (meta == NULL)                   return;
+  if (g    == NULL)                   return;
+
+  nnodes = graph_num_nodes(g);
+
+  for (i = 0; i < nnodes; i++) {
+    
+    lbl = graph_get_nodelabel(g, i);
+
+    meta[i] = lbl->meta[slot];
+  }
+}
+
 graph_label_t *graph_get_nodelabel(graph_t *g, uint32_t nidx) {
 
   if (nidx >= g->numnodes)   return NULL;

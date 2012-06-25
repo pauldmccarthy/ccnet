@@ -338,15 +338,29 @@ double stats_newman_error(
 );
 
 /**
- * Calculates the normalised mutual information on the given graph.
+ * Calculates the normalised mutual information on the given graph,
+ * with respect to the node labels, and component identifiers.
+ *
+ *   Manning CD, Raghavan P and Shutze H 2008. Introduction to Information
+ *   Retrieval. Cambridge University Press. Available online at:
+ *   http://nlp.stanford.edu/IR-book/html/htmledition/irbook.html 
  *
  *   Danon L, Dutch J, Diaz-Guilera A, Arenas A. 2005. Comparing
  *   community structure identification. Journal of Statistical
  *   Mechanics: Theory and Experiment, vol. 2005, no. 9, pg. 09008.
  */
+double stats_graph_mutual_information(
+  graph_t *g /**< the graph */
+);
+
+/**
+ * Calculates the normalised mutual information with respect to the two
+ * provided sets of node labels.
+ */
 double stats_mutual_information(
-  graph_t *g,    /**< the graph                         */
-  uint8_t  disco /**< non-0: ignore disconnected nodes  */
+  uint32_t  n,     /**< number of labels     */
+  uint32_t *lblsj, /**< first set of labels  */
+  uint32_t *lblsk  /**< second set of labels */
 );
 
 /**

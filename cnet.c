@@ -475,8 +475,7 @@ void print_stats(graph_t *g, struct args *args) {
   if (args->newmanerror)
     printf("newman error:          %f\n",    stats_newman_error(g));
   if (args->mutualinfo) {
-    printf("disco mutual info:     %f\n",    stats_mutual_information(g, 1));
-    printf("mutual info:           %f\n",    stats_mutual_information(g, 0));
+    printf("mutual info:           %f\n",    stats_graph_mutual_information(g));
   }
 
   if (args->ebmatrix) print_matrix(   g, &stats_cache_edge_betweenness);

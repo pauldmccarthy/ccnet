@@ -1,8 +1,9 @@
 /**
- * Calculates the normalised mutual information of a graph, with respect to
- * the line-up between unique label values, and components in the graph. The
- * normalised mutual information may be used to gauge the success of a
- * community detection algorithm.
+ * Calculates the normalised mutual information of two collections of labels.
+ *
+ *   Manning CD, Raghavan P and Shutze H 2008. Introduction to Information
+ *   Retrieval. Cambridge University Press. Available online at:
+ *   http://nlp.stanford.edu/IR-book/html/htmledition/irbook.html
  *
  *   Danon L, Dutch J, Diaz-Guilera A, Arenas A. 2005. Comparing
  *   community structure identification. Journal of Statistical
@@ -19,31 +20,46 @@
 #include "stats/stats.h"
 #include "stats/stats_cache.h"
 
-
+/**
+ * Collection of indices which have the same label.
+ */
 typedef struct _set {
 
-  uint32_t lblval;
-  array_t  idxs;
+  uint32_t lblval; /**< the label value */
+  array_t  idxs;   /**< list of indices */
 
 } set_t;
 
+/**
+ * Partitions the indices of given list of labels (basically creating
+ * a histogram of repeating values in the label list).
+ *
+ * \return 0 on success, non-0 on failure.
+ */
 static uint8_t _partition(
-  uint32_t  n,
-  uint32_t *lbls,
-  array_t  *sets
+  uint32_t  n,    /**< number of labels                          */
+  uint32_t *lbls, /**< list of labels                            */
+  array_t  *sets  /**< uninitialised array to store partitioning
+                       (as a collection of set_t structs).       */
 );
 
+/**
+ * \return the number of values which are presenti in both of the
+ * given partitionings. 
+ */
 static uint32_t _intersection(
-  set_t *setj,
-  set_t *setk
+  set_t *setj, /**< first partitioning  */
+  set_t *setk  /**< second partitioning */
 );
 
+/**
+ * \return the mutual information between the two provided partitionings.
+ */
 static double _mutual_information(
-  uint32_t  n,
-  array_t  *sets1,
-  array_t  *sets2
+  uint32_t  n,     /**< total number of values */
+  array_t  *sets1, /**< first partitioning     */
+  array_t  *sets2  /**< second partitioning    */
 );
-
 
 /**
  * \return the entropy of the given partitioning.
@@ -54,7 +70,8 @@ static double _entropy(
 );
 
 
-double smi(uint32_t n, uint32_t *lblsj, uint32_t *lblsk) {
+double stats_mutual_information(
+  uint32_t n, uint32_t *lblsj, uint32_t *lblsk) {
 
   array_t  setsj;
   array_t  setsk;
@@ -82,7 +99,7 @@ fail:
 }
 
 
-double stats_mutual_information(graph_t *g, uint8_t disco) {
+double stats_graph_mutual_information(graph_t *g) {
 
   uint64_t  i;
   uint32_t  nnodes;
@@ -99,7 +116,7 @@ double stats_mutual_information(graph_t *g, uint8_t disco) {
   for (i = 0; i < nnodes; i++) 
     lblsk[i] = graph_get_nodelabel(g, i)->labelval;
 
-  return smi(nnodes, lblsj, lblsk);
+  return stats_mutual_information(nnodes, lblsj, lblsk);
 }
 
 

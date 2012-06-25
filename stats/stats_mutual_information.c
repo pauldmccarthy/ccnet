@@ -13,197 +13,220 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "graph/graph.h"
 #include "stats/stats.h"
 #include "stats/stats_cache.h"
 
-/**
- * Populates the 'confusion matrix', a 2D matrix where rows represesnt 'real'
- * communities (unique label values), and columns represent 'found'
- * communities (components). The value of each element N[i,j] "is simply the
- * number of nodes in the real community i that appear in the found community
- * j."
- *
- * \return 0 on success, non-0 on failure.
- */
-static uint8_t _mk_confusion_matrix(
-  uint32_t *matrix, /**< flattened 2D matrix to store community counts */
-  uint32_t  ncmps,  /**< number of components, or 'found' communities  */
-  uint32_t  nlbls,  /**< number of label values, or 'real' communities */
-  array_t  *groups  /**< array of communities in the graph             */
+
+typedef struct _set {
+
+  uint32_t lblval;
+  array_t  idxs;
+
+} set_t;
+
+static uint8_t _partition(
+  uint32_t  n,
+  uint32_t *lbls,
+  array_t  *sets
 );
 
-/**
- * Calculates the mutual information from the given matrix.
- *
- * \return the normalised mutual information, a value between 0.0 and 1.0, or
- * -1 on failure.
- */
+static uint32_t _intersection(
+  set_t *setj,
+  set_t *setk
+);
+
 static double _mutual_information(
-  uint32_t *matrix, /**< flattened 2D confusion matrix                 */
-  array_t  *cmpszs, /**< array containing sizes of 'found' communities */
-  uint32_t  nlbls,  /**< number of 'real' communities                  */
-  uint32_t  nnodes, /**< number of nodes in the graph                  */
-  uint8_t   disco   /**< non-0: do not include disconnected nodes      */
+  uint32_t  n,
+  array_t  *sets1,
+  array_t  *sets2
 );
 
-double stats_mutual_information(graph_t *g, uint8_t disco) {
 
-  array_t   groups;
-  array_t   cmpszs;
-  uint32_t  ncmps;
-  uint32_t  nlbls;
-  uint32_t  nnodes;
-  uint32_t  connected;
-  uint32_t *conf_matrix;
-  double    mi;
+/**
+ * \return the entropy of the given partitioning.
+ */
+static double _entropy(
+  array_t *sets, /**< tne partitioning       */
+  uint32_t n     /**< total number of values */
+);
 
-  groups.data = NULL;
-  cmpszs.data = NULL;
-  conf_matrix = NULL;
 
-  if (array_create(&cmpszs, sizeof(uint32_t), 10)) goto fail;
+double smi(uint32_t n, uint32_t *lblsj, uint32_t *lblsk) {
+
+  array_t  setsj;
+  array_t  setsk;
+  double   mi;
+  double   nmi;
+  double   entj;
+  double   entk;
+
+  memset(&setsj, 0, sizeof(array_t));
+  memset(&setsk, 0, sizeof(array_t));
+
+  if (_partition(n, lblsj, &setsj)) goto fail;
+  if (_partition(n, lblsk, &setsk)) goto fail;
+
+  mi   = _mutual_information(n, &setsj, &setsk);
+  entj = _entropy(&setsj, n);
+  entk = _entropy(&setsk, n);
   
-  ncmps     = stats_num_components( g, 1, &cmpszs, NULL);
-  connected = stats_cache_connected(g);
-  nlbls     = graph_num_labelvals(  g);
-  nnodes    = graph_num_nodes(      g);
+  nmi  = mi / ((entj + entk)/2.0);
 
-  conf_matrix = calloc(ncmps*nlbls, sizeof(uint32_t));
-  if (conf_matrix == NULL) goto fail;
+  return nmi;
 
-  if (array_create(&groups, sizeof(node_group_t), 10))          goto fail;
-  if (graph_communities(g, 1, &groups))                         goto fail;
-  if (_mk_confusion_matrix(conf_matrix, ncmps, nlbls, &groups)) goto fail;
-
-  if (disco) nnodes = connected;
-  mi = _mutual_information(conf_matrix, &cmpszs, nlbls, nnodes, disco);
-
-  if (mi == -1) goto fail;
-
-  free(conf_matrix);
-  array_free(&groups);
-  array_free(&cmpszs);
-  return mi;
-  
 fail:
-  if (cmpszs.data != NULL) array_free(&cmpszs);
-  if (groups.data != NULL) array_free(&groups);
-  if (conf_matrix != NULL) free(conf_matrix);
   return -1;
 }
 
-uint8_t _mk_confusion_matrix(
-  uint32_t *matrix, uint32_t ncmps, uint32_t nlbls, array_t *groups) {
 
-  uint64_t     i;
-  uint32_t     midx;
-  node_group_t g;
+double stats_mutual_information(graph_t *g, uint8_t disco) {
 
-  for (i = 0; i < groups->size; i++) {
+  uint64_t  i;
+  uint32_t  nnodes;
+  uint32_t *lblsj;
+  uint32_t *lblsk;
 
-    if (array_get(groups, i, &g)) goto fail;
+  nnodes = graph_num_nodes(g);
 
-    midx = ncmps * (g.labelidx) + g.component;
-    matrix[midx] += g.nnodes;
+  lblsj = calloc(nnodes, sizeof(uint32_t));
+  lblsk = calloc(nnodes, sizeof(uint32_t));
+
+  stats_num_components(g, 0, NULL, lblsj);
+
+  for (i = 0; i < nnodes; i++) 
+    lblsk[i] = graph_get_nodelabel(g, i)->labelval;
+
+  return smi(nnodes, lblsj, lblsk);
+}
+
+
+uint8_t _partition(
+  uint32_t  n,
+  uint32_t *lbls,
+  array_t  *sets) {
+
+  uint32_t  i;
+  uint32_t  j;
+  set_t    *s;
+
+  if (array_create(sets, sizeof(set_t), 10)) goto fail;
+
+  for (i = 0; i < n; i++) {
+
+    for (j = 0; j < sets->size; j++) {
+      
+      s = (set_t *)array_getd(sets, j);
+
+      if (s->lblval == lbls[i]) {
+        
+        if (array_append(&(s->idxs), &i)) goto fail;
+        break;
+      }
+    }
+
+    if (j == sets->size) {
+      
+      s = calloc(sizeof(set_t), 1);
+      if (s == NULL) goto fail;
+      
+      s->lblval = lbls[i];
+
+      if (array_create(&(s->idxs), sizeof(uint32_t), 10)) goto fail;
+      if (array_append(&(s->idxs), &i))                   goto fail;
+      if (array_append(sets, s))                          goto fail;
+    }
   }
 
+  free(lbls);
   return 0;
+  
 fail:
   return 1;
 }
 
-double _mutual_information(
-  uint32_t *matrix,
-  array_t  *cmpszs,
-  uint32_t  nlbls,
-  uint32_t  nnodes,
-  uint8_t   disco) {
+
+uint32_t _intersection(set_t *setj, set_t *setk) {
+
+  uint64_t j;
+  uint64_t k;
+  uint32_t idxj;
+  uint32_t idxk;
+  uint32_t count;
+
+  count = 0;
+
+  for (j = 0; j < setj->idxs.size; j++) {
+
+    idxj = *(uint32_t *)array_getd(&(setj->idxs), j);
+
+    for (k = 0; k < setk->idxs.size; k++) {
+
+      idxk = *(uint32_t *)array_getd(&(setk->idxs), k);
+
+      if (idxj == idxk) {
+        count++;
+        break;
+      }
+    }
+  }
+
+  return count;
+}
+
+
+double _mutual_information(uint32_t n, array_t *setsj, array_t *setsk) {
+
+  uint64_t j;
+  uint64_t k;
+  uint32_t intcount;
+  double   jkval;
+  double   mi;
+  set_t   *setj;
+  set_t   *setk;
+
+  mi = 0;
+
+  for (j = 0; j < setsj->size; j++) {
+
+    setj = (set_t *)array_getd(setsj, j);
+
+    for (k = 0; k < setsk->size; k++) {
+
+      setk      = (set_t *)array_getd(setsk, k);
+      intcount  = _intersection(setj, setk);
+      jkval     = n*((double)intcount);
+      jkval    /= (setj->idxs.size)*(setk->idxs.size);
+      jkval     = log2(jkval);
+      jkval    *= ((double)intcount) / n;
+
+      if (!isfinite(jkval))
+        mi += jkval;
+    }
+  }
+  
+  return mi;
+}
+
+
+double _entropy(array_t *sets, uint32_t n) {
 
   uint64_t i;
-  uint64_t j;
-  uint32_t off;
-  uint32_t cmpsz;
-  double  *rowsums;
-  double  *colsums;
-  double   numer;
-  double   denom1;
-  double   denom2;
-  double   tmp;
+  double   ent;
+  double   enti;
+  set_t   *seti;
+  ent = 0;
 
-  rowsums = NULL;
-  colsums = NULL;
+  for (i = 0; i < sets->size; i++) {
 
-  rowsums = calloc(nlbls, sizeof(double));
-  if (rowsums == NULL) goto fail;  
-  colsums = calloc(cmpszs->size, sizeof(double));
-  if (colsums == NULL) goto fail;
+    seti  = (set_t *)array_getd(sets, i);
 
-  /*tally up rows and columns*/
-  for (i = 0; i < nlbls; i++) {
-    
-    off = i*(cmpszs->size);
-
-    for (j = 0; j < cmpszs->size; j++) {
-
-      if (array_get(cmpszs, j, &cmpsz)) goto fail;
-      if (disco && (cmpsz == 1)) continue;
-      
-      rowsums[i] += matrix[off+j];
-      colsums[j] += matrix[off+j];
-    }
+    enti  = ((double)seti->idxs.size) / n;
+    enti *= log2(enti);
+    ent  += enti;
   }
 
-  /*tally up the sections of the mutual info equation*/
-  numer  = 0;
-  denom1 = 0;
-  denom2 = 0;
-
-  /*numerator*/
-  for (i = 0; i < nlbls; i++) {
-
-    off = i*(cmpszs->size);
-
-    for (j = 0; j < cmpszs->size; j++) {
-
-      if (array_get(cmpszs, j, &cmpsz)) goto fail;
-      if (disco && (cmpsz == 1)) continue;
-
-      /*running log(0) will cause the result to be NaN*/
-      if (matrix[off+j] == 0) continue;
-      
-      tmp = ((double)matrix[off+j] * nnodes) / (rowsums[i] * colsums[j]);
-      numer += matrix[off+j] * log(tmp);
-    }
-  }
-
-  /*first denominator*/
-  for (i = 0; i < nlbls; i++) {
-    
-    if (rowsums[i] == 0) continue;
-    denom1 += rowsums[i] * log(rowsums[i] / nnodes);
-  }
-
-  /*second denominator*/
-  for (j = 0; j < cmpszs->size; j++) {
-    
-    if (array_get(cmpszs, j, &cmpsz)) goto fail;
-    if (disco && (cmpsz == 1)) continue;
-
-    if (colsums[j] == 0) continue;
-    
-    denom2 += colsums[j] * log(colsums[j] / nnodes);
-  }
-
-  free(rowsums);
-  free(colsums);
-
-  if (denom1 + denom2 == 0) return 0;
-  else                      return (-2*numer) / (denom1 + denom2);
-  
-fail:
-  if (rowsums != NULL) free(rowsums);
-  if (colsums != NULL) free(colsums);
-  return -1;
+  return -ent;
 }

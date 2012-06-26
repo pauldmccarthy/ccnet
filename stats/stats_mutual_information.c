@@ -219,7 +219,7 @@ double _mutual_information(uint32_t n, array_t *setsj, array_t *setsk) {
       jkval     = log2(jkval);
       jkval    *= ((double)intcount) / n;
 
-      if (!isfinite(jkval))
+      if (isfinite(jkval))
         mi += jkval;
     }
   }
@@ -242,7 +242,9 @@ double _entropy(array_t *sets, uint32_t n) {
 
     enti  = ((double)seti->idxs.size) / n;
     enti *= log2(enti);
-    ent  += enti;
+
+    if (isfinite(enti))
+      ent += enti;
   }
 
   return -ent;

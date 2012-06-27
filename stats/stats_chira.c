@@ -131,25 +131,10 @@ double stats_chira(graph_t *g, uint32_t ncommunities, uint32_t *communities) {
   _count_community_sizes(g, ncommunities, communities, comm_sizes);
   _count_community_edges(g, ncommunities, communities, indegrees, comm_edges);
 
-  uint32_t i;
-
-  for (i = 0; i < ncommunities; i++) {
-    printf("comm %u size: %02u  edges: %3.0f\n",
-           i, comm_sizes[i], comm_edges[i]);
-  }
-
   _calc_node_strengths(
     g, indegrees, outdegrees,
     communities, comm_sizes,
     node_strengths);
-
-
-  for (i = 0; i < nnodes; i++) {
-    printf(
-      "node %03u  comm: %u  in: %02u  out: %02u  deg: %02u  str: %0.2f\n",
-      i, communities[i], indegrees[i], outdegrees[i],
-      graph_num_neighbours(g, i), node_strengths[i]);
-  } 
 
   _calc_community_strengths(
     g, ncommunities,
@@ -302,7 +287,7 @@ void _calc_community_strengths(
     for (j = 0; j < nnbrs; j++) {
 
       if (communities[i] != communities[nbrs[j]]) continue;
-      
+
       istr += 0.5 * node_strengths[nbrs[j]];
     }
 
@@ -332,6 +317,5 @@ double _calc_partition_strength(
   }
 
   partstr /= ncommunities;
-
   return partstr;
 }

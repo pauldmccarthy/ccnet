@@ -153,8 +153,6 @@ uint8_t _agg_matrix(mat_t **inmats, mat_t *outmat, uint8_t ninputs) {
   double  *inrowbuf;
   double  *outrowbuf;
 
-  uint32_t myi;
-
   inrowbuf  = NULL;
   outrowbuf = NULL;
 

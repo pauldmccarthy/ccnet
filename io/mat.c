@@ -150,6 +150,11 @@ uint64_t mat_num_cols(mat_t *mat) {
   return mat->numcols;
 }
 
+uint16_t mat_get_flags(mat_t *mat) {
+
+  return mat->flags;
+}
+
 uint16_t mat_hdr_data_size(mat_t *mat) {
   
   return mat->hdrsize;
@@ -396,9 +401,10 @@ uint8_t mat_write_row_part(
     rowlen = col + len - row;
     collen = row - col;
 
-    if (mat_write_col_part(mat, col, row, collen, vals))      goto fail;
-    if (_mat_seek(mat, row, row))                             goto fail;
-    if (fwrite(vals+collen, sizeof(double), rowlen, mat->hd)) goto fail;
+    if (mat_write_col_part(mat, col, row, collen, vals)) goto fail;
+    if (_mat_seek(mat, row, row))                        goto fail;
+    if (fwrite(vals+collen, sizeof(double), rowlen, mat->hd) != rowlen)
+      goto fail;
   }
 
   return 0;

@@ -58,6 +58,13 @@ uint64_t mat_num_cols(
 );
 
 /**
+ * \return the flags for the given mat file.
+ */
+uint16_t mat_get_flags(
+  mat_t *mat /**< mat file to query */
+);
+
+/**
  * \return the header data size in bytes.
  */
 uint16_t mat_hdr_data_size(

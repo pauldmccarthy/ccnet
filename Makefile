@@ -71,7 +71,8 @@ exes=dumpimg    \
      creg       \
      searchimg  \
      cseed      \
-     callseed
+     callseed   \
+     avgmat
 
 
 default: clean $(exes)

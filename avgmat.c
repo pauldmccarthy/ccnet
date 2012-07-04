@@ -20,14 +20,9 @@ typedef struct _args {
   char   *inputs[MAX_INPUTS];
   char   *output;
   uint8_t ninputs;
-  uint8_t sum;
  
 } args_t ;
 
-static struct argp_option options[] = {
-  {"sum", 's', NULL, 0, "store sum of inputs, rather than average"},
-  {0}
-};
 
 static char doc[] = "avgmat -- create an average matrix from "\
                     "a collection of input matrix files";
@@ -39,8 +34,6 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   args = state->input;
 
   switch (key) {
-
-    case 's': args->sum = 1; break; 
 
     case ARGP_KEY_ARG:
       if (state->arg_num == 0) args->output = arg;
@@ -63,20 +56,30 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-static uint8_t _add_input(mat_t *inmat, mat_t *outmat, uint8_t ninputs);
+static mat_t * _create_outmat(
+  char    *outf,
+  mat_t  **inmats,
+  uint8_t  ninputs
+);
+
+static uint8_t _agg_matrix(
+  mat_t  **inmats,
+  mat_t   *outmat,
+  uint8_t  ninputs
+);
 
 int main(int argc, char *argv[]) {
 
   uint16_t    i;
-  mat_t      *inmat;
+  mat_t      *inmats[MAX_INPUTS];
   mat_t      *outmat;
   args_t      args;
-  struct argp argp = {options, _parse_opt, "OUTPUT [INPUT ...]", doc};
-
-  inmat  = NULL;
+  struct argp argp = {NULL, _parse_opt, "OUTPUT [INPUT ...]", doc};
+  
   outmat = NULL;
 
-  memset(&args, 0, sizeof(args));
+  memset(inmats, 0, sizeof(inmats));
+  memset(&args,  0, sizeof(args));
 
   startup("avgmat", argc, argv, &argp, &args);
 
@@ -85,30 +88,29 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (copyfile(args.inputs[0], args.output)) {
-    printf("could not create output file from first input %s\n",
-           args.inputs[0]);
+  for (i = 0; i < args.ninputs; i++) {
+    
+    inmats[i] = mat_open(args.inputs[i]);
+    
+    if (inmats[i] == NULL) {
+      printf("could not open input file %s\n", args.inputs[i]);
+      goto fail;
+    }    
+  }
+
+  outmat = _create_outmat(args.output, inmats, args.ninputs);
+  if (outmat == NULL) {
+    printf("could not create output matrix %s\n", args.output);
     goto fail;
   }
 
-  outmat = mat_open(args.output);
-  if (outmat == NULL) goto fail;
-
-  for (i = 1; i < args.ninputs; i++) {
-
-    inmat = mat_open(args.inputs[i]);
-    if (inmat == NULL) {
-      printf("could not open input file %s\n", args.inputs[i]);
-      goto fail;
-    }
-
-    if (_add_input(inmat, outmat, args.ninputs)) {
-      printf("could not aggregate input file %s\n", args.inputs[i]);
-      goto fail;
-    }
-
-    mat_close(inmat);
+  if (_agg_matrix(inmats, outmat, args.ninputs)) {
+    printf("could not aggregate matrix\n");
+    goto fail;
   }
+
+  for (i = 0; i < args.ninputs; i++) 
+    mat_close(inmats[i]);
 
   mat_close(outmat);
 
@@ -116,13 +118,79 @@ int main(int argc, char *argv[]) {
 
 fail:
 
-  if (inmat  != NULL) mat_close(inmat);
+  for (i = 0; i < args.ninputs; i++) {
+      if (inmats[i] != NULL)
+        mat_close(inmats[i]);
+  }
+
   if (outmat != NULL) mat_close(outmat);
   return 1;
 }
 
+mat_t * _create_outmat(char *outf, mat_t **inmats, uint8_t ninputs) {
 
-uint8_t _add_input(mat_t *inmat, mat_t *outmat, uint8_t ninputs) {
+  mat_t *outmat;
 
+  outmat = mat_create(
+    outf,
+    mat_num_rows(     inmats[0]),
+    mat_num_cols(     inmats[0]),
+    mat_get_flags(    inmats[0]),
+    mat_hdr_data_size(inmats[0]),
+    mat_label_size(   inmats[0]));
+                      
+  return outmat;
+}
+
+
+uint8_t _agg_matrix(mat_t **inmats, mat_t *outmat, uint8_t ninputs) {
+  
+  uint16_t i;
+  uint64_t rowi;
+  uint64_t coli;
+  uint64_t nrows;
+  uint64_t ncols;
+  double  *inrowbuf;
+  double  *outrowbuf;
+
+  uint32_t myi;
+
+  inrowbuf  = NULL;
+  outrowbuf = NULL;
+
+  nrows  = mat_num_rows(outmat);
+  ncols  = mat_num_cols(outmat);
+  
+  inrowbuf = malloc(ncols*sizeof(double));
+  if (inrowbuf == NULL) goto fail;
+  
+  outrowbuf = malloc(ncols*sizeof(double));
+  if (outrowbuf == NULL) goto fail;
+
+  for (rowi = 0; rowi < nrows; rowi++) {
+    
+    memset(outrowbuf, 0, ncols*sizeof(double));
+
+    for (i = 0; i < ninputs; i++) {
+
+      if (mat_read_row(inmats[i], rowi, inrowbuf))
+        goto fail;
+
+      for (coli = 0; coli < ncols; coli++)
+        outrowbuf[coli] += inrowbuf[coli] / ninputs;
+    }
+
+    if (mat_write_row(outmat, rowi, outrowbuf))
+      goto fail; 
+  }
+
+  free(inrowbuf);
+  free(outrowbuf);
   return 0;
+  
+fail:
+
+  if (inrowbuf  != NULL) free(inrowbuf);
+  if (outrowbuf != NULL) free(outrowbuf);
+  return 1;
 }

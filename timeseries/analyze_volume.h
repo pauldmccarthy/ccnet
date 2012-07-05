@@ -1,5 +1,6 @@
 /**
- * Functions for reading a collection of 3D ANALYZE75 images.
+ * Functions for reading a collection of 3D ANALYZE75 images, or a single 4D
+ * image.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
@@ -20,14 +21,16 @@ typedef struct __analyze_volume {
 } analyze_volume_t;
 
 /**
- * Opens the volume in the specified directory for reading.
+ * Opens the volume in the specified path for reading. If the path is a
+ * directory, it is assumed to contain a series of 3D ANALYZE75 image files.
+ * If the path is a file, it is assumed to be a 4D ANALYZE75 image.
  *
  * \return 0 on success, non-0 on failure.
  */
 uint8_t analyze_open_volume(
-  char             *path, /**< directory containing volume images */
+  char             *path, /**< file/directory containing volume image(s) */
   analyze_volume_t *vol   /**< pointer to an uninitialised
-                               analyze_volume_t struct            */
+                               analyze_volume_t struct                   */
 );
 
 /**

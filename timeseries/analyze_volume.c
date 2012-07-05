@@ -1,5 +1,6 @@
 /**
- * Functions for reading a collection of 3D ANALYZE75 images.
+ * Functions for reading a collection of 3D ANALYZE75 images, or a single 4D
+ * image.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
@@ -9,11 +10,34 @@
 #include <string.h>
 
 #include <dirent.h>
+#include <sys/stat.h>
 
 #include "io/analyze75.h"
 #include "util/suffix.h"
 #include "util/compare.h"
 #include "timeseries/analyze_volume.h"
+
+/**
+ * Converts a 4D ANALYZE75 image to an analyze_volume_t struct.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _4d_to_volume(
+  char             *imgfile, /**< 4D image file name           */
+  analyze_volume_t *vol      /**< empty volume to be populated */
+);
+
+/**
+ * Converts a collection of 3D ANALYZE75 image files to an analyze_volume_t
+ * struct.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+static uint8_t _3d_to_volume(
+  char            **imgfiles, /**< list of image file names     */
+  uint16_t          nfiles,   /**< number of files              */
+  analyze_volume_t *vol       /**< empty volume to be populated */
+);
 
 /**
  * Lists all of the .img files in the specified path.
@@ -50,51 +74,37 @@ static int _cmp_filenames(
 
 uint8_t analyze_open_volume(char *path, analyze_volume_t *vol) {
 
-  uint32_t i;  
+  uint32_t i;
+  char   **files;
   int32_t  nfiles;
 
-  vol->files = NULL;
-  vol->hdrs  = NULL;
-  vol->imgs  = NULL;
+  nfiles = 0;
+  files  = NULL;
+  memset(vol, 0, sizeof(analyze_volume_t));
 
-  nfiles = _list_files(path, &(vol->files));
+  nfiles = _list_files(path, &files);
   if (nfiles <= 0) goto fail;
 
-  vol->nimgs = nfiles;
-  vol->hdrs  = calloc(vol->nimgs, sizeof(dsr_t));
-  if (vol->hdrs == NULL) goto fail;
-
-  vol->imgs = calloc(vol->nimgs, sizeof(uint8_t *));
-  if (vol->imgs == NULL) goto fail;
-
-  for (i = 0; i < vol->nimgs; i++) {
-    if (analyze_load(vol->files[i], (vol->hdrs)+i, (vol->imgs)+i)) 
-      goto fail;
-  }
-  
-  if (analyze_hdr_compat(vol->nimgs, vol->hdrs, 0)) goto fail;
-  if (analyze_num_dims(&(vol->hdrs[0])) != 3)       goto fail;
+  if (nfiles == 1) {
     
+    if (_4d_to_volume(files[0], vol)) goto fail;
+    free(files[0]);
+    free(files);
+  }
+  else {
+    if (_3d_to_volume(files, nfiles, vol)) goto fail;
+  }
+
   return 0;
 
 fail:
-
-  if (vol->files != NULL) {
+  if (files != NULL) {
     for (i = 0; i < nfiles; i++) {
-      if (vol->files[i] != NULL)
-        free(vol->files[i]);
+      if (files[i] != NULL)
+        free(files[i]);
     }
-    free(vol->files);
-  }
-
-  if (vol->hdrs != NULL) free(vol->hdrs);
-  if (vol->imgs != NULL) {
-    for (i = 0; i < vol->nimgs; i++) {
-      if (vol->imgs[i] != NULL)
-        free(vol->imgs[i]);
-    }
-    free(vol->imgs);
-  }
+    free(files);
+  } 
   return 1;
 }
 
@@ -156,27 +166,50 @@ int32_t _list_files(char *path, char ***list) {
   uint32_t        i;
   int32_t         nentries;
   struct dirent **entries;
+  struct stat     buf;
   char          **llist;
 
   llist    = NULL;  
   entries  = NULL;
   nentries = 0;
 
-  nentries = scandir(path, &entries, _select_img_files, _cmp_filenames);
+  if (stat(path, &buf)) goto fail;
 
-  if (nentries == 0) goto fail;
+  /* the path points to a file, not a directory */
+  if (S_ISREG(buf.st_mode)) {
 
-  llist = calloc(nentries, sizeof(char *));
-  if (llist == NULL) goto fail;
+    llist = calloc(1, sizeof(char *));
+    if (llist == NULL) goto fail;
 
-  for (i = 0; i < nentries; i++) {
+    llist[0] = malloc(strlen(path)+1);
+    if (llist[0] == NULL) goto fail;
     
-    llist[i] = join_path(path, entries[i]->d_name);
-    if (llist[i] == NULL) goto fail;
+    strcpy(llist[0], path);
+    nentries = 1;
   }
 
-  for (i = 0; i < nentries; i++) free(entries[i]);
-  free(entries);
+  /* the path is a directory */
+  else if (S_ISDIR(buf.st_mode)) {
+  
+    nentries = scandir(path, &entries, _select_img_files, _cmp_filenames);
+
+    if (nentries == 0) goto fail;
+
+    llist = calloc(nentries, sizeof(char *));
+    if (llist == NULL) goto fail;
+
+    for (i = 0; i < nentries; i++) {
+
+      llist[i] = join_path(path, entries[i]->d_name);
+      if (llist[i] == NULL) goto fail;
+    }
+
+    for (i = 0; i < nentries; i++) free(entries[i]);
+    free(entries);
+  }
+
+  /* path is neither a file nor a directory */
+  else goto fail;
 
   *list = llist;                              
   return nentries;
@@ -262,3 +295,126 @@ fail:
   return 0;
 }
 
+
+uint8_t _4d_to_volume(char *imgfile, analyze_volume_t *vol) {
+
+  uint32_t i;
+  uint32_t imgsz;
+  dsr_t    volhdr;
+  uint8_t *volimg;
+  uint32_t imgoff;
+  uint32_t dimidxs[4];
+
+  volimg = NULL;
+  memset(vol,     0, sizeof(analyze_volume_t));
+  memset(dimidxs, 0, sizeof(dimidxs));
+
+  if (analyze_load(imgfile, &volhdr, &volimg)) goto fail;
+  if (analyze_num_dims(&volhdr) != 4)          goto fail;
+
+  vol->nimgs = analyze_dim_size(&volhdr, 3);
+
+  /*
+   * figure out the size of a single 3D
+   * image, as contained in the 4D volume
+   */
+  imgsz  = analyze_num_vals(&volhdr);
+  imgsz /= vol->nimgs;
+  imgsz *= analyze_value_size(&volhdr);
+
+  vol->files = calloc(vol->nimgs, sizeof(char *));
+  if (vol->files == NULL) goto fail;
+
+  vol->hdrs = calloc(vol->nimgs, sizeof(dsr_t));
+  if (vol->hdrs == NULL) goto fail;
+  
+  vol->imgs = calloc(vol->nimgs, sizeof(uint8_t *));
+  if (vol->imgs == NULL) goto fail;
+
+  for (i = 0; i < vol->nimgs; i++) {
+
+    vol->imgs[i] = malloc(imgsz);
+    if (vol->imgs[i] == NULL) goto fail;
+
+    vol->files[i] = malloc(strlen(imgfile)+1);
+    if (vol->files[i] == NULL) goto fail;
+    
+    strcpy(vol->files[i], imgfile);
+    memcpy(vol->hdrs+i, &volhdr, sizeof(dsr_t));
+
+    /* hack the 4D volume header so it looks 3D */
+    vol->hdrs[i].dime.dim   [0] = 3;
+    vol->hdrs[i].dime.dim   [4] = 1;
+    vol->hdrs[i].dime.pixdim[4] = 0;
+
+    /*copy the portion of the volume at the current time step */
+    dimidxs[3] = i;
+    imgoff = analyze_get_offset(&volhdr, dimidxs);
+    memcpy(vol->imgs[i], volimg+imgoff, imgsz);
+  }
+  
+  free(volimg);
+  
+  return 0;
+fail:
+
+  if (volimg != NULL) free(volimg);
+  
+  if (vol->hdrs != NULL) free(vol->hdrs);
+  
+  if (vol->files != NULL) {
+    for (i = 0; i < vol->nimgs; i++) {
+      if (vol->files[i] != NULL)
+        free(vol->files[i]);
+    }
+    free(vol->files); 
+  }
+
+  if (vol->imgs != NULL) {
+    for (i = 0; i < vol->nimgs; i++) {
+      if (vol->imgs[i] != NULL)
+        free(vol->imgs[i]);
+    }
+    free(vol->imgs);
+  } 
+
+  return 1;
+}
+
+uint8_t _3d_to_volume(
+  char **imgfiles, uint16_t nfiles, analyze_volume_t *vol) {
+
+  uint32_t i;
+
+  memset(vol, 0, sizeof(analyze_volume_t));  
+
+  vol->files = imgfiles;
+  vol->nimgs = nfiles;
+  vol->hdrs  = calloc(vol->nimgs, sizeof(dsr_t));
+  if (vol->hdrs == NULL) goto fail;
+
+  vol->imgs = calloc(vol->nimgs, sizeof(uint8_t *));
+  if (vol->imgs == NULL) goto fail;
+
+  for (i = 0; i < vol->nimgs; i++) {
+    if (analyze_load(vol->files[i], (vol->hdrs)+i, (vol->imgs)+i)) 
+      goto fail;
+  }
+  
+  if (analyze_hdr_compat(vol->nimgs, vol->hdrs, 0)) goto fail;
+  if (analyze_num_dims(&(vol->hdrs[0])) != 3)       goto fail;
+    
+  return 0;
+
+fail:
+
+  if (vol->hdrs != NULL) free(vol->hdrs);
+  if (vol->imgs != NULL) {
+    for (i = 0; i < vol->nimgs; i++) {
+      if (vol->imgs[i] != NULL)
+        free(vol->imgs[i]);
+    }
+    free(vol->imgs);
+  }
+  return 1;  
+}

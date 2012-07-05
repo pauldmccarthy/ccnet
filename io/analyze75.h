@@ -147,6 +147,18 @@ uint8_t analyze_hdr_compat_ptr(
 );
 
 /**
+ * Another conventience function which compares just two
+ * headers.
+ *
+ * \return 0 if all of the headers match, non-0 otherwise.
+ */
+uint8_t analyze_hdr_compat_two(
+  dsr_t  *hdr1,   /**< first header to check                */ 
+  dsr_t  *hdr2,   /**< second header to check               */ 
+  uint8_t skip_dt /**< non-0: do not perform datatype check */
+);
+
+/**
  * Reads an ANALYZE75 header from the given file.
  *
  * \return 0 on success, non-0 otherwise.

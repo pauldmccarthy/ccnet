@@ -402,6 +402,17 @@ fail:
   return 1;
 }
 
+uint8_t analyze_hdr_compat_two(dsr_t *hdr1, dsr_t *hdr2, uint8_t skip_dt) {
+
+  dsr_t *hdrs[2];
+
+
+  hdrs[0] = hdr1;
+  hdrs[1] = hdr2;
+
+  return analyze_hdr_compat_ptr(2, hdrs, skip_dt);
+}
+
 uint8_t analyze_load(
   char     *filename, 
   dsr_t    *hdr, 

@@ -35,7 +35,7 @@ typedef struct _args {
 
 static struct argp_option options[] = {
   {"lblf",    'f', "FILE",   0, "ANALYZE75 label file"},
-  {"ngdbf",   'f', "FILE",   0, "corresponding graph file"},
+  {"ngdbf",   'g', "FILE",   0, "corresponding graph file"},
   {"allnode", 'n',  NULL,    0, "extract time series for all nodes in graph"},
   {"bylbl",   'l',  NULL,    0, "extract time series by voxel/node label"},
   {"byidx",   'i',  NULL,    0, "extract time series by xyz indices"},
@@ -60,6 +60,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   switch (key) {
 
     case 'f': args->lblf    = arg;       break;
+    case 'g': args->ngdbf   = arg;       break;
     case 'l': args->bylbl   = 1;         break;
     case 'i': args->byidx   = 1;         break;
     case 'r': args->byreal  = 1;         break;
@@ -86,25 +87,23 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 }
 
 
-static void _print_ts(
-  uint16_t len,
-  double  *tsdata
+static uint8_t _make_graph_mask(
+  args_t           *args,
+  analyze_volume_t *vol,
+  uint8_t          *mask
 );
 
-static void _make_lbl_mask(
-  dsr_t   *lblhdr,
-  uint8_t *lblimg,
-  uint8_t  mask,
-  double   lblval
+static uint8_t _make_lbl_mask(
+  args_t           *args,
+  analyze_volume_t *vol,
+  uint8_t          *mask
 );
 
-static void _make_idx_mask(
-  dsr_t   *lblhdr,
-  uint8_t *lblimg,
-  double   lblval,
-  uint8_t  mask  
+static uint8_t _make_idx_mask(
+  args_t           *args,
+  analyze_volume_t *vol,
+  uint8_t          *mask  
 );
-
 
 static uint8_t _print_by_mask(
   analyze_volume_t *vol,
@@ -112,11 +111,19 @@ static uint8_t _print_by_mask(
   uint8_t           avg
 );
 
+static void _print_ts(
+  uint16_t len,
+  double  *tsdata
+);
+
 int main(int argc, char *argv[]) {
 
   analyze_volume_t vol;
   args_t           args;
+  uint8_t         *mask;
   struct argp      argp = {options, _parse_opt, "OUTPUT [INPUT ...]", doc};
+
+  mask = NULL;
 
   memset(&args, 0, sizeof(args_t));
 
@@ -127,66 +134,116 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (args.bylbl) _print_by_label(&vol, &args);
-  else            _print_one(     &vol, &args);
+  mask = calloc(analyze_num_vals(vol.hdrs), sizeof(uint8_t));
+  if (mask == NULL) {
+    printf("out of memory?!\n");
+    goto fail;
+  }
 
+  if (args.bylbl || args.allnode) {
+    
+    if (args.ngdbf != NULL) {
+      if (_make_graph_mask(&args, &vol, mask)) {
+        printf("error making mask by graph %s\n", args.ngdbf);
+        goto fail;
+      }
+    }
+    else if (args.lblf != NULL) {
+      if (_make_lbl_mask(&args, &vol, mask)) {
+        printf("error making mask by label file %s\n", args.lblf);
+        goto fail;
+      }
+    }
+  }
 
+  else if (args.byidx || args.byreal) {
+
+    if (_make_idx_mask(&args, &vol, mask)) {
+      printf("error making mask by index/coordinates\n");
+      goto fail;
+    }
+  }
+
+  if (_print_by_mask(&vol, mask, args.avg)) {
+    printf("error printing time series\n");
+    goto fail;
+  }
+
+  free(mask);
+  analyze_free_volume(&vol);
   return 0;
 
 fail:
   return 1;
-
 }
 
-void _print_ts(uint16_t len, double *tsdata) {
 
-  uint32_t i;
-  for (i = 0; i < len; i++) printf("%0.4f ", tsdata[i]);
-  printf("\n");
+static uint8_t _make_graph_mask(
+  args_t *args, analyze_volume_t *vol, uint8_t *mask) {
+
+  return 0;
 }
 
-uint8_t _print_one(analyze_volume_t *vol, args_t *args) {
+static uint8_t _make_lbl_mask(
+  args_t *args, analyze_volume_t *vol, uint8_t *mask) {
 
-  double *tsdata;
-  uint32_t x;
-  uint32_t y;
-  uint32_t z;
-
-  x = 0;
-  y = 0;
-  z = 0;
-
-  tsdata = malloc(vol->nimgs * sizeof(double));
-  if (tsdata == NULL) goto fail;
+  uint64_t i;
+  uint32_t nvals;
+  dsr_t    lblhdr;
+  uint8_t *lblimg;
+  double   lblval;
   
-  if (args->byidx) {
-    
-    x = (uint32_t)round(args->x);
-    y = (uint32_t)round(args->y);
-    z = (uint32_t)round(args->z);
-  }
-  
-  else if (args->byreal) {
-    
-    x = (uint32_t)round(args->x / analyze_pixdim_size(vol->hdrs, 0));
-    y = (uint32_t)round(args->y / analyze_pixdim_size(vol->hdrs, 1));
-    z = (uint32_t)round(args->z / analyze_pixdim_size(vol->hdrs, 2));
+  lblimg = NULL;
+  nvals  = analyze_num_vals(vol->hdrs);
+
+  if (analyze_load(args->lblf, &lblhdr, &lblimg))    goto fail;
+  if (analyze_hdr_compat_two(&lblhdr, vol->hdrs, 1)) goto fail;
+
+  for (i = 0; i < nvals; i++) {
+
+    lblval = analyze_read_by_idx(&lblhdr, lblimg, i);
+
+    if (lblval != args->lblval) continue;
+
+    mask[i] = 1;
   }
 
+  free(lblimg);
+  return 0;
+  
+fail:
+
+  if (lblimg != NULL) free(lblimg);
+  return 1;
+}
+
+static uint8_t _make_idx_mask(
+  args_t *args, analyze_volume_t *vol, uint8_t *mask) {
+
+  uint32_t idx;
+  uint32_t dims[3];
+
+  if (args->byreal) {
+    dims[0] = (uint32_t)round(args->x / analyze_pixdim_size(vol->hdrs, 0));
+    dims[1] = (uint32_t)round(args->y / analyze_pixdim_size(vol->hdrs, 1));
+    dims[2] = (uint32_t)round(args->z / analyze_pixdim_size(vol->hdrs, 2));
+  }
+  else if (args->byidx) {
+    dims[0] = (uint32_t)round(args->x);
+    dims[1] = (uint32_t)round(args->y);
+    dims[2] = (uint32_t)round(args->z);
+  }
   else goto fail;
 
-  if (analyze_read_timeseries(vol, x, y, z, tsdata)) goto fail;
-
-  _print_ts(vol->nimgs, tsdata);
-
-  free(tsdata);
-
+  idx = analyze_get_index(vol->hdrs, dims);
+  mask[idx] = 1;
+  
   return 0;
-
+  
 fail:
-   if (tsdata != NULL) free(tsdata);
   return 1;
 }
+
 
 uint8_t _print_by_mask(analyze_volume_t *vol, uint8_t *mask, uint8_t avg) {
 
@@ -233,4 +290,11 @@ fail:
   if (tsdata != NULL) free(tsdata);
   if (tsavg  != NULL) free(tsavg);
   return 1;
+}
+
+void _print_ts(uint16_t len, double *tsdata) {
+
+  uint32_t i;
+  for (i = 0; i < len; i++) printf("%0.4f ", tsdata[i]);
+  printf("\n");
 }

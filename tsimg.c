@@ -20,8 +20,8 @@ typedef struct _args {
   
   char    *input;
   char    *lblf;
+  char    *maskf;
   char    *ngdbf;
-
   
   uint8_t  allnode;
   uint32_t nodeidx;
@@ -39,6 +39,7 @@ typedef struct _args {
 
 static struct argp_option options[] = {
   {"lblf",    'f', "FILE",   0, "ANALYZE75 label file"},
+  {"maskf",   'm', "FILE",   0, "ANALYZE75 mask file"},
   {"ngdbf",   'g', "FILE",   0, "corresponding graph file"},
   {"allnode", 'o',  NULL,    0, "extract time series for all nodes in graph"},
   {"nodeidx", 'n', "INT",    0, "extract time series for the specified node"},
@@ -65,6 +66,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   switch (key) {
 
     case 'f': args->lblf    = arg;         break;
+    case 'm': args->maskf   = arg;         break;
     case 'g': args->ngdbf   = arg;         break;
     case 'o': args->allnode = 1;           break;
     case 'n': args->nodeidx = atoi(arg)+1; break;
@@ -93,6 +95,12 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
+
+static uint8_t _make_mask_mask(
+  args_t           *args,
+  analyze_volume_t *vol,
+  uint8_t          *mask
+);
 
 static uint8_t _make_graph_mask(
   args_t           *args,
@@ -149,19 +157,24 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (args.bylbl || args.allnode || args.nodeidx) {
-    
-    if (args.ngdbf != NULL) {
-      if (_make_graph_mask(&args, &vol, mask)) {
-        printf("error making mask by graph %s\n", args.ngdbf);
-        goto fail;
-      }
+  if (args.maskf != NULL) {
+    if (_make_mask_mask(&args, &vol, mask)) {
+      printf("error making mask by mask file %s\n", args.maskf);
+      goto fail;
     }
-    else if (args.lblf != NULL) {
-      if (_make_lbl_mask(&args, &vol, mask)) {
-        printf("error making mask by label file %s\n", args.lblf);
-        goto fail;
-      }
+  }
+  
+  else if (args.lblf != NULL) {
+    if (_make_lbl_mask(&args, &vol, mask)) {
+      printf("error making mask by label file %s\n", args.lblf);
+      goto fail;
+    }
+  }
+  
+  else if (args.ngdbf != NULL) {
+    if (_make_graph_mask(&args, &vol, mask)) {
+      printf("error making mask by graph %s\n", args.ngdbf);
+      goto fail;
     }
   }
 
@@ -186,6 +199,37 @@ fail:
   return 1;
 }
 
+uint8_t _make_mask_mask(
+  args_t *args, analyze_volume_t *vol, uint8_t *mask) {
+  uint64_t i;
+  uint32_t nvals;
+  dsr_t    mskhdr;
+  uint8_t *mskimg;
+  double   mskval;
+  
+  mskimg = NULL;
+  nvals  = analyze_num_vals(vol->hdrs);
+
+  if (analyze_load(args->maskf, &mskhdr, &mskimg))   goto fail;
+  if (analyze_hdr_compat_two(&mskhdr, vol->hdrs, 1)) goto fail;
+
+  for (i = 0; i < nvals; i++) {
+
+    mskval = analyze_read_by_idx(&mskhdr, mskimg, i);
+
+    if (mskval == 0) continue;
+
+    mask[i] = 1;
+  }
+
+  free(mskimg);
+  return 0;
+  
+fail:
+
+  if (mskimg != NULL) free(mskimg);
+  return 1;
+}
 
 static uint8_t _make_graph_mask(
   args_t *args, analyze_volume_t *vol, uint8_t *mask) {

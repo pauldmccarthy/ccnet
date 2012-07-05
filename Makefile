@@ -72,7 +72,8 @@ exes=dumpimg    \
      searchimg  \
      cseed      \
      callseed   \
-     avgmat
+     avgmat     \
+     tsimg
 
 
 default: clean $(exes)

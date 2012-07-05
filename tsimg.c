@@ -12,7 +12,9 @@
 
 #include "util/startup.h"
 #include "io/analyze75.h"
+#include "io/ngdb_graph.h"
 #include "timeseries/analyze_volume.h"
+#include "graph/graph.h"
 
 typedef struct _args {
   
@@ -20,7 +22,9 @@ typedef struct _args {
   char    *lblf;
   char    *ngdbf;
 
+  
   uint8_t  allnode;
+  uint32_t nodeidx;
   uint8_t  bylbl;
   uint8_t  byidx;
   uint8_t  byreal;
@@ -36,7 +40,8 @@ typedef struct _args {
 static struct argp_option options[] = {
   {"lblf",    'f', "FILE",   0, "ANALYZE75 label file"},
   {"ngdbf",   'g', "FILE",   0, "corresponding graph file"},
-  {"allnode", 'n',  NULL,    0, "extract time series for all nodes in graph"},
+  {"allnode", 'o',  NULL,    0, "extract time series for all nodes in graph"},
+  {"nodeidx", 'n', "INT",    0, "extract time series for the specified node"},
   {"bylbl",   'l',  NULL,    0, "extract time series by voxel/node label"},
   {"byidx",   'i',  NULL,    0, "extract time series by xyz indices"},
   {"byreal",  'r',  NULL,    0, "extract time series by real xyz coordinates"},
@@ -59,16 +64,18 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
   switch (key) {
 
-    case 'f': args->lblf    = arg;       break;
-    case 'g': args->ngdbf   = arg;       break;
-    case 'l': args->bylbl   = 1;         break;
-    case 'i': args->byidx   = 1;         break;
-    case 'r': args->byreal  = 1;         break;
-    case 'a': args->avg     = 1;         break;
-    case 'v': args->lblval  = atoi(arg); break;
-    case 'x': args->x       = atof(arg); break;
-    case 'y': args->y       = atof(arg); break;
-    case 'z': args->z       = atof(arg); break;
+    case 'f': args->lblf    = arg;         break;
+    case 'g': args->ngdbf   = arg;         break;
+    case 'o': args->allnode = 1;           break;
+    case 'n': args->nodeidx = atoi(arg)+1; break;
+    case 'l': args->bylbl   = 1;           break;
+    case 'i': args->byidx   = 1;           break;
+    case 'r': args->byreal  = 1;           break;
+    case 'a': args->avg     = 1;           break;
+    case 'v': args->lblval  = atoi(arg);   break;
+    case 'x': args->x       = atof(arg);   break;
+    case 'y': args->y       = atof(arg);   break;
+    case 'z': args->z       = atof(arg);   break;
 
     case ARGP_KEY_ARG:
       if (state->arg_num == 0) args->input = arg;
@@ -129,6 +136,8 @@ int main(int argc, char *argv[]) {
 
   startup("tsimg", argc, argv, &argp, &args);
 
+  printf("args.nodeidx: %u\n", args.nodeidx);
+
   if (analyze_open_volume(args.input, &vol)) {
     printf("could not open ANALYZE75 volume %s\n", args.input);
     goto fail;
@@ -140,7 +149,7 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (args.bylbl || args.allnode) {
+  if (args.bylbl || args.allnode || args.nodeidx) {
     
     if (args.ngdbf != NULL) {
       if (_make_graph_mask(&args, &vol, mask)) {
@@ -181,7 +190,58 @@ fail:
 static uint8_t _make_graph_mask(
   args_t *args, analyze_volume_t *vol, uint8_t *mask) {
 
+  uint64_t       i;
+  uint32_t       nnodes;
+  uint32_t       idx;
+  uint32_t       dims[3];
+  graph_label_t *lbl;
+  graph_t        g;
+
+  if (ngdb_read(args->ngdbf, &g)) goto fail;
+
+  nnodes = graph_num_nodes(&g);
+
+  for (i = 0; i < nnodes; i++) {
+
+    lbl = graph_get_nodelabel(&g, i);
+
+    if (args->byreal) {
+      dims[0] = (uint32_t)round(lbl->xval / analyze_pixdim_size(vol->hdrs, 0));
+      dims[1] = (uint32_t)round(lbl->yval / analyze_pixdim_size(vol->hdrs, 1));
+      dims[2] = (uint32_t)round(lbl->zval / analyze_pixdim_size(vol->hdrs, 2));
+    }
+    else {
+      dims[0] = (uint32_t)round(lbl->xval);
+      dims[1] = (uint32_t)round(lbl->yval);
+      dims[2] = (uint32_t)round(lbl->zval);
+    }
+
+    idx = analyze_get_index(vol->hdrs, dims);
+
+
+    if (args->nodeidx) {
+      if (args->nodeidx == i+1) {
+      mask[idx] = 1;
+      break;
+    }}
+
+    else if (args->allnode)
+      mask[idx] = 1;
+    
+    else if (args->bylbl) {
+      if (lbl->labelval == args->lblval)
+        mask[idx] = 1;
+    }
+    
+    else goto fail;
+  }
+  
+  graph_free(&g);
+
   return 0;
+
+fail:
+  return 1;
 }
 
 static uint8_t _make_lbl_mask(

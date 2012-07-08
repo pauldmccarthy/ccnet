@@ -136,15 +136,13 @@ int main(int argc, char *argv[]) {
   analyze_volume_t vol;
   args_t           args;
   uint8_t         *mask;
-  struct argp      argp = {options, _parse_opt, "OUTPUT [INPUT ...]", doc};
+  struct argp      argp = {options, _parse_opt, "INPUT", doc};
 
   mask = NULL;
 
   memset(&args, 0, sizeof(args_t));
 
   startup("tsimg", argc, argv, &argp, &args);
-
-  printf("args.nodeidx: %u\n", args.nodeidx);
 
   if (analyze_open_volume(args.input, &vol)) {
     printf("could not open ANALYZE75 volume %s\n", args.input);

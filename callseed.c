@@ -16,7 +16,7 @@
 #include "io/ngdb_graph.h"
 #include "io/analyze75.h"
 
-static char doc[] = "cseed -- extract a subgraph from a specified seed node";
+static char doc[] = "callseed -- extract a number of maximum degree subgraphs";
 
 static struct argp_option opts[] = {
   {"maxcmps", 'm',  "INT",    0, "maximum number of components to extract"},

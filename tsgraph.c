@@ -346,19 +346,22 @@ uint8_t _connect_graph(
   uint64_t i;
   uint64_t j;
   double   corrval;
+  double   corrvalcpy;
   uint8_t  addedge;
 
   for (i = 0; i < nnodes; i++) {
     for (j = i+1; j < nnodes; j++) {
 
-      corrval = mat_read_elem(mat, nodes[i], nodes[j]);
+      corrval    = mat_read_elem(mat, nodes[i], nodes[j]);
+      corrvalcpy = corrval;
+      
       if (absval) corrval = fabs(corrval);
 
       if (!reverse) addedge = corrval >= threshold;
       else          addedge = corrval <= threshold;
       
       if (addedge) {
-        if (graph_add_edge(graph, i, j, corrval))
+        if (graph_add_edge(graph, i, j, corrvalcpy))
           goto fail;
       }
     }

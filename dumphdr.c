@@ -129,6 +129,7 @@ void dump_short(dsr_t *dsr, uint8_t *img) {
   printf("minimum:     %0.6f\n", min);
   printf("maximum:     %0.6f\n", max);
   printf("mean:        %0.6f\n", mean);
+  printf("endianness:  %u\n",    dsr->rev);
 }
 
 void dump_overview(dsr_t *dsr, uint8_t *img) {
@@ -165,6 +166,7 @@ void dump_overview(dsr_t *dsr, uint8_t *img) {
   printf("data minimum: %0.6f\n", min);
   printf("data maximum: %0.6f\n", max);
   printf("data mean:    %0.6f\n", mean);
+  printf("endianness:   %u\n",    dsr->rev);
 }
 
 void dump_header_key(header_key_t *hk) {

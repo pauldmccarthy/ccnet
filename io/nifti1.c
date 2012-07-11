@@ -79,6 +79,8 @@ uint8_t nifti1_load_hdr(char *filename, nifti1_hdr_t *hdr) {
   bytes = NULL;
   afile = NULL;
 
+  memset(hdr, 0, sizeof(nifti1_hdr_t));
+
   afile = set_suffix(filename, "hdr");
   if (afile == NULL) goto fail;
 

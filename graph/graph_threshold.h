@@ -33,10 +33,11 @@ typedef struct _mod_opt {
  * \return 0 on success, non-0 on failure.
  */
 uint8_t graph_threshold_weight(
-  graph_t *gin,       /**< weighted input graph                 */
-  graph_t *gout,      /**< pointer to an empty output graph     */
-  double   threshold, /**< threshold to apply                   */
-  uint8_t  absval     /**< use absolute values for thresholding */
+  graph_t *gin,       /**< weighted input graph                           */
+  graph_t *gout,      /**< pointer to an empty output graph               */
+  double   threshold, /**< threshold to apply                             */
+  uint8_t  absval,    /**< use absolute values for thresholding           */
+  uint8_t  reverse    /**< remove edges above threshold, instead of below */
 );
 
 /**

@@ -22,6 +22,7 @@ typedef struct _args {
   char   *output;
   double  threshold;
   uint8_t absval;
+  uint8_t reverse;
 } args_t;
 
 static char doc[] = "cthres -- threshold the edges of a weighted ngdb file";
@@ -29,6 +30,8 @@ static char doc[] = "cthres -- threshold the edges of a weighted ngdb file";
 static struct argp_option options[] = {
   {"threshold", 't', "DOUBLE", 0, "edge threshold value"},
   {"absval",    'a',  NULL,    0, "threshold at absolute value"},
+  {"reverse",   'r',  NULL,    0, "remove edges below the "\
+                                  "threshold, rather than above"},
   {0}
 };
 
@@ -42,6 +45,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
     
     case 't': args->threshold = atof(arg); break;
     case 'a': args->absval    = 1;         break;
+    case 'r': args->reverse   = 1;         break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) args->input  = arg;
@@ -76,7 +80,8 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (graph_threshold_weight(&gin, &gout, args.threshold, args.absval)) {
+  if (graph_threshold_weight(
+        &gin, &gout, args.threshold, args.absval, args.reverse)) {
     printf("error thresholding graph\n");
     goto fail;
   }

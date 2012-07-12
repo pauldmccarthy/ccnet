@@ -213,7 +213,7 @@ int main (int argc, char *argv[]) {
   graph_free(&gin);
 
   if (args.threshold > 0) {
-    if (graph_threshold_weight(&gwt, &gout, args.threshold, 0)) {
+    if (graph_threshold_weight(&gwt, &gout, args.threshold, 0, 0)) {
       printf("Graph threshold failed\n");
       goto fail;
     }

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include "graph/graph.h"
+#include "graph/graph_prune.h"
 #include "graph/bfs.h"
 #include "io/ngdb_graph.h"
 #include "util/startup.h"
@@ -23,12 +24,16 @@ typedef struct args {
   char    *input;
   char    *output;
 
-  uint8_t  abs;
+  int16_t  prune;
+  uint8_t  pruneon;
+  uint8_t  absval;
 } args_t;
 
 
 static struct argp_option options[] = {
-  {"abs", 'a', NULL, 0, "use absolute value of edge weight"},
+  {"absval", 'a',  NULL, 0, "use absolute value of edge weight"},
+  {"prune",  'p', "INT", 0, "prune components this size before starting "\
+                            "- set to 0 for automatic pruning"},
   {0}
 };
 
@@ -39,7 +44,8 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
   switch(key) {
 
-    case 'a': a->abs = 1; break;
+    case 'a': a->absval  = 1;                       break;
+    case 'p': a->pruneon = 1; a->prune = atoi(arg); break;
       
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->input  = arg;
@@ -78,8 +84,9 @@ static int _compare_edges(
  * \return 0 on success, non-0 on failure.
  */
 static uint8_t _sort_edges(
-  graph_t       *g,
-  graph_edge_t **edges
+  graph_t       *g,     /**< the graph                                       */
+  graph_edge_t **edges, /**< uninitialised pointer, sorted edges stored here */
+  uint8_t        absval /**< use absolute edge weights                       */
 );
 
 
@@ -121,6 +128,7 @@ int main(int argc, char *argv[]) {
   int8_t        is_con;
   uint32_t      nedges;
   graph_t       g;
+  graph_t       tmp;
   graph_edge_t *curedge;
   graph_edge_t *edges;
   args_t        args;
@@ -134,15 +142,28 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
+  if (args.pruneon) {
+    
+    printf("pruning graph (%u) before starting ...\n", args.prune);
+    if (graph_prune(&g, &tmp, args.prune)) {
+      printf("error pruning graph\n");
+      goto fail;
+    }
+
+    graph_free(&g);
+    memcpy(&g, &tmp, sizeof(graph_t));
+  }
+  
   nedges = graph_num_edges(&g);
-  _sort_edges(&g, &edges);
+  printf("sorting %u edges ...\n", nedges);
+  _sort_edges(&g, &edges, args.absval);
 
   for (i = 0; i < nedges; i++) {
     
     curedge = edges+i;
 
     /* remove the current edge (the edge with the lowest weight) */
-    printf("removing edge %5lu (%5u -- %5u: %0.3f) ...\n",
+    printf("removing edge %5lu (%5u -- %5u: %0.6f) ...\n",
            i, curedge->u, curedge->v, curedge->val);
     if (graph_remove_edge(&g, curedge->u, curedge->v)) {
       printf("error removing edge %5u -- %5u\n", curedge->u, curedge->v);
@@ -164,11 +185,11 @@ int main(int argc, char *argv[]) {
      */
     if (is_con == 0) {
 
-      printf("graph disconnected at edge %5lu (%5u -- %5u: %0.3f)\n",
+      printf("graph disconnected at edge %5lu (%5u -- %5u: %0.6f)\n",
              i, curedge->u, curedge->v, curedge->val);
 
       if (graph_add_edge(&g, curedge->u, curedge->v, curedge->val)) {
-        printf("error re-inserting edge %5u -- %5u: %0.3f\n",
+        printf("error re-inserting edge %5u -- %5u: %0.6f\n",
                curedge->u, curedge->v, curedge->val);
         goto fail;
       }
@@ -204,7 +225,7 @@ int _compare_edges(const void *a, const void *b) {
 }
 
 
-uint8_t _sort_edges(graph_t *g, graph_edge_t **edges) {
+uint8_t _sort_edges(graph_t *g, graph_edge_t **edges, uint8_t absval) {
 
   uint64_t      i;
   uint64_t      j;
@@ -237,7 +258,9 @@ uint8_t _sort_edges(graph_t *g, graph_edge_t **edges) {
       
       ledges[iedge].u   = i;
       ledges[iedge].v   = nbrs[j];
-      ledges[iedge].val = wts[j];
+
+      if (absval) ledges[iedge].val = abs(wts[j]);
+      else        ledges[iedge].val =     wts[j];
 
       iedge ++;
     }

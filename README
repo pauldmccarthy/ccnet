@@ -2,13 +2,16 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
 
   avgimg     - Average a collection of ANALYZE75 image files (the inputs 
                must have the same dimensions).
+  avgmat     - Average a collection of .mat matrix files.
   avgngdb    - Create a weighted ngdb file by accumulating edges from a 
                number of inputs.
+  callseed   - Iteratively extract maximum degree subgraphs (see cseed).
   catimg     - Concatenate a collection of ANALYZE75 image files into a 
                volume (the inputs must have the same dimensions).
+  ccnet      - Graph measures in standard output format.
   cdot       - Convert a ngdb graph to a graphviz dot file.
-  ceo        - Convert a radatools lol file to a ngdb graph file.
   cedgenorm  - Normalise edge weights in a ngdb graph file.
+  ceo        - Convert a radatools lol file to a ngdb graph file.
   cextract   - Extract subgraphs by label.
   cgen       - Generate graphs of different types.
   cmask      - Mask the nodes of a ngdb file with the values from a 
@@ -21,11 +24,14 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
   cprune     - Remove small components/disconnected nodes from a graph.
   creduce    - Reduce a graph by label value, creating a new 
                weighted/thresholded graph.
+  creg       - Calculate and print inter/intra-regional densities in a graph.
   cropimg    - Extract a portion of an ANALYZE75 file.
+  cseed      - Extract a subgraph from a specified seed node.
   cthres     - Threshold the edges of a weighted ngdb file.
   ctrim      - Remove edges from a graph based on a given criteria.
   cutimg     - Split an ANALYZE75 volume into a collection of image files.
   cvtk       - Convert a ngdb graph to a vtk model file.
+  cwhittle   - Remove weak edges from a graph.
   dumphdr    - Dump the contents of an ANALYZE75 header 
   dumpimg    - Dump the contents of an ANALYZE75 image, with control over 
                dimension order 
@@ -40,9 +46,12 @@ Various utilities for working with NGDB graph files and ANALYZE75 image files.
   patchhdr   - Modify fields in an ANALYZE75 header file.
   repimg     - Replace values in an ANALYZE75 image file.
   scaleimg   - Apply a scaling factor to every value in an ANALYZE75 image.
+  searchimg  - Search for values in an ANALYZE75 image.
   shiftimg   - Shift an ANALYZE75 image along any dimension, with optional
                wrap-around.
   tsgen      - Generate random ANALYZE75 time series volumes.
   tsgraph    - Create a NGDB file from a MAT file generated from tsmat.
+  tsimg      - Extract time series for specified nodes in a graph file, from
+               a corresponding ANALYZE75 volume.
   tsmat      - Create a MAT file containing a correlation matrix between time
                series from an ANALYZE75 volume.

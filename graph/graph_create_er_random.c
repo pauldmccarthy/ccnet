@@ -1,7 +1,7 @@
 /**
  * A function which generates an Erdos-Renyi random graph. Assumes that the
  * random number generator has been seeded. Edge weights are set to random
- * values between 0 and 1.
+ * values between -1 and 1.
  *
  *   A. Renyi, P. Erdos, 1960. On the evolution of random
  *   graphs. Publications of the Mathematical Institute of 
@@ -41,7 +41,7 @@ uint8_t graph_create_er_random(
       prob = (double)rand() / RAND_MAX;
 
       if (prob <= density) {
-        wt = (double)rand() / RAND_MAX;
+        wt = -1.0 + 2.0*((double)rand() / RAND_MAX);
         if (graph_add_edge(g, i, j, wt)) goto fail;
       }
     }

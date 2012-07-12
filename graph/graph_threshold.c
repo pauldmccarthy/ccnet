@@ -21,14 +21,14 @@
 #include "stats/stats_cache.h"
 
 static uint8_t _threshold_edges(
-  graph_t *gin, graph_t *gout, double threshold);
+  graph_t *gin, graph_t *gout, double threshold, uint8_t absval);
 
 uint8_t graph_threshold_weight(
-  graph_t *gin, graph_t *gout, double threshold) {
+  graph_t *gin, graph_t *gout, double threshold, uint8_t absval) {
 
   if (graph_create(         gout, graph_num_nodes(gin), 0)) goto fail;
   if (graph_copy_nodelabels(gin,  gout))                    goto fail;
-  if (_threshold_edges(     gin,  gout, threshold))         goto fail;
+  if (_threshold_edges(     gin,  gout, threshold, absval)) goto fail;
 
   return 0;
 
@@ -360,7 +360,8 @@ fail:
 }
 
 
-uint8_t _threshold_edges(graph_t *gin, graph_t *gout, double threshold) {
+uint8_t _threshold_edges(
+  graph_t *gin, graph_t *gout, double threshold, uint8_t absval) {
 
   uint32_t  u;
   uint32_t  v;
@@ -381,7 +382,9 @@ uint8_t _threshold_edges(graph_t *gin, graph_t *gout, double threshold) {
 
     for (v = 0; v < nnbrs; v++) {
 
-      if (wts[v] < threshold)                       continue;
+      if (absval) { if (abs(wts[v]) < threshold) continue; }
+      else        { if (    wts[v]  < threshold) continue; }
+      
       if (graph_add_edge(gout, u, nbrs[v], wts[v])) goto fail;
     }
   }

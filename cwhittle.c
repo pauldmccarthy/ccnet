@@ -4,6 +4,7 @@
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -259,8 +260,8 @@ uint8_t _sort_edges(graph_t *g, graph_edge_t **edges, uint8_t absval) {
       ledges[iedge].u   = i;
       ledges[iedge].v   = nbrs[j];
 
-      if (absval) ledges[iedge].val = abs(wts[j]);
-      else        ledges[iedge].val =     wts[j];
+      if (absval) ledges[iedge].val = fabs(wts[j]);
+      else        ledges[iedge].val =      wts[j];
 
       iedge ++;
     }

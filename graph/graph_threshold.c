@@ -12,6 +12,7 @@
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com>
  */ 
 
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -396,8 +397,8 @@ uint8_t _threshold_edges(
 
     for (v = 0; v < nnbrs; v++) {
 
-      if (absval) wt = abs(wts[v]);
-      else        wt =     wts[v];
+      if (absval) wt = fabs(wts[v]);
+      else        wt =      wts[v];
 
       if (reverse) { if (wt > threshold) continue; }
       else         { if (wt < threshold) continue; }

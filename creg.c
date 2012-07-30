@@ -93,7 +93,7 @@ int main (int argc, char *argv[]) {
   matrix = NULL;
   memset(&args, 0, sizeof(args));
 
-  startup("cseg", argc, argv, &argp, &args);
+  startup("creg", argc, argv, &argp, &args);
 
   if (ngdb_read(args.input, &g)) {
     printf("error loading graph file %s\n", args.input);

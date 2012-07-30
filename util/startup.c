@@ -62,6 +62,14 @@ void startup(
     {0}
   };
 
+  printf("%s revision: %s", progname, GIT_REVISION);
+  printf(" (");
+  for (i = 0; i < argc; i++) {
+    if (i < argc-1) printf("%s ", argv[i]);
+    else            printf("%s",  argv[i]);
+  }
+  printf(")\n");
+
   memset(&my_argp, 0, sizeof(struct argp));
   my_argp.options  = options;
   my_argp.parser   = _parse_opt;
@@ -72,14 +80,6 @@ void startup(
 
   if (child_argp != NULL && child_input != NULL)
     argp_parse(&my_argp, argc, argv, 0, 0, &my_input);
-
-  printf("%s revision: %s", progname, GIT_REVISION);
-  printf(" (");
-  for (i = 0; i < argc; i++) {
-    if (i < argc-1) printf("%s ", argv[i]);
-    else            printf("%s",  argv[i]);
-  }
-  printf(")\n");
 
   gettimeofday(&t, NULL);
   if (my_input.seed == -1) my_input.seed = t.tv_usec;

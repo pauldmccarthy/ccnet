@@ -134,15 +134,15 @@ void dump_short(dsr_t *dsr, uint8_t *img) {
 
 void dump_overview(dsr_t *dsr, uint8_t *img) {
 
-  uint8_t i;
-  uint8_t valsize;
-  uint8_t numdims;
-  uint8_t dimsize;
-  int     dimoff;
-  int     numvals;
-  double  min;
-  double  max;
-  double  mean;
+  uint8_t  i;
+  uint8_t  valsize;
+  uint8_t  numdims;
+  uint16_t dimsize;
+  int      dimoff;
+  int      numvals;
+  double   min;
+  double   max;
+  double   mean;
 
   valsize = analyze_value_size(dsr);
   numdims = analyze_num_dims(  dsr);

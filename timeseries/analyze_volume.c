@@ -154,7 +154,7 @@ uint8_t analyze_read_timeseries(
 uint8_t analyze_read_timeseries_by_idx(
   analyze_volume_t *vol, uint32_t idx, double *timeseries) {
 
-  uint32_t dims[3];
+  uint32_t dims[5];
 
   analyze_get_indices(vol->hdrs, idx, dims);
 

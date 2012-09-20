@@ -1,6 +1,7 @@
 /**
- * Prints out inter/intra regional densities for a ngdb file, optionally
- * reading node labels from a corresponding ANALYZE75 image file.
+ * Prints out graph measures averaged by region, and inter/intra regional
+ * densities for a ngdb file, optionally reading node labels from a
+ * corresponding ANALYZE75 image file.
  *
  * Author: Paul McCarthy <pauld.mccarthy@gmail.com> 
  */
@@ -16,6 +17,8 @@
 #include "io/ngdb_graph.h"
 #include "io/analyze75.h"
 #include "util/startup.h"
+#include "stats/stats.h"
+#include "stats/stats_cache.h"
 
 static char doc[] = "creg -- calculate and print inter/intra regional "\
                     "densities";
@@ -23,7 +26,9 @@ static char doc[] = "creg -- calculate and print inter/intra regional "\
 static struct argp_option opts[] = {
   {"lblfile", 'l', "FILE", 0, "ANALYZE75 file containing node labels"},
   {"real",    'r',  NULL,  0, "node coordinates are in real units"},
+  {"region",  'e',  NULL,  0, "Print out regional density matrix"},
   {"sizes",   's',  NULL,  0, "print out number of nodes in each region"},
+  {"means",   'm',  NULL,  0, "print out mean node measures for each region"},
   {"nonorm",  'n',  NULL,  0, "show edge counts, rather "\
                               "than normalised densities"},
   {0}
@@ -34,7 +39,9 @@ typedef struct _args {
   char   *input;
   char   *lblfile;
   uint8_t real;
+  uint8_t region;
   uint8_t sizes;
+  uint8_t means;
   uint8_t nonorm;
 
 } args_t;
@@ -47,7 +54,9 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
     case 'l': args->lblfile = arg; break;
     case 'r': args->real    = 1;   break;
+    case 'e': args->region  = 1;   break;
     case 's': args->sizes   = 1;   break;
+    case 'm': args->means   = 1;   break;
     case 'n': args->nonorm  = 1;   break;
 
     case ARGP_KEY_ARG:
@@ -80,6 +89,11 @@ static void _print_region_sizes(
   node_partition_t *ptn
 );
 
+static void _print_region_means(
+  graph_t          *g,
+  node_partition_t *ptn
+);
+
 int main (int argc, char *argv[]) {
 
   graph_t          g;
@@ -98,7 +112,12 @@ int main (int argc, char *argv[]) {
   if (ngdb_read(args.input, &g)) {
     printf("error loading graph file %s\n", args.input);
     goto fail;
-  } 
+  }
+
+  if (stats_cache_init(&g)) {
+    printf("error initialising stats cache\n");
+    goto fail;
+  }  
 
   if (args.lblfile != NULL) {
     if (analyze_load(args.lblfile, &hdr, &img)) {
@@ -123,22 +142,34 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
-  if (_mk_density_matrix(&g, &ptn, matrix)) {
-    printf("error creating density matrix\n");
-    goto fail;
+  if (args.region) {  
+    if (_mk_density_matrix(&g, &ptn, matrix)) {
+      printf("error creating density matrix\n");
+      goto fail;
+    }
+
+    _print_density_matrix(&g, &ptn, matrix, args.nonorm);
   }
-  _print_density_matrix(&g, &ptn, matrix, args.nonorm);
 
   if (args.sizes) {
     printf("\n");
     _print_region_sizes(&ptn);
   }
 
+  if (args.means) {
+    
+    _print_region_means(&g, &ptn);
+  } 
+
   return 0;
   
 fail:
   return 1;
 }
+
+
+
+
 
 uint8_t _mk_density_matrix(
   graph_t *g, node_partition_t *ptn, double *matrix) {
@@ -246,5 +277,53 @@ void _print_region_sizes(node_partition_t *ptn) {
     array_get(ptn->partids, i, &id);
     array_get(ptn->parts,   i, &part);
     printf("%u %u\n", id,  part.size);
+  }
+}
+
+
+void _print_region_means(graph_t *g, node_partition_t *ptn) {
+
+  uint64_t i;
+  uint64_t j;
+  uint32_t id;
+  uint32_t node;
+  array_t  part;
+  double   avgdegree;
+  double   avgplen;
+  double   avgclust;
+  double   tmp;
+
+  stats_avg_clustering(g);
+  stats_avg_pathlength(g);
+
+  printf("region, degree, pathlength, clustering\n");
+
+  for (i = 0; i < ptn->nparts; i++) {
+
+    array_get(ptn->partids, i, &id);
+    array_get(ptn->parts,   i, &part);
+
+    avgdegree = 0;
+    avgplen   = 0;
+    avgclust  = 0;
+
+    for (j = 0; j < part.size; j++) {
+
+      array_get(&part, i, &node);
+
+      avgdegree += graph_num_neighbours(g, node);
+      
+      stats_cache_node_pathlength(g, node, &tmp);
+      avgplen   += tmp;
+
+      stats_cache_node_clustering(g, node, &tmp);
+      avgclust  += tmp;
+    }
+
+    avgdegree /= part.size;
+    avgplen   /= part.size;
+    avgclust  /= part.size;
+
+    printf("%3u: %8.4f, %8.4f, %0.6f\n", id, avgdegree, avgplen, avgclust);
   }
 }

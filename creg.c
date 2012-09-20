@@ -324,6 +324,7 @@ void _print_region_means(graph_t *g, node_partition_t *ptn) {
     avgplen   /= part.size;
     avgclust  /= part.size;
 
-    printf("%3u: %8.4f, %8.4f, %0.6f\n", id, avgdegree, avgplen, avgclust);
+    printf("%3u, %4u, %8.4f, %8.4f, %0.6f\n",
+           id, part.size, avgdegree, avgplen, avgclust);
   }
 }

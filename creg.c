@@ -296,7 +296,7 @@ void _print_region_means(graph_t *g, node_partition_t *ptn) {
   stats_avg_clustering(g);
   stats_avg_pathlength(g);
 
-  printf("region, degree, pathlength, clustering\n");
+  printf("region, size, degree, pathlength, clustering\n");
 
   for (i = 0; i < ptn->nparts; i++) {
 
@@ -309,7 +309,7 @@ void _print_region_means(graph_t *g, node_partition_t *ptn) {
 
     for (j = 0; j < part.size; j++) {
 
-      array_get(&part, i, &node);
+      array_get(&part, j, &node);
 
       avgdegree += graph_num_neighbours(g, node);
       

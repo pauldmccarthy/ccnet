@@ -77,9 +77,7 @@ static int64_t _create_mask(
   analyze_volume_t *vol,     /**< volume containing time series  */
   uint32_t        **incvxls, /**< place to store indices
                                   of voxels to include           */
-  args_t           *args,    /**< tsmat program arguments        */
-  dsr_t            *hdr,     /**< ANALYZE75 label header         */
-  uint8_t          *img      /**< ANALYZE75 label data           */
+  args_t           *args     /**< tsmat program arguments        */
 );
 
 /**
@@ -261,6 +259,28 @@ int main (int argc, char *argv[]) {
     goto fail;
   }
 
+  nincvxls = _create_mask(&vol, &incvxls, &args);
+  
+  if (nincvxls < 0) {
+    printf("error masking voxels\n");
+    goto fail;
+  }
+
+  if (nincvxls == 0) {
+
+    printf("All voxels have been thresholded - relax your constraints\n");
+    goto fail;
+  }
+
+  /*
+   * if a label file was not provided, but a mask file
+   * was, use the mask file to set row/column labels 
+   */
+  if (args.labelf == NULL && args.maskf != NULL) {
+
+    args.labelf = args.maskf;
+  }
+
   if (args.labelf != NULL) {
     
     if (analyze_load(args.labelf, &lblhdr, &lblimg)) {
@@ -277,19 +297,6 @@ int main (int argc, char *argv[]) {
         args.labelf, args.input);
       goto fail;
     }
-  }
-
-  nincvxls = _create_mask(&vol, &incvxls, &args, &lblhdr, lblimg);
-  
-  if (nincvxls < 0) {
-    printf("error masking voxels\n");
-    goto fail;
-  }
-
-  if (nincvxls == 0) {
-
-    printf("All voxels have been thresholded - relax your constraints\n");
-    goto fail;
   }
 
   mat = mat_create(
@@ -373,9 +380,7 @@ fail:
 int64_t _create_mask(
   analyze_volume_t *vol,
   uint32_t        **incvxls,
-  args_t           *args,
-  dsr_t            *hdr,
-  uint8_t          *img) {
+  args_t           *args) {
 
   uint64_t  i;
   uint64_t  j;
@@ -384,7 +389,10 @@ int64_t _create_mask(
   uint32_t  nvals;
   uint32_t  nincvxls;
   int64_t   result;
+  dsr_t     lblhdr;
+  uint8_t  *lblimg;
 
+  lblimg   = NULL;
   lincvxls = NULL;
   mask     = NULL;
   nvals    = analyze_num_vals(vol->hdrs);
@@ -406,12 +414,16 @@ int64_t _create_mask(
 
   /*masking via label file*/
   if (args->labelf != NULL) {
+
+    if (analyze_load(args->labelf, &lblhdr, &lblimg)) {
+      goto fail;
+    }
     
     result = _apply_label_mask(
       vol,
       mask,
-      hdr,
-      img,
+      &lblhdr,
+      lblimg,
       args->inclbls,
       args->exclbls,
       args->ninclbls,
@@ -419,6 +431,8 @@ int64_t _create_mask(
     
     if (result < 0) goto fail;
     nincvxls -= result;
+
+    free(lblimg);
   }
 
   /*masking via mask file*/
@@ -439,10 +453,12 @@ int64_t _create_mask(
   }
 
   free(mask);
+  free(lblimg);
   *incvxls = lincvxls;
   return nincvxls;
   
 fail:
+  if (lblimg   != NULL) free(lblimg);
   if (mask     != NULL) free(mask);
   if (lincvxls != NULL) free(lincvxls);
   *incvxls = NULL;

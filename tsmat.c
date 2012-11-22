@@ -276,13 +276,13 @@ int main (int argc, char *argv[]) {
    * if a label file was not provided, but a mask file
    * was, use the mask file to set row/column labels 
    */
-  if (args.labelf == NULL && args.maskf != NULL) {
+  if ((args.labelf == NULL) && (args.maskf != NULL)) {
 
     args.labelf = args.maskf;
   }
 
   if (args.labelf != NULL) {
-    
+
     if (analyze_load(args.labelf, &lblhdr, &lblimg)) {
       printf("error loading label file %s\n", args.labelf);
       goto fail;
@@ -349,7 +349,7 @@ int main (int argc, char *argv[]) {
            hdrdata, args.output);
     goto fail;
   }
-
+  
   if (lblimg != NULL) {
     if (_write_labels(&lblhdr, lblimg, mat, incvxls, nincvxls)) {
       printf("error writing labels to %s\n", args.output);
@@ -433,6 +433,7 @@ int64_t _create_mask(
     nincvxls -= result;
 
     free(lblimg);
+    lblimg = NULL;
   }
 
   /*masking via mask file*/
@@ -453,14 +454,13 @@ int64_t _create_mask(
   }
 
   free(mask);
-  free(lblimg);
   *incvxls = lincvxls;
   return nincvxls;
   
 fail:
-  if (lblimg   != NULL) free(lblimg);
   if (mask     != NULL) free(mask);
   if (lincvxls != NULL) free(lincvxls);
+  if (lblimg   != NULL) free(lblimg);
   *incvxls = NULL;
   return -1;
 }

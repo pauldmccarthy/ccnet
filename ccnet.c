@@ -22,7 +22,12 @@ static char doc[] = "ccnet -- calculate and print standard statistics "\
 
 static struct argp_option opts[] = {
   {"global",     'g', NULL, 0, "print global statistics"},
-  {"node",       'n', NULL, 0, "print node statistics"}, 
+  {"node",       'n', NULL, 0, "print node statistics"},
+  {"bigstats",   'b', NULL, 0, "zero big global stats"},
+  {"pathlength", 'p', NULL, 0, "zero pathlength"},
+  {"clustering", 'c', NULL, 0, "zero clustering"},
+  {"closeness",  'l', NULL, 0, "zero closeness"},
+  {"edgedist",   'e', NULL, 0, "zero edgedist"},
   {0}
 };
 
@@ -32,6 +37,11 @@ typedef struct _args {
   char   *input;
   uint8_t global;
   uint8_t node;
+  uint8_t bigstats;
+  uint8_t pathlength;
+  uint8_t clustering;
+  uint8_t closeness;
+  uint8_t edgedist;
 
 } args_t;
 
@@ -41,8 +51,13 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
   switch (key) {
 
-    case 'g': args->global = 1; break;
-    case 'n': args->node   = 1; break;
+    case 'g': args->global     = 1; break;
+    case 'n': args->node       = 1; break;
+    case 'b': args->bigstats   = 1; break;
+    case 'p': args->pathlength = 1; break;
+    case 'c': args->clustering = 1; break;
+    case 'l': args->closeness  = 1; break;
+    case 'e': args->edgedist   = 1; break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) args->input  = arg;
@@ -59,7 +74,8 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
 
 static void _print_global_stats(
-  graph_t *g
+  graph_t *g,
+  args_t  *args
 );
 
 static void _print_node_stats_header(
@@ -96,7 +112,7 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (args.global) _print_global_stats(&g);
+  if (args.global) _print_global_stats(&g, &args);
 
   if (args.node) {
     
@@ -115,9 +131,28 @@ fail:
 }
 
 
-void _print_global_stats(graph_t *g) {
+void _print_global_stats(graph_t *g, args_t *args) {
 
   uint32_t nnodes;
+  double   clustering;
+  double   pathlength;
+  double   swidx;
+  double   globeff;
+  double   assort;
+
+  clustering = 0;
+  pathlength = 0;
+  swidx      = 0;
+  globeff    = 0;
+  assort     = 0;
+
+  if (!args->bigstats) {
+    clustering = stats_cache_graph_clustering( g);
+    pathlength = stats_cache_graph_pathlength( g);
+    swidx      = stats_smallworld_index(       g);
+    globeff    = stats_cache_global_efficiency(g);
+    assort     = stats_cache_assortativity(    g);
+  }
 
   nnodes = graph_num_nodes(g);
 
@@ -130,11 +165,11 @@ void _print_global_stats(graph_t *g) {
   printf("# largest component  %0.0f\n", stats_cache_largest_component( g));
   printf("# connected          %0.0f\n", stats_cache_connected(         g));
   printf("# disconnected       %0.0f\n", nnodes - stats_cache_connected(g));  
-  printf("# clustering         %0.6f\n", stats_cache_graph_clustering(  g));
-  printf("# pathlength         %0.6f\n", stats_cache_graph_pathlength(  g));
-  printf("# smallworld index   %0.6f\n", stats_smallworld_index(        g));
-  printf("# global efficiency  %0.6f\n", stats_cache_global_efficiency( g));
-  printf("# assortativity      %0.6f\n", stats_cache_assortativity(     g));
+  printf("# clustering         %0.6f\n", clustering);
+  printf("# pathlength         %0.6f\n", pathlength);
+  printf("# smallworld index   %0.6f\n", swidx);
+  printf("# global efficiency  %0.6f\n", globeff);
+  printf("# assortativity      %0.6f\n", assort);
 }
 
 void _print_node_stats_header(graph_t *g, args_t *args) {
@@ -158,13 +193,22 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   double         clust;
   double         plen;
   double         edgedist;
+  double         close;
   uint32_t       cmp;
 
+  clust    = 0;
+  plen     = 0;
+  edgedist = 0;
+  close    = 0;
+
   lbl = graph_get_nodelabel(  g, n);
-  stats_cache_node_clustering(g, n, &clust);
-  stats_cache_node_pathlength(g, n, &plen);
+
+  if (!args->clustering) stats_cache_node_clustering(g, n, &clust);
+  if (!args->pathlength) stats_cache_node_pathlength(g, n, &plen);
+  if (!args->edgedist)   close = stats_closeness_centrality(g, n);
+  if (!args->edgedist)   stats_cache_node_edgedist(  g, n, &edgedist);
+
   stats_cache_node_component( g, n, &cmp);
-  stats_cache_node_edgedist(  g, n, &edgedist);
 
   printf("%u,",    n);
   printf("%0.6f,", lbl->xval);
@@ -174,7 +218,7 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   printf("%u,",    graph_num_neighbours(g, n));
   printf("%0.6f,", clust);
   printf("%0.6f,", plen);
-  printf("%0.6f,", stats_closeness_centrality(g, n));
+  printf("%0.6f,", close);
   printf("%0.6f,", edgedist);
   printf("%u\n",   cmp);
 }

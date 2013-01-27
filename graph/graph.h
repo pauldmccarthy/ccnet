@@ -369,6 +369,29 @@ uint8_t graph_create_er_random(
   double   density /**< desired graph density (between 0.0 and 1.0) */
 );
 
+/**
+ * Generates a scale free random graph. Assumes that the random number
+ * generator has been seeded. Edge weights are set to random values between -1
+ * and 1.
+ */
+uint8_t graph_create_scalefree(
+  graph_t *g,      /**< pointer to an uninitialised graph        */
+  uint32_t nnodes, /**< number of nodes                          */
+  uint16_t m,      /**< number of fully connected nodes to start */
+  uint16_t m0      /**< number of connections new nodes make     */
+);
+
+/**
+ * A function which generates a small world random graph. Assumes that the
+ * random number generator has been seeded. Edge weights are set to random
+ * values between -1 and 1.
+ */
+uint8_t graph_create_smallworld(
+  graph_t *g,      /**< pointer to an uninitialised graph  */
+  uint32_t nnodes, /**< number of nodes                    */
+  double   p,      /**< rewire probability                 */
+  uint16_t k       /**< mean degree                        */
+);
 
 /**
  * Checks to see whether a path exists between all nodes in the given group,

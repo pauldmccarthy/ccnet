@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <argp.h>
 
@@ -14,9 +15,11 @@
 #include "io/ngdb_graph.h"
 
 typedef enum {
-  TYPE_ER_RANDOM = 1, /* "errandom"  */
-  TYPE_CLUSTERED,     /* "clustered" */
-  TYPE_NCUT,          /* "ncut"      */
+  TYPE_ER_RANDOM = 1, /* "errandom"   */
+  TYPE_CLUSTERED,     /* "clustered"  */
+  TYPE_SCALEFREE,     /* "scalefree"  */
+  TYPE_SMALLWORLD,    /* "smallworld" */
+  TYPE_NCUT,          /* "ncut"       */
 } graph_type_t;
 
 static char doc[] = "cgen - generate graphs";
@@ -35,6 +38,12 @@ typedef struct args {
   uint8_t      iedegree;
   uint8_t      intext;
   uint8_t      intdens;
+
+  uint16_t     sfm;
+  uint16_t     sfm0;
+
+  double       swp;
+  uint16_t     swk;
   
   char        *imgf;
   double       si;
@@ -61,6 +70,13 @@ static struct argp_option options[] = {
                                     "for clustered graphs"},
   {"intdens",     's',  NULL,    0, "use internal and total density "\
                                     "for clustered graphs"},
+  {"sfm",         'f', "INT",    0, "number of connections for new nodes, "\
+                                    "for scale free graphs"},
+  {"sfm0",        'o', "INT",    0, "size of initial fully connected graph, "\
+                                    "for scale free graphs"},
+  {"swp",         'p', "DOUBLE", 0, "Rewire probability for smallworld "\
+                                    "graphs"},
+  {"swk",         'k', "INT",    0, "Mean degree for smallworld graphs"},
   {"imgf",        'm', "FILE",   0, "image file, for ncut graphs"},
   {"si",          'a', "DOUBLE", 0, "similarity sigma, for ncut graphs"},
   {"sx",          'x', "DOUBLE", 0, "distance sigma, for ncut graphs"},
@@ -79,9 +95,11 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'n': a->numnodes = atoi(arg); break;
     case 't':
       if      (arg == NULL)               argp_usage(state);
-      else if (!strcmp(arg, "errandom"))  a->type = TYPE_ER_RANDOM;
-      else if (!strcmp(arg, "clustered")) a->type = TYPE_CLUSTERED;
-      else if (!strcmp(arg, "ncut"))      a->type = TYPE_NCUT;
+      else if (!strcasecmp(arg, "errandom"))   a->type = TYPE_ER_RANDOM;
+      else if (!strcasecmp(arg, "clustered"))  a->type = TYPE_CLUSTERED;
+      else if (!strcasecmp(arg, "scalefree"))  a->type = TYPE_SCALEFREE;
+      else if (!strcasecmp(arg, "smallworld")) a->type = TYPE_SMALLWORLD;
+      else if (!strcasecmp(arg, "ncut"))       a->type = TYPE_NCUT;
       else argp_usage(state);
       break;
 
@@ -94,6 +112,10 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'l': a->intext      = 0xFF;      break;
     case 's': a->intdens     = 0xFF;      break;
     case 'm': a->imgf        = arg;       break;
+    case 'f': a->sfm         = atoi(arg); break;
+    case 'o': a->sfm0        = atoi(arg); break;
+    case 'p': a->swp         = atof(arg); break;
+    case 'k': a->swk         = atoi(arg); break;
     case 'a': a->si          = atof(arg); break;
     case 'x': a->sx          = atof(arg); break; 
     case 'u': a->radius      = atof(arg); break;
@@ -171,6 +193,30 @@ int main(int argc, char *argv[]) {
           printf("could not create clustered graph\n");
           goto fail;
         }
+      }
+      break;
+
+    case TYPE_SCALEFREE:
+
+      if (graph_create_scalefree(
+            &g,
+            args.numnodes,
+            args.sfm,
+            args.sfm0)) {
+        printf("could not create scale free graph\n");
+        goto fail;
+      }
+      break;
+
+    case TYPE_SMALLWORLD:
+
+      if (graph_create_smallworld(
+            &g,
+            args.numnodes,
+            args.swp,
+            args.swk)) {
+        printf("could not create small world graph\n");
+        goto fail;
       }
       break;
 

@@ -76,10 +76,8 @@ uint8_t graph_create_smallworld(
       oldnbr = nbrs[j];
 
       /*remove old edge*/
-      if (graph_remove_edge(g, i, oldnbr)){
-        printf("remove edge fail: %u -- %u\n", i, oldnbr);
-        goto fail;
-      }
+      if (graph_remove_edge(g, i, oldnbr)) goto fail;
+
 
       /*choose a new neighbour*/
       while (1) {
@@ -93,10 +91,7 @@ uint8_t graph_create_smallworld(
         break;
       } 
 
-      if (graph_add_edge(g, i, newnbr, wt)) {
-        printf("add edge fail: %u -- %u\n", i, newnbr);
-        goto fail;
-      }
+      if (graph_add_edge(g, i, newnbr, wt)) goto fail;
     }
   }
 

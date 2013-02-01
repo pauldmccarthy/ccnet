@@ -14,6 +14,7 @@
 #include "graph/graph_log.h"
 #include "io/ngdb_graph.h"
 #include "util/startup.h"
+#include "stats/stats.h"
 
 typedef struct _args {
   char   *input;
@@ -21,6 +22,7 @@ typedef struct _args {
   uint8_t labels;
   uint8_t graph;
   uint8_t weights;
+  uint8_t dists;
 } args_t;
 
 static char doc[] =
@@ -31,6 +33,7 @@ static struct argp_option options[] = {
   {"labels",  'l', NULL, 0, "print node labels"},
   {"graph",   'g', NULL, 0, "print nodes and neighbours"},
   {"weights", 'w', NULL, 0, "print edge weights"},
+  {"dists",   'd', NULL, 0, "print edge distances"},
   {0}
 };
 
@@ -46,6 +49,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
     case 'l': args->labels  = 1; break;
     case 'g': args->graph   = 1; break;
     case 'w': args->weights = 1; break;
+    case 'd': args->dists   = 1; break;
       
     case ARGP_KEY_ARG:
       if (state->arg_num == 0) args->input = arg;
@@ -66,7 +70,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
 
 static void _meta(  graph_t *g);
 static void _labels(graph_t *g);
-static void _graph( graph_t *g, uint8_t weights);
+static void _graph( graph_t *g, uint8_t weights, uint8_t dists);
 
 int main(int argc, char *argv[]) {
 
@@ -85,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   if (args.meta)   _meta(  &g);
   if (args.labels) _labels(&g);
-  if (args.graph)  _graph( &g, args.weights);
+  if (args.graph)  _graph( &g, args.weights, args.dists);
 
   graph_free(&g);
   return 0;
@@ -136,7 +140,7 @@ void _labels(graph_t *g) {
 
 }
 
-void _graph(graph_t *g, uint8_t weights) {
+void _graph(graph_t *g, uint8_t weights, uint8_t dists) {
 
   uint64_t  i;
   uint64_t  j;
@@ -144,6 +148,7 @@ void _graph(graph_t *g, uint8_t weights) {
   uint32_t  nnbrs;
   uint32_t *nbrs;
   float    *wts;
+  double    dist;
 
   nnodes = graph_num_nodes(g);
 
@@ -156,8 +161,18 @@ void _graph(graph_t *g, uint8_t weights) {
     printf("%5" PRIu64 ": ", i);
 
     for (j = 0; j < nnbrs; j++) {
+      
       printf("%5u", nbrs[j]);
-      if (weights) printf(" (%0.4f)", wts[j]);
+
+      dist = stats_edge_distance(g, i, nbrs[j]);
+
+      if (weights || dists) printf(" (");
+
+      if (weights) printf("%0.4f",   wts[j]);
+      if (dists)   printf(":%0.4f:", dist);
+      
+      if (weights || dists) printf(")");
+      
       if (j < nnbrs-1) printf(" ");
     }
     printf("\n");

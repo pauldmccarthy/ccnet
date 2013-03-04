@@ -74,7 +74,8 @@ exes=dumpimg    \
      callseed   \
      avgmat     \
      tsimg      \
-     cwhittle
+     cwhittle   \
+     cslice 
 
 
 default: clean $(exes)

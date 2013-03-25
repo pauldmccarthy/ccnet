@@ -26,6 +26,7 @@ static struct argp_option opts[] = {
   {"bigstats",   'b', NULL, 0, "zero big global stats"},
   {"pathlength", 'p', NULL, 0, "zero pathlength"},
   {"clustering", 'c', NULL, 0, "zero clustering"},
+  {"efficiency", 'f', NULL, 0, "zero efficiency"},
   {"closeness",  'l', NULL, 0, "zero closeness"},
   {"edgedist",   'e', NULL, 0, "zero edgedist"},
   {0}
@@ -40,6 +41,7 @@ typedef struct _args {
   uint8_t bigstats;
   uint8_t pathlength;
   uint8_t clustering;
+  uint8_t efficiency;
   uint8_t closeness;
   uint8_t edgedist;
 
@@ -56,6 +58,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'b': args->bigstats   = 1; break;
     case 'p': args->pathlength = 1; break;
     case 'c': args->clustering = 1; break;
+    case 'f': args->efficiency = 1; break;
     case 'l': args->closeness  = 1; break;
     case 'e': args->edgedist   = 1; break;
 
@@ -181,6 +184,7 @@ void _print_node_stats_header(graph_t *g, args_t *args) {
   printf("label,");
   printf("degree,");
   printf("clustering,");
+  printf("local efficiency,");
   printf("pathlength,");
   printf("closeness,");
   printf("edgedist,");
@@ -191,22 +195,25 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
 
   graph_label_t *lbl;
   double         clust;
+  double         leff;
   double         plen;
   double         edgedist;
   double         close;
   uint32_t       cmp;
 
   clust    = 0;
+  leff     = 0;
   plen     = 0;
   edgedist = 0;
   close    = 0;
 
   lbl = graph_get_nodelabel(  g, n);
 
-  if (!args->clustering) stats_cache_node_clustering(g, n, &clust);
-  if (!args->pathlength) stats_cache_node_pathlength(g, n, &plen);
+  if (!args->clustering) stats_cache_node_clustering(       g, n, &clust);
+  if (!args->efficiency) stats_cache_node_local_efficiency( g, n, &leff);
+  if (!args->pathlength) stats_cache_node_pathlength(       g, n, &plen);
   if (!args->edgedist)   close = stats_closeness_centrality(g, n);
-  if (!args->edgedist)   stats_cache_node_edgedist(  g, n, &edgedist);
+  if (!args->edgedist)   stats_cache_node_edgedist(         g, n, &edgedist);
 
   stats_cache_node_component( g, n, &cmp);
 
@@ -217,6 +224,7 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   printf("%u,",    lbl->labelval);
   printf("%u,",    graph_num_neighbours(g, n));
   printf("%0.6f,", clust);
+  printf("%0.6f,", leff);
   printf("%0.6f,", plen);
   printf("%0.6f,", close);
   printf("%0.6f,", edgedist);

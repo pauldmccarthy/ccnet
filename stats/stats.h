@@ -78,6 +78,16 @@ double stats_smallworld_index(
 );
 
 /**
+ * \return the small world index of the given node in the graph. The values
+ * are compared to the clustering coefficient and the path length of an
+ * Erdos-Renyi randomly generated graph.
+ */
+double stats_local_smallworld_index(
+  graph_t *g, /**< the graph to query */
+  uint32_t n  /**< node to query      */
+);
+
+/**
  * \return the approximate average path length of an Erdos-Renyi random graph
  * which has the same order and density of the given graph.
  */
@@ -170,6 +180,24 @@ double stats_pathlength(
 );
 
 /**
+ * Calculates the distance between the given node and all nodes specified in
+ * the mask. The individual path lengths are stored in the pathlens array if
+ * it is provided.
+ *
+ * \return the mean path length from the specified node to all nodes in the
+ * mask.
+ */
+double stats_sub_pathlength(
+  graph_t  *g,       /**< the graph to query                     */
+  uint32_t  nidx,    /**< node to query                          */
+  uint32_t  nnodes,  /**< number of nodes to include             */
+  uint8_t  *mask,    /**< mask specifying which nodes to include */
+  double   *pathlens /**< array, nnodes in length, used as a
+                          place to store individual path lengths,
+                          may be NULL                            */
+);
+
+/**
  * Calculates the global efficiency of the graph.
  *
  * Definition of efficiency:
@@ -189,6 +217,16 @@ double stats_global_efficiency(
 double stats_local_efficiency(
   graph_t *g,   /**< the graph to query */
   uint32_t nidx /**< the node to query  */
+);
+
+/**
+ * \return the 'regional' efficiency, the efficiency
+ * of all nodes specified by the given mask.
+ */
+double stats_sub_efficiency(
+  graph_t *g,      /**< graph to query                         */
+  uint32_t nnodes, /**< number of nodes to include             */
+  uint8_t *mask    /**< mask specifying which nodes to include */
 );
 
 /**

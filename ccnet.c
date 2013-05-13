@@ -188,6 +188,7 @@ void _print_node_stats_header(graph_t *g, args_t *args) {
   printf("pathlength,");
   printf("closeness,");
   printf("edgedist,");
+  printf("local smallworld index,");
   printf("component\n");
 }
 
@@ -199,6 +200,7 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   double         plen;
   double         edgedist;
   double         close;
+  double         lswidx;
   uint32_t       cmp;
 
   clust    = 0;
@@ -206,6 +208,7 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   plen     = 0;
   edgedist = 0;
   close    = 0;
+  lswidx   = 0;
 
   lbl = graph_get_nodelabel(  g, n);
 
@@ -214,6 +217,9 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   if (!args->pathlength) stats_cache_node_pathlength(       g, n, &plen);
   if (!args->edgedist)   close = stats_closeness_centrality(g, n);
   if (!args->edgedist)   stats_cache_node_edgedist(         g, n, &edgedist);
+
+  if (!(args->clustering || args->pathlength))
+      lswidx = stats_local_smallworld_index(g, n);
 
   stats_cache_node_component( g, n, &cmp);
 
@@ -228,5 +234,6 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   printf("%0.6f,", plen);
   printf("%0.6f,", close);
   printf("%0.6f,", edgedist);
+  printf("%0.6f,", lswidx);
   printf("%u\n",   cmp);
 }

@@ -125,6 +125,58 @@ fail:
   return -1;
 }
 
+
+
+double stats_sub_pathlength(
+  graph_t *g,
+  uint32_t nidx,
+  uint32_t nnodes,
+  uint8_t *mask,
+  double  *pathlens) 
+{
+  ctx_t    ctx;
+  double   path;
+  uint64_t i;
+  uint64_t j;
+  uint32_t gnnodes;
+
+  ctx.pathlens   = NULL;
+  gnnodes        = graph_num_nodes(g);
+  ctx.tally      = 0;
+  ctx.count      = 0;
+  ctx.pathlens   = calloc(gnnodes,sizeof(double));
+  if (ctx.pathlens == NULL) goto fail;
+
+  ctx.pathlens[nidx] = 0;
+
+  if (bfs(g, &nidx, 1, mask, &ctx, NULL, _bfs_cb, NULL)) goto fail;
+
+  if (ctx.count == 0) path = 0;
+  else                path = ctx.tally / ctx.count;
+
+  if (pathlens != NULL) {
+
+    for (i = 0, j = 0; i < gnnodes; i++) {
+
+      if (mask[i]) continue;
+
+      /*guard against array overflow - if this occurs, the input
+        arguments were invalid (either nnodes or mask). */
+      if (j >= nnodes) goto fail;
+      
+      pathlens[j++] = ctx.pathlens[i];
+
+    }
+  }
+
+  free(ctx.pathlens);
+  return path;
+
+fail:
+  if (ctx.pathlens != NULL) free(ctx.pathlens);
+  return -1;
+}
+
 uint8_t _bfs_cb(bfs_state_t *state, void *context) {
   
   uint64_t i;

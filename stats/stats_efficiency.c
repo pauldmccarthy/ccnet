@@ -19,6 +19,8 @@
 #include "stats/stats.h"
 #include "stats/stats_cache.h"
 
+
+
 /**
  * Callback function for the breadth first search. Updates the inverse
  * accumulation.
@@ -75,6 +77,12 @@ fail:
   if (pathlens != NULL) free(pathlens);
   return -1;
 }
+
+double stats_regional_efficiency(graph_t *g, uint32_t lbl) {
+
+  return 0;
+}
+
 
 double stats_local_efficiency(graph_t *g, uint32_t nidx) {
 

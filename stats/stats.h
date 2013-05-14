@@ -231,7 +231,7 @@ double stats_avg_local_efficiency(
  * Calculates the 'regional efficiency' upon the subgraph formed by nodes
  * specified in the given mask. The corresponding mask value for all nodes to
  * be included should be set to zero, and nodes to be excluded set to
- * non-zero.
+ * non-zero. If the mask is NULL, every node in the graph is included.
  *
  * \return the 'regional' efficiency, the efficiency of all nodes specified by
  * the given mask, or -1 on error.

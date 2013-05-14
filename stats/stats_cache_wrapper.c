@@ -189,6 +189,18 @@ double stats_cache_global_efficiency(graph_t *g) {
   return stats_global_efficiency(g);
 }
 
+
+double stats_cache_local_efficiency(graph_t *g) {
+
+  double eff;
+
+  if (stats_cache_check(g, STATS_CACHE_LOCAL_EFFICIENCY, 0, -1, &eff) == 1)
+    return eff;
+
+  return stats_avg_local_efficiency(g);
+}
+
+
 uint8_t stats_cache_node_local_efficiency(
   graph_t *g, int64_t n, double *data) {
 
@@ -197,7 +209,7 @@ uint8_t stats_cache_node_local_efficiency(
 
   nnodes = graph_num_nodes(g);
 
-  if (stats_cache_check(g, STATS_CACHE_LOCAL_EFFICIENCY, n, -1, data) == 1)
+  if (stats_cache_check(g, STATS_CACHE_NODE_LOCAL_EFFICIENCY, n, -1, data) == 1)
     return 0;
 
   if (data != NULL) {

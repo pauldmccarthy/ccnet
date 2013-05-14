@@ -49,6 +49,7 @@ enum {
   STATS_CACHE_LARGEST_COMPONENT,
   STATS_CACHE_CONNECTED,
   STATS_CACHE_GLOBAL_EFFICIENCY,
+  STATS_CACHE_LOCAL_EFFICIENCY,
   STATS_CACHE_MODULARITY,
   STATS_CACHE_INTRA_EDGES,
   STATS_CACHE_INTER_EDGES,
@@ -60,7 +61,7 @@ enum {
   /*node-level statistics*/
   STATS_CACHE_NODE_CLUSTERING,
   STATS_CACHE_NODE_PATHLENGTH,
-  STATS_CACHE_LOCAL_EFFICIENCY,
+  STATS_CACHE_NODE_LOCAL_EFFICIENCY,
   STATS_CACHE_BETWEENNESS_CENTRALITY,
   STATS_CACHE_NODE_NUMPATHS,
   STATS_CACHE_NODE_COMPONENT,
@@ -248,6 +249,7 @@ double stats_cache_num_components(   graph_t *g);
 double stats_cache_largest_component(graph_t *g);
 double stats_cache_connected(        graph_t *g);
 double stats_cache_global_efficiency(graph_t *g);
+double stats_cache_local_efficiency( graph_t *g);
 double stats_cache_modularity(       graph_t *g);
 double stats_cache_intra_edges(      graph_t *g);
 double stats_cache_inter_edges(      graph_t *g);

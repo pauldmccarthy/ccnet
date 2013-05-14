@@ -182,10 +182,11 @@ double stats_pathlength(
 /**
  * Calculates the distance between the given node and all nodes specified in
  * the mask. The individual path lengths are stored in the pathlens array if
- * it is provided.
+ * it is provided.  The corresponding mask value for all nodes to be included
+ * should be set to zero, and nodes to be excluded set to non-zero.
  *
  * \return the mean path length from the specified node to all nodes in the
- * mask.
+ * mask, or -1 on error.
  */
 double stats_sub_pathlength(
   graph_t  *g,       /**< the graph to query                     */
@@ -220,8 +221,20 @@ double stats_local_efficiency(
 );
 
 /**
- * \return the 'regional' efficiency, the efficiency
- * of all nodes specified by the given mask.
+ * \return the average local efficiency of the graph.
+ */
+double stats_avg_local_efficiency(
+  graph_t *g /**< the graph to query */
+);
+
+/**
+ * Calculates the 'regional efficiency' upon the subgraph formed by nodes
+ * specified in the given mask. The corresponding mask value for all nodes to
+ * be included should be set to zero, and nodes to be excluded set to
+ * non-zero.
+ *
+ * \return the 'regional' efficiency, the efficiency of all nodes specified by
+ * the given mask, or -1 on error.
  */
 double stats_sub_efficiency(
   graph_t *g,      /**< graph to query                         */

@@ -27,7 +27,6 @@ static struct argp_option opts[] = {
   {"pathlength", 'p', NULL, 0, "zero pathlength"},
   {"clustering", 'c', NULL, 0, "zero clustering"},
   {"efficiency", 'f', NULL, 0, "zero efficiency"},
-  {"closeness",  'l', NULL, 0, "zero closeness"},
   {"edgedist",   'e', NULL, 0, "zero edgedist"},
   {0}
 };
@@ -42,7 +41,6 @@ typedef struct _args {
   uint8_t pathlength;
   uint8_t clustering;
   uint8_t efficiency;
-  uint8_t closeness;
   uint8_t edgedist;
 
 } args_t;
@@ -59,7 +57,6 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'p': args->pathlength = 1; break;
     case 'c': args->clustering = 1; break;
     case 'f': args->efficiency = 1; break;
-    case 'l': args->closeness  = 1; break;
     case 'e': args->edgedist   = 1; break;
 
     case ARGP_KEY_ARG:
@@ -141,6 +138,7 @@ void _print_global_stats(graph_t *g, args_t *args) {
   double   pathlength;
   double   swidx;
   double   globeff;
+  double   loceff;
   double   assort;
 
   clustering = 0;
@@ -154,6 +152,7 @@ void _print_global_stats(graph_t *g, args_t *args) {
     pathlength = stats_cache_graph_pathlength( g);
     swidx      = stats_smallworld_index(       g);
     globeff    = stats_cache_global_efficiency(g);
+    loceff     = stats_cache_local_efficiency( g);
     assort     = stats_cache_assortativity(    g);
   }
 
@@ -172,6 +171,7 @@ void _print_global_stats(graph_t *g, args_t *args) {
   printf("# pathlength         %0.6f\n", pathlength);
   printf("# smallworld index   %0.6f\n", swidx);
   printf("# global efficiency  %0.6f\n", globeff);
+  printf("# local efficiency   %0.6f\n", loceff);
   printf("# assortativity      %0.6f\n", assort);
 }
 
@@ -215,8 +215,10 @@ void _print_node_stats(graph_t *g, args_t *args, uint32_t n) {
   if (!args->clustering) stats_cache_node_clustering(       g, n, &clust);
   if (!args->efficiency) stats_cache_node_local_efficiency( g, n, &leff);
   if (!args->pathlength) stats_cache_node_pathlength(       g, n, &plen);
-  if (!args->edgedist)   close = stats_closeness_centrality(g, n);
   if (!args->edgedist)   stats_cache_node_edgedist(         g, n, &edgedist);
+
+  if (!args->pathlength)
+    close = stats_closeness_centrality(g, n);
 
   if (!(args->clustering || args->pathlength))
       lswidx = stats_local_smallworld_index(g, n);

@@ -78,9 +78,65 @@ fail:
   return -1;
 }
 
-double stats_regional_efficiency(graph_t *g, uint32_t lbl) {
 
-  return 0;
+double stats_avg_local_efficiency(graph_t *g) {
+
+  uint64_t i;
+  uint32_t nnodes;
+  double   loceff;
+  double   loceff_tally;
+
+  nnodes       = graph_num_nodes(g);
+  loceff_tally = 0;
+
+  for (i = 0; i < nnodes; i++) {
+    if (stats_cache_node_local_efficiency(g, i, &loceff)) goto fail;
+
+    loceff_tally += loceff;
+  }
+
+  loceff_tally /= nnodes;
+
+  stats_cache_add(g,
+                  STATS_CACHE_LOCAL_EFFICIENCY,
+                  STATS_CACHE_TYPE_GRAPH,
+                  sizeof(double));
+  stats_cache_update(g, STATS_CACHE_LOCAL_EFFICIENCY, 0, -1, &loceff_tally);
+
+  return loceff_tally;
+
+fail: 
+  return -1;
+}
+
+double stats_sub_efficiency(graph_t *g, uint32_t nnodes, uint8_t *mask) {
+
+  uint32_t  i;
+  uint32_t  gnnodes;
+  double    invsum;
+  double    inv;
+  double    effic;
+
+  invsum  = 0;
+  gnnodes = graph_num_nodes(g);
+
+  for (i = 0; i < gnnodes; i++) {
+
+    if (mask[i]) continue;
+
+    inv = 0;
+    if (bfs(g, &i, 1, mask, &inv, NULL, _bfs_cb, NULL)) goto fail;
+
+    if (inv < 0) goto fail;
+    invsum += inv;
+  }
+
+  effic = invsum / (nnodes*(nnodes-1));
+
+  return effic;
+
+fail:
+  return -1;
 }
 
 
@@ -128,10 +184,10 @@ double stats_local_efficiency(graph_t *g, uint32_t nidx) {
   effic = invsum / (numnbrs*(numnbrs-1));
 
   stats_cache_add(g,
-                  STATS_CACHE_LOCAL_EFFICIENCY,
+                  STATS_CACHE_NODE_LOCAL_EFFICIENCY,
                   STATS_CACHE_TYPE_NODE,
                   sizeof(double));
-  stats_cache_update(g, STATS_CACHE_LOCAL_EFFICIENCY, nidx, -1, &effic);
+  stats_cache_update(g, STATS_CACHE_NODE_LOCAL_EFFICIENCY, nidx, -1, &effic);
 
   return effic;
 

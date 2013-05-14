@@ -13,6 +13,7 @@
 #include "util/startup.h"
 #include "graph/graph.h"
 #include "io/ngdb_graph.h"
+#include "io/edgefile.h"
 
 typedef enum {
   TYPE_ER_RANDOM = 1, /* "errandom"   */
@@ -20,6 +21,7 @@ typedef enum {
   TYPE_SCALEFREE,     /* "scalefree"  */
   TYPE_SMALLWORLD,    /* "smallworld" */
   TYPE_NCUT,          /* "ncut"       */
+  TYPE_EDGEFILE       /* "edgefile"   */
 } graph_type_t;
 
 static char doc[] = "cgen - generate graphs";
@@ -50,6 +52,9 @@ typedef struct args {
   double       sx;
   double       radius;
   double       threshold;
+
+
+  char        *infile;
 } args_t;
 
 static struct argp_option options[] = {
@@ -82,6 +87,7 @@ static struct argp_option options[] = {
   {"sx",          'x', "DOUBLE", 0, "distance sigma, for ncut graphs"},
   {"radius",      'u', "DOUBLE", 0, "connectivity radius, for ncut graphs"},
   {"threshold",   'h', "DOUBLE", 0, "threshold, for ncut graphs"},
+  {"infile",      'b', "FILE",   0, "input file for edgefile graphs"},
   {0}
 };
 
@@ -100,6 +106,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
       else if (!strcasecmp(arg, "scalefree"))  a->type = TYPE_SCALEFREE;
       else if (!strcasecmp(arg, "smallworld")) a->type = TYPE_SMALLWORLD;
       else if (!strcasecmp(arg, "ncut"))       a->type = TYPE_NCUT;
+      else if (!strcasecmp(arg, "edgefile"))   a->type = TYPE_EDGEFILE;
       else argp_usage(state);
       break;
 
@@ -120,6 +127,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
     case 'x': a->sx          = atof(arg); break; 
     case 'u': a->radius      = atof(arg); break;
     case 'h': a->threshold   = atof(arg); break;
+    case 'b': a->infile      = arg;       break;
 
     case ARGP_KEY_ARG:
       if      (state->arg_num == 0) a->output = arg;
@@ -238,6 +246,26 @@ int main(int argc, char *argv[]) {
         printf("could not create ncut graph\n");
         goto fail;
       }
+
+      break;
+
+    case TYPE_EDGEFILE:
+
+      if (!args.infile) {
+        printf("You must specify an input edge file\n");
+        goto fail;
+      }
+
+      if (!args.numnodes) {
+        printf("You must specify the number of nodes\n");
+        goto fail;
+      }
+
+      if (edgefile_read(&g, args.numnodes, args.infile)) {
+        printf("error reading in edge file\n");
+        goto fail;
+      }
+
 
       break;
       

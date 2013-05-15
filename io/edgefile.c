@@ -46,5 +46,6 @@ uint8_t edgefile_read(graph_t *g, uint32_t nnodes, char *fname) {
   return 0;
 
 fail:
+  if (line != NULL) free(line);
   return 1;
 }  

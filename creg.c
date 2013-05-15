@@ -25,10 +25,11 @@ static char doc[] = "creg -- calculate and print inter/intra regional "\
 
 static struct argp_option opts[] = {
   {"lblfile", 'l', "FILE", 0, "ANALYZE75 file containing node labels"},
+  {"lblmap",  'a', "FILE", 0, "text file containing label mappings"},
   {"real",    'r',  NULL,  0, "node coordinates are in real units"},
   {"region",  'e',  NULL,  0, "Print out regional density matrix"},
   {"sizes",   's',  NULL,  0, "print out number of nodes in each region"},
-  {"means",   'm',  NULL,  0, "print out mean node measures for each region"},
+  {"means",   'm',  NULL,  0, "print out node measures for each region"},
   {"nonorm",  'n',  NULL,  0, "show edge counts, rather "\
                               "than normalised densities"},
   {0}
@@ -38,6 +39,7 @@ typedef struct _args {
 
   char   *input;
   char   *lblfile;
+  char   *lblmap;
   uint8_t real;
   uint8_t region;
   uint8_t sizes;
@@ -53,6 +55,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
   switch (key) {
 
     case 'l': args->lblfile = arg; break;
+    case 'a': args->lblmap  = arg; break;
     case 'r': args->real    = 1;   break;
     case 'e': args->region  = 1;   break;
     case 's': args->sizes   = 1;   break;
@@ -89,7 +92,7 @@ static void _print_region_sizes(
   node_partition_t *ptn
 );
 
-static void _print_region_means(
+static uint8_t _print_region_means(
   graph_t          *g,
   node_partition_t *ptn
 );
@@ -127,6 +130,13 @@ int main (int argc, char *argv[]) {
 
     if (graph_relabel(&g, &hdr, img, args.real)) {
       printf("error relabelling graph\n");
+      goto fail;
+    }
+  }
+
+  if (args.lblmap) {
+    if (graph_relabel_map(&g, args.lblmap)) {
+      printf("error relabelling graph with mapping file %s\n", args.lblmap);
       goto fail;
     }
   }
@@ -281,50 +291,57 @@ void _print_region_sizes(node_partition_t *ptn) {
 }
 
 
-void _print_region_means(graph_t *g, node_partition_t *ptn) {
+uint8_t _print_region_means(graph_t *g, node_partition_t *ptn) {
 
   uint64_t i;
   uint64_t j;
   uint32_t id;
+  uint32_t nnodes;
   uint32_t node;
   array_t  part;
   double   avgdegree;
-  double   avgplen;
-  double   avgclust;
-  double   tmp;
+  uint8_t *mask;
+  double   regeff;
 
-  stats_avg_clustering(g);
-  stats_avg_pathlength(g);
-
-  printf("region, size, degree, pathlength, clustering\n");
+  nnodes = graph_num_nodes(g);
+  mask   = calloc(nnodes, sizeof(uint8_t));
+  if (mask == NULL) goto fail;
+  
+  printf("region, size, degree, efficiency\n");
 
   for (i = 0; i < ptn->nparts; i++) {
 
     array_get(ptn->partids, i, &id);
     array_get(ptn->parts,   i, &part);
 
+    /* create node mask for regional efficiency calculation */
+    memset(mask, 1, nnodes*sizeof(uint8_t));
+    for (j = 0; j < part.size; j++) {
+
+      array_get(&part, j, &node);
+      mask[node] = 0;
+    }
+
+    regeff    = stats_sub_efficiency(g, part.size, mask);
     avgdegree = 0;
-    avgplen   = 0;
-    avgclust  = 0;
 
     for (j = 0; j < part.size; j++) {
 
       array_get(&part, j, &node);
 
       avgdegree += graph_num_neighbours(g, node);
-      
-      stats_cache_node_pathlength(g, node, &tmp);
-      avgplen   += tmp;
-
-      stats_cache_node_clustering(g, node, &tmp);
-      avgclust  += tmp;
     }
 
     avgdegree /= part.size;
-    avgplen   /= part.size;
-    avgclust  /= part.size;
 
-    printf("%3u, %4u, %8.4f, %8.4f, %0.6f\n",
-           id, part.size, avgdegree, avgplen, avgclust);
+    printf("%3u, %4u, %8.4f, %0.6f\n",
+           id, part.size, avgdegree, regeff);
   }
+
+  free(mask);
+  return 0;
+  
+fail:
+  if (mask != NULL) free(mask);
+  return 1;
 }

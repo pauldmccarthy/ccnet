@@ -513,6 +513,21 @@ uint8_t graph_relabel(
   uint8_t  real /**< node coordinates are in real units */
 );
 
+/**
+ * Relabels the nodes of a graph using the label mapping contained in the
+ * given file. The label map file must be a plain text file, where each line
+ * contains two unsigned integers separated by a space. The first integer on
+ * each line represents an old node label, and the second integer is the new
+ * label to which all nodes having the old label should be set.
+ *
+ * \return 0 on success, non-0 on failure.
+ */
+uint8_t graph_relabel_map(
+  graph_t *g,
+  char    *lblmapfile
+);
+
+
 uint8_t graph_group_by_label(
   graph_t          *g,
   node_partition_t *ptn

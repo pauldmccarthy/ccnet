@@ -37,6 +37,8 @@ typedef struct _args {
   char    *output;                   /**< name of output file              */
   char    *lblfile;                  /**< ANALYZE75 file containing
                                           node labels                      */
+  uint8_t  relabel;                  /**< nodes are relabelled using label
+                                          file                             */  
   uint8_t  real;                     /**< node coordinates are in
                                           real units                       */
   char    *hdrmsg;                   /**< message to add to output file    */
@@ -47,6 +49,7 @@ typedef struct _args {
   uint32_t labels[MAX_LABEL_VALUES]; /**< labels (or components) to
                                           include in subgraph              */
   uint8_t  nlabels;                  /**< number of labels (or components) */
+  
 } args_t;
 
 static char doc[]   = "cextract - extract a subgraph by "\
@@ -59,6 +62,8 @@ static struct argp_option options[] = {
   {"hdrmsg",    'h', "MSG",  0, "message to save to .ngdb file header"},  
   {"lblval",    'l', "INT",  0, "label/component value/number"},
   {"lblfile",   'f', "FILE", 0, "ANALYZE75 file containing node labels"},
+  {"relabel",   'a', NULL,   0, "Relabel nodes in output graph according to "\
+                                "provided label file"},
   {"real",      'r',  NULL,  0, "node coordinates are in real units"},
   {0}
 };
@@ -74,6 +79,7 @@ static error_t _parse_opt (int key, char *arg, struct argp_state *state) {
     case 'c': args->component = 1;   break;
     case 'e': args->exclude   = 1;   break;
     case 'f': args->lblfile   = arg; break;
+    case 'a': args->relabel   = 1;   break;
     case 'r': args->real      = 1;   break;
     case 'h': args->hdrmsg    = arg; break;
     case 'l':
@@ -143,6 +149,7 @@ int main (int argc, char *argv[]) {
 
 
   graph_t     gin;
+  graph_t     gincpy;
   graph_t     gout;
   dsr_t       hdr;
   uint8_t    *img;
@@ -160,6 +167,11 @@ int main (int argc, char *argv[]) {
     printf("Could not read in %s\n", args.input);
     goto fail;
   }
+
+  if (ngdb_read(args.input, &gincpy)) {
+    printf("Could not read in %s\n", args.input);
+    goto fail;
+  }  
 
   if (args.lblfile) {
     if (analyze_load(args.lblfile, &hdr, &img)) {
@@ -196,9 +208,18 @@ int main (int argc, char *argv[]) {
     }
   }
 
-  if (graph_mask(&gin, &gout, mask)) {
-    printf("could not mask graph\n");
-    goto fail;
+  if (args.relabel) {
+    if (graph_mask(&gin, &gout, mask)) {
+      printf("could not mask graph\n");
+      goto fail;
+    }
+  }
+
+  else {
+    if (graph_mask(&gincpy, &gout, mask)) {
+      printf("could not mask graph\n");
+      goto fail;
+    }
   }
 
   if (graph_log_copy(&gin, &gout)) {

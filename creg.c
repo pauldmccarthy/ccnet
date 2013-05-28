@@ -238,6 +238,7 @@ void _print_density_matrix(
   uint32_t iid;
   uint32_t isz;
   uint32_t jsz;
+  uint32_t normfac;
   uint32_t nparts;
   double   val;
 
@@ -266,8 +267,11 @@ void _print_density_matrix(
       if (nonorm) printf("%6u ", (uint32_t)val);
 
       else {
-        if (i == j) val /= (isz*(isz-1)/2.0);
-        else        val /= (isz*jsz/2.0);
+
+        if (i == j) normfac = (isz*(isz-1)/2.0);
+        else        normfac = (isz*jsz/2.0);
+
+        if (normfac > 1) val /= normfac;
 
         printf("%12.10f ", val);
       }

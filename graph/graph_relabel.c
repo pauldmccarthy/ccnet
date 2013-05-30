@@ -106,7 +106,8 @@ static uint8_t _load_mapfile(char *mapfile,  array_t *map) {
 
   array_set_cmps(map, &_cmp_mapping, NULL);
 
-  line = malloc(64);
+  len  = 64;
+  line = malloc(len);
   if (line == NULL) goto fail;
 
   f = fopen(mapfile, "rt");

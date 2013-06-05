@@ -269,7 +269,7 @@ void _print_density_matrix(
       else {
 
         if (i == j) normfac = (isz*(isz-1)/2.0);
-        else        normfac = (isz*jsz/2.0);
+        else        normfac = isz*jsz;
 
         if (normfac > 1) val /= normfac;
 

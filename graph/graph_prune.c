@@ -93,7 +93,13 @@ uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size) {
       if (s > size) size = s;
     }
 
-    size -= 1;
+    /*
+     * if the network consists wholly of disconnected nodes (i.e. all
+     * components have size == 1), just remove them all; otherwise, remove
+     * all components that are smaller than the largtest component
+     */
+    if (size > 1)
+      size -= 1;
   }
 
   if (_prune(gin, gout, size, components, sizes.size, (uint32_t *)sizes.data))

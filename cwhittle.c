@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   if (args.pruneon) {
     
     printf("pruning graph (%u) before starting ...\n", args.prune);
-    if (graph_prune(&g, &tmp, args.prune)) {
+    if (graph_prune(&g, &tmp, args.prune, 0)) {
       printf("error pruning graph\n");
       goto fail;
     }

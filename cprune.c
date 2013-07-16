@@ -19,10 +19,24 @@
 #include "io/ngdb_graph.h"
 #include "util/startup.h"
 
-static char doc[] = "cprune - remove disconnected nodes/components "\
+static char doc[] = "cprune - remove disconnected nodes/components"\
                     "from a graph.\v"\
-                    "If a size is not specified, or set to 0, the graph "\
-                    "is pruned such that only the largest component remains.";
+                    "Listen carefully.\n\n"\
+                    "If size is > 0, the prop parameter is ignored, "\
+                    "and the graph is pruned such that only those "\
+                    "components which are larger than size remain. "\
+                    "If size is 0 and prop is 0.0, the graph is pruned "\
+                    "such that only the largest component remains - if "\
+                    "multiple components have equal largest size, they "\
+                    "are all retained.\n\n" \
+                    "If size is 0 and prop is > 0.0, the graph is pruned "\
+                    "such that only the largest component remains, but "\
+                    "only if that component is (prop*100)% of the total "\
+                    "network size. If this is not the case, the graph is "\
+                    "pruned as if (size=1,prop=0.0) were passed in - i.e."\
+                    "only disconnected nodes are pruned.\n\n" \
+                    "If a size is not specified, or set to 0, the graph is "\
+                    "pruned such that only the largest component remains.";
 
 /**
  * input arguments
@@ -32,11 +46,13 @@ typedef struct args {
   char    *output;
   char    *hdrmsg;
   uint32_t size;
+  double   prop;
 } args_t;
 
 static struct argp_option options[] = {
-  {"size",   's', "INT", 0, "remove components below this size"},
-  {"hdrmsg", 'h', "MSG", 0, "message to save to .ngdb file header"},
+  {"size",   's', "INT",    0, "remove components below this size"},
+  {"prop",   'p', "DOUBLE", 0, "minimum proportion of largest component"},
+  {"hdrmsg", 'h', "MSG",    0, "message to save to .ngdb file header"},
   {0}
 };
 
@@ -46,6 +62,7 @@ static error_t _parse_opt(int key, char *arg, struct argp_state *state) {
 
   switch(key) {
     case 's': a->size   = atoi(arg); break;
+    case 'p': a->prop   = atof(arg); break;
     case 'h': a->hdrmsg = arg;       break;
       
     case ARGP_KEY_ARG:
@@ -80,7 +97,7 @@ int main(int argc, char *argv[]) {
     goto fail;
   }
 
-  if (graph_prune(&gin, &gout, args.size)) {
+  if (graph_prune(&gin, &gout, args.size, args.prop)) {
     printf("Graph prune failed\n");
     goto fail;
   }

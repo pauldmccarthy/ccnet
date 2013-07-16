@@ -59,7 +59,7 @@ static uint8_t _bfs_cb(
   void        *context /**< pointer to a ctx_t struct */
 );
 
-uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size) {
+uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size, double prop) {
 
   uint32_t *components;
   array_t   sizes;
@@ -82,7 +82,7 @@ uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size) {
     goto fail;
 
   /*
-   * if size was not specified, prune all but the largest component.
+   * If size is 0, find the size of the largest component(s)
    * 
    */
   if (size == 0) {
@@ -100,6 +100,18 @@ uint8_t graph_prune(graph_t *gin, graph_t *gout, uint32_t size) {
      */
     if (size > 1)
       size -= 1;
+    /*
+     * If size is 0 and prop is > 0.0, the graph is pruned such that only the
+     * largest component remains, but only if that component is at least
+     * (prop*100)% of the total network size. If this is not the case, the
+     * graph is pruned as if (size=1,prop=0.0) were passed in - i.e. only
+     * disconnected nodes are pruned.
+     */
+    if (prop > 0) {
+      if (size / ((double)nnodes) < prop) {
+        size = 1;
+      }
+    }
   }
 
   if (_prune(gin, gout, size, components, sizes.size, (uint32_t *)sizes.data))

@@ -64,7 +64,6 @@ uint8_t ngdb_read(char *ngdbfile, graph_t *graph) {
 
   if (graph_create(graph, nnodes, 0)) goto fail;
   if (_read_hdr(ngdb, graph))         goto fail;
-
   for (i = 0; i < nnodes; i++) {
     if (_read_refs (ngdb, graph, i) != 0) goto fail;
     if (_read_label(ngdb, graph, i) != 0) goto fail;
@@ -223,22 +222,22 @@ uint8_t _write_hdr(ngdb_t *ngdb, graph_t *g) {
   uint8_t *data;
   char    *delim = "\n";
 
-  data = NULL;
-
-  if (!graph_log_exists(g))        return 0;
-  if (graph_log_total_len(g) == 0) return 0;
-
-  len = graph_log_total_len(g) +
-       (graph_log_num_msgs(g)-1) * strlen(delim) + 1;
+  len = NGDB_HDR_DATA_SIZE;
 
   data = calloc(len, 1);
   if (data == NULL) goto fail;
 
-  graph_log_export(g, (char *)data, delim);
+  if (graph_log_exists(g) && graph_log_total_len(g) > 0) {
 
-  if (len > NGDB_HDR_DATA_SIZE) {
-    len = NGDB_HDR_DATA_SIZE;
-    data[len-1] = '\0';
+    len = graph_log_total_len(g) +
+      (graph_log_num_msgs(g)-1) * strlen(delim) + 1;
+
+    graph_log_export(g, (char *)data, delim);
+
+    if (len > NGDB_HDR_DATA_SIZE) {
+      len = NGDB_HDR_DATA_SIZE;
+      data[len-1] = '\0';
+    }
   }
 
   if (ngdb_hdr_set_data(ngdb, data, len)) goto fail;

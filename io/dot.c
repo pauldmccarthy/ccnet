@@ -265,6 +265,9 @@ void _write_edges(
 
   for (i = 0; i < nnbrs; i++) {
 
+    if (((opts << DOT_UNDIR) & 1) && (nbrs[i] <= u))
+      continue;
+
     if ((opts >> DOT_EDGE_LABELS) & 1)
       sprintf(lblstr, "label=%0.4f", wts[i]);
     if ((opts >> DOT_EDGE_WEIGHT) & 1)

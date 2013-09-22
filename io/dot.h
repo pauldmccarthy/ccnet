@@ -25,6 +25,7 @@ typedef enum {
   DOT_EDGE_WEIGHT   = 6, /**< Set edge line width proportional
                               to edge weight                       */
   DOT_OMIT_EDGES    = 7, /**< Do not output edges                  */
+  DOT_UNDIR         = 8, /**< Output edges one way only            */
 
 } dot_opts_t;
 

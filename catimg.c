@@ -63,16 +63,28 @@ int main (int argc, char *argv[]) {
   if (hdrs == NULL) goto fail;
 
   for (i = 0; i < ninputs; i++) {
-    if (analyze_load_hdr(inputs[i], hdrs+i)) goto fail;
+    if (analyze_load_hdr(inputs[i], hdrs+i)) {
+      printf("Couldn't load image %s\n", inputs[i]);
+      goto fail;
+    }
   }
 
-  if (analyze_hdr_compat(ninputs, hdrs, 0)) goto fail;
+  if (analyze_hdr_compat(ninputs, hdrs, 0)) {
+    printf("Headers aren't compatible\n");
+    goto fail;
+  }
 
   _mk_hdr(&newhdr, hdrs, ninputs, dimsz);
 
-  if (_concat(output, inputs, ninputs)) goto fail;
+  if (_concat(output, inputs, ninputs)) {
+    printf("Cat failed, simple as that\n");
+    goto fail;
+  }
 
-  if (analyze_write_hdr(output, &newhdr)) goto fail;
+  if (analyze_write_hdr(output, &newhdr)) {
+    printf("Write failed to %s\n", output);
+    goto fail;
+  }
   
   free(hdrs);
   return 0;
